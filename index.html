@@ -608,6 +608,32 @@
     #continuar-viendo-wrap { margin-top: 6px !important; margin-bottom: 18px; }
     #continuar-viendo-wrap .section-label { opacity: 1 !important; }
 
+
+    /* ── Menú y Tú ── */
+    .buscar-camara { flex: none; width: 46px; border: 1px solid var(--k-dedfd8); border-radius: 8px; background: var(--k-fffefb); font-size: 19px; cursor: pointer; }
+    .tu-sec { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 20px 0 10px; }
+    /* ── Especiales con más mimo ── */
+    .especiales-scroll { display: flex !important; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 10px; margin: 0 -2px; scrollbar-width: none; }
+    .especiales-scroll::-webkit-scrollbar { display: none; }
+    .especiales-scroll > .especial-tile { flex: 0 0 158px; min-height: 178px; scroll-snap-align: start; display: flex; flex-direction: column; border-radius: 14px; border: 0; border-top: 4px solid var(--esp-c, var(--acento)); background-color: var(--esp-bg, #1b1d1c); background-image: linear-gradient(160deg, var(--esp-bg, #1b1d1c), #101010); color: #faf9f6; }
+    .especiales-scroll > .especial-tile .especial-tile-emoji { font-size: 30px; margin-bottom: auto; }
+    .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; margin-top: 18px; }
+    .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(250,249,246,0.68); }
+    .esp-maraton { position: relative; border-radius: 18px; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: #1b1d1c center/cover no-repeat; cursor: pointer; margin: 6px 0 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+    .esp-maraton::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.55) 45%, rgba(10,10,10,0.94)); }
+    .esp-maraton > * { position: relative; }
+    .esp-maraton .in { padding: 18px; }
+    .esp-maraton .k { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--esp-c); filter: brightness(1.35); }
+    .esp-maraton .t { font: 800 24px/1.1 'Cabinet Grotesk', -apple-system, sans-serif; margin: 6px 0 10px; }
+    .esp-maraton .barra { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.18); overflow: hidden; }
+    .esp-maraton .barra i { display: block; height: 100%; background: var(--esp-c); }
+    .esp-maraton .cuenta { font-size: 12.5px; color: rgba(255,255,255,0.78); margin-top: 6px; }
+    .esp-maraton .sig { margin-top: 12px; font-size: 13.5px; line-height: 1.4; }
+    .esp-maraton .sig small { display: block; color: rgba(255,255,255,0.7); font-size: 12px; }
+    .esp-sec-cab { display: flex; justify-content: space-between; align-items: baseline; margin: 26px 0 10px; }
+    .esp-sec-cab h3 { font: 800 19px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 0; }
+    .aviso-version { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 2147483000; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #1b1d1c; color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: escAparece .3s ease; }
+    .aviso-version button { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--acento); color: #fff; font: 800 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
     .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
@@ -1807,14 +1833,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="inicio-sec">
         <div class="inicio-sec-t">Más formas de elegir</div>
         <div class="inicio-atajos">
-          <button type="button" class="inicio-atajo" onclick="abrirEstaNoche()"><span>🌙</span><b>Esta noche</b><small>Lo mejor para ti en tus plataformas</small></button>
           <button type="button" class="inicio-atajo" onclick="abrirQueVemos()"><span>🃏</span><b>¿Qué vemos?</b><small>Desliza para decidir</small></button>
-          <button type="button" class="inicio-atajo" onclick="abrirFeedTrailers()"><span>▶️</span><b>Tráilers</b><small>Uno tras otro</small></button>
-          <button type="button" class="inicio-atajo" onclick="irA('p-comparador')"><span>⚖️</span><b>¿Cuál veo?</b><small>Compara dos o tres</small></button>
-          <button type="button" class="inicio-atajo" onclick="irA('p-especiales-hub')"><span>🎬</span><b>Especiales</b><small>Listas temáticas</small></button>
-          <button type="button" class="inicio-atajo" onclick="sorprendeme()"><span>🎲</span><b>Sorpréndeme</b><small>Una al azar para ti</small></button>
-          <button type="button" class="inicio-atajo" onclick="abrirEscaner()"><span>📸</span><b>¿Cuál de estas?</b><small>Desde una captura o foto</small></button>
           <button type="button" class="inicio-atajo" onclick="abrirMundial()"><span>🏆</span><b>El Mundial</b><small>Eliminatorias hasta quedarte con una</small></button>
+          <button type="button" class="inicio-atajo" onclick="irA('p-comparador')"><span>⚖️</span><b>¿Cuál veo?</b><small>Compara dos o tres</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirFeedTrailers()"><span>▶️</span><b>Tráilers</b><small>Uno tras otro</small></button>
         </div>
       </div>
       <div id="hoy-cine" style="display:none"></div>
@@ -1950,16 +1972,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
-      <button type="button" class="inicio-trailers qv-entrada" onclick="abrirQueVemos()">
-        <span class="inicio-trailers-ic">🃏</span>
-        <span class="inicio-trailers-t"><b>¿Qué vemos?</b><span>Desliza: → para ver · ← no me interesa · ↑ ficha</span></span>
-        <span class="inicio-trailers-f">›</span>
-      </button>
       <button type="button" class="inicio-trailers qv-entrada imp-entrada" onclick="abrirImprescindibles()">
         <span class="inicio-trailers-ic">🏅</span>
         <span class="inicio-trailers-t"><b>Las 100 imprescindibles</b><span id="imp-entrada-sub">Las mejor valoradas de la historia: ¿cuántas has visto?</span></span>
         <span class="inicio-trailers-f">›</span>
       </button>
+      <div id="desc-especiales"></div>
       <div id="desc-top10"></div>
       <div id="desc-generos"></div>
       <div id="desc-estudios"></div>
@@ -2036,6 +2054,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       </div>
       <form class="buscar-form" onsubmit="event.preventDefault();buscarEnPantalla()">
         <input type="search" id="buscar-input" placeholder="Película, serie, actor o director…" autocomplete="off" enterkeyhint="search" oninput="_buscarSugerir()">
+        <button type="button" class="buscar-camara" onclick="abrirEscaner();escanerVivo()" aria-label="Escanear con la cámara" title="Escanear con la cámara">📷</button>
         <button type="submit" id="buscar-btn">Buscar</button>
       </form>
       <div class="buscar-sug" id="buscar-sug"></div>
@@ -2114,7 +2133,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
   <div class="pantalla" id="p-especiales-hub">
     <div class="wrap">
       <div class="pantalla-header">
-        <span class="btn-atras" onclick="irA('p-inicio', true)">‹ Atrás</span>
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-descubre', true)">‹ Atrás</span>
         <h2>Especiales</h2>
         <span></span>
       </div>
@@ -2235,19 +2254,21 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="lg-nivel-n">Tu nivel de cinéfilo</div><div class="lg-nivel-t">Logros</div>
           <div class="lg-meta">Toca para ver tus logros</div>
         </div>
-        <button type="button" class="tu-milista" onclick="abrirBiblioteca()"><span class="tu-milista-ic">🔖</span><span class="tu-milista-t"><b>Mi lista</b><span>Lo que quieres ver y lo que ya has visto</span></span><span class="tu-milista-f">›</span></button>
+        <button type="button" class="tu-milista" onclick="abrirMisSeries()"><span class="tu-milista-ic">📺</span><span class="tu-milista-t"><b>Mis series</b><span>Por dónde vas y qué sale nuevo</span></span><span class="tu-milista-f">›</span></button>
+        <div class="tu-sec">Tu gusto</div>
         <div class="tu-grid">
-          <button type="button" class="tu-btn solo-logros" onclick="abrirLogros()"><span>🎖️</span>Logros</button>
-          <button type="button" class="tu-btn" onclick="abrirMisSeries()"><span>📺</span>Mis series</button>
-          <button type="button" class="tu-btn" onclick="abrirImprescindibles()"><span>🏅</span>Imprescindibles</button>
-          <button type="button" class="tu-btn" onclick="abrirRanking()"><span>🏆</span>Mi ranking</button>
-          <button type="button" class="tu-btn" onclick="abrirPuntuar()"><span>⭐</span>Puntuar rápido</button>
-          <button type="button" class="tu-btn" onclick="abrirLaHasVisto()"><span>👀</span>¿La has visto?</button>
           <button type="button" class="tu-btn" onclick="abrirADN()"><span>🧬</span>Tu ADN de cine</button>
           <button type="button" class="tu-btn" onclick="abrirEstadisticas()"><span>📊</span>Tus estadísticas</button>
           <button type="button" class="tu-btn" onclick="abrirWrapped()"><span>🎬</span>Tu año en cine</button>
           <button type="button" class="tu-btn" onclick="abrirActividad()"><span>🔥</span>Actividad y evolución</button>
-          <button type="button" class="tu-btn" onclick="abrirMapaCine()"><span>🕸️</span>Mapa de tu cine</button>
+          <button type="button" class="tu-btn" onclick="abrirMapaCine()"><span>🕸️</span>Red de tu cine</button>
+          <button type="button" class="tu-btn solo-logros" onclick="abrirLogros()"><span>🎖️</span>Logros</button>
+        </div>
+        <div class="tu-sec">Puntúa y ordena</div>
+        <div class="tu-grid">
+          <button type="button" class="tu-btn" onclick="abrirPuntuar()"><span>⭐</span>Puntuar rápido</button>
+          <button type="button" class="tu-btn" onclick="abrirLaHasVisto()"><span>👀</span>¿La has visto?</button>
+          <button type="button" class="tu-btn" onclick="abrirRanking()"><span>🏆</span>Mi ranking</button>
         </div>
         <hr class="section-divider">
         <div class="section-label">Ajustes</div>
@@ -2407,7 +2428,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     <div class="wrap">
       <div class="pantalla-header">
         <span class="btn-atras" onclick="irA('p-cuenta', true)">‹ Atrás</span>
-        <h2>Mapa de tu cine</h2>
+        <h2>Red de tu cine</h2>
         <span></span>
       </div>
       <div id="mapa-cine-cont"><span style="color:var(--k-767973);font-size:13px">Construyendo tu mapa...</span></div>
@@ -2431,7 +2452,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
   <div class="pantalla" id="p-biblioteca">
     <div class="wrap">
       <div class="pantalla-header">
-        <span class="btn-atras" onclick="mostrarCuenta()">‹ Tú</span>
+        <span></span>
         <h2>Mi lista</h2>
         <button class="ml-enlace" type="button" onclick="abrirEstadisticas()">Tus estadísticas</button>
       </div>
@@ -2564,7 +2585,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     <button class="tab" type="button" data-tab="inicio" onclick="tabIr('inicio')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></button>
     <button class="tab" type="button" data-tab="descubre" onclick="tabIr('descubre')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.8 8.2 13.6 13.6 8.2 15.8 10.4 10.4z"/></svg><span>Descubre</span></button>
     <button class="tab" type="button" data-tab="buscar" onclick="tabIr('buscar')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg><span>Buscar</span></button>
-    <button class="tab" type="button" data-tab="especiales" onclick="tabIr('especiales')"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg><span>Especiales</span></button>
+    <button class="tab" type="button" data-tab="milista" onclick="tabIr('milista')"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.5L5 21V4a1 1 0 0 1 1-1z"/></svg><span>Mi lista</span></button>
     <button class="tab" type="button" data-tab="cuenta" onclick="tabIr('cuenta')"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg><span>Tú</span></button>
   </nav>
 
@@ -2739,7 +2760,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
     // Recuerda la posición de scroll de cada pantalla; al volver con "Atrás" (restaurar=true) se recupera
     window.__posPantalla = {};
-    const _TAB_DE_PANTALLA = {'p-descubre':'descubre','p-descubre-todo':'descubre','p-buscar':'buscar','p-inicio':'inicio','p-comparador':'inicio','p-biblioteca':'cuenta','p-resumen':'cuenta','p-especiales-hub':'especiales','p-especial':'especiales',
+    const _TAB_DE_PANTALLA = {'p-descubre':'descubre','p-descubre-todo':'descubre','p-buscar':'buscar','p-inicio':'inicio','p-comparador':'inicio','p-biblioteca':'milista','p-resumen':'cuenta','p-especiales-hub':'descubre','p-especial':'descubre','p-escaner':'buscar','p-mundial':'inicio','p-noche':'inicio',
       'p-cuenta':'cuenta','p-puntuar':'cuenta','p-logros':'cuenta','p-ranking':'cuenta','p-addons':'cuenta','p-estadisticas':'cuenta','p-wrapped':'cuenta','p-actividad':'cuenta','p-perfil-gusto':'cuenta','p-evolucion-gusto':'cuenta','p-mapa-cine':'cuenta','p-nueva-password':'cuenta'};
     function _tabActualizar(id){
       const t = _TAB_DE_PANTALLA[id]; if(!t) return;   // en fichas y personas se mantiene la pestaña de la que vienes
@@ -3629,6 +3650,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       _descImagenesGeneros(prov);
       _descPintarTop10(prov);
       _descPintarEstudios();
+      _descPintarEspeciales();
       cont.innerHTML = filas.map((f,fi)=>`<section class="desc-fila"><div class="desc-fila-cab"><h3>${_escHtml(f.t.replace(/ · (Películas|Series)$/,''))}${/ · (Películas|Series)$/.test(f.t) ? `<span class="desc-tipo">${f.tipo==='tv'?'Series':'Películas'}</span>` : ''}</h3>${f.calendario ? `<button type="button" class="desc-todo desc-cal-btn" onclick="abrirCalendario()">📅 Calendario</button>` : ''}<button type="button" class="desc-todo" onclick="descVerTodo(${fi})">Ver todo ›</button></div>
         <div class="desc-scroll" id="desc-f-${fi}">${Array(5).fill('<div class="desc-card"><div class="desc-poster skeleton"></div></div>').join('')}</div></section>`).join('');
       if(!hero.innerHTML) hero.innerHTML = '<div class="desc-hero skeleton"></div>';
@@ -8135,7 +8157,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const vistos = contarVistos(e);
         const pct = total ? Math.round(vistos/total*100) : 0;
         return `
-        <div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')">
+        <div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}">
           <span class="especial-tile-emoji">${e.emoji}</span>
           <div class="especial-tile-titulo">${e.titulo}</div>
           <div class="especial-tile-sub">${e.sub}</div>
@@ -8160,13 +8182,22 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="especiales-scroll">${cols.map(e=>tile(e).replace('class="especial-tile"','class="especial-tile col-tile"').replace(`onclick="abrirEspecial('${e.id}')"`, `onclick="abrirEspecial('${e.id}')"${e.fondo?` style="background-image:linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${e.fondo});background-size:cover;background-position:center"`:''}`)).join('')}
             <div class="especial-tile col-nueva-tile" onclick="abrirColOverlay('crear')"><span class="especial-tile-emoji">＋</span><div class="especial-tile-titulo">Nueva colección</div><div class="especial-tile-sub">Tu propia lista, en el orden que quieras</div></div>
           </div>`;
-      document.getElementById('especiales-secciones').innerHTML = filaCols + filaEnCurso.replace('margin-top:4px','margin-top:20px') + SECCIONES.map(sec=>{
+      window._espContarVistos = contarVistos;
+      const maraton = enCurso[0] || null;
+      document.getElementById('especiales-secciones').innerHTML = (maraton ? `<div id="esp-maraton-hub"></div>` : '') + filaEnCurso.replace('<div class="section-label" style="margin-top:4px">En curso</div>', `<div class="section-label" style="margin-top:20px">${maraton ? 'Tus otros maratones' : 'En curso'}</div>`) + SECCIONES.map(sec=>{
         const items = ordenAlfabetico(ESPECIALES.filter(e=>e.categoria===sec.cat));
         if(!items.length) return '';
         return `
           <div class="section-label" style="margin-top:20px">${sec.titulo}</div>
           <div class="especiales-scroll">${items.map(tile).join('')}</div>`;
-      }).join('');
+      }).join('') + filaCols.replace('margin-top:4px','margin-top:20px');
+      if(maraton){
+        _espPintarMaraton(maraton, document.getElementById('esp-maraton-hub'));
+        // la del maratón no se repite en «Tus otros maratones»
+        const fila = document.querySelector('#especiales-secciones .esp-en-curso');
+        fila?.querySelector(`.especial-tile[data-esp-id="${maraton.id}"]`)?.remove();
+        if(fila && !fila.querySelector('.especial-tile')){ fila.previousElementSibling?.remove(); fila.remove(); }
+      }
       _resolverImagenesHeroEspeciales();
     }
 
@@ -11232,6 +11263,51 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){ return null; }
     }
 
+    // ══ ESPECIALES: «Tu maratón» (el especial que llevas a medias y cuál toca ahora) y la sección dentro de Descubre ══
+    function _espItemVisto(it){
+      const vistosSet = window.vistosNormSet || new Set(), idsSet = window.idsVistosSet || new Set();
+      const r = it.tmdb_id ? {id:it.tmdb_id, tipo:it.tipo} : (window.especialIdsResueltos||{})[_claveIdResuelto(it)];
+      return (r && idsSet.size) ? idsSet.has(`${r.id}-${r.tipo}`) : vistosSet.has(`${normalizarTitulo(it.t)}|${it.tipo}`);
+    }
+    function _espSiguiente(e){ const i = e.items.findIndex(it=>!_espItemVisto(it)); return i<0 ? null : {it:e.items[i], pos:i+1}; }
+    async function _espPintarMaraton(e, caja){
+      if(!caja || !e) return;
+      const total = e.items.length, vistas = e.items.filter(_espItemVisto).length, sig = _espSiguiente(e), pct = Math.round(vistas/total*100);
+      const it = sig && sig.it, r = it ? (it.tmdb_id ? {id:it.tmdb_id, tipo:it.tipo} : (window.especialIdsResueltos||{})[_claveIdResuelto(it)]) : null;
+      window._espMaraton = {e, it, r};
+      caja.innerHTML = `<div class="esp-maraton" style="--esp-c:${e.color||'var(--acento)'}" onclick="abrirEspecial('${e.id}')"><div class="in">
+          <div class="k">${e.emoji} Tu maratón</div>
+          <div class="t">${_escHtml(e.titulo)}</div>
+          <div class="barra"><i style="width:${pct}%"></i></div>
+          <div class="cuenta">${vistas} de ${total} vistas · te ${total-vistas===1?'queda 1':`quedan ${total-vistas}`}</div>
+          ${it ? `<div class="sig">Te toca: <b>${_escHtml(it.t)}</b>${it.y ? ` (${it.y})` : ''}<small>${[`Nº ${sig.pos} del especial`, it.tag || it.era || '', it.tipo==='tv'?'Serie':'Película'].filter(Boolean).map(_escHtml).join(' · ')}</small></div>` : '<div class="sig">¡Lo has visto todo! 🏆</div>'}
+          <div class="noche-b">${it ? `<button type="button" class="noche-btn principal" onclick="event.stopPropagation();espVerSiguiente()">▶ Ver la siguiente</button>` : ''}<button type="button" class="noche-btn" onclick="event.stopPropagation();abrirEspecial('${e.id}')">Abrir el especial ›</button></div>
+        </div></div>`;
+      // de fondo, la imagen de la que te toca (o la del especial)
+      try{
+        let ruta = null;
+        if(r){ const d = await _tmdbJson(`/${r.tipo}/${r.id}&language=es-ES`); ruta = d.backdrop_path; }
+        if(!ruta) ruta = await _resolverImagenHeroEspecial(e);
+        const m = caja.querySelector('.esp-maraton'); if(ruta && m) m.style.backgroundImage = `url(https://image.tmdb.org/t/p/w1280${ruta})`;
+      }catch(err){}
+    }
+    function espVerSiguiente(){
+      const x = window._espMaraton; if(!x || !x.it) return;
+      if(x.r) abrirDetalle({id:x.r.id, _tipo:x.r.tipo, title:x.it.t, release_date:x.it.f || (x.it.y ? x.it.y+'-01-01' : '')});
+      else abrirEspecial(x.e.id);
+    }
+    function _descPintarEspeciales(){
+      const box = document.getElementById('desc-especiales'); if(!box) return;
+      try{ renderEspecialesTiles(); }catch(e){} // calcula «En curso» con lo que has visto
+      const cont = window._espContarVistos || (()=>0);
+      const enCurso = calcularEnCurso(cont), maraton = enCurso[0];
+      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(e=>e.categoria==='saga' || e.categoria==='estudio')])].filter(e=>e!==maraton).slice(0, 12);
+      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
+      box.innerHTML = `<div class="esp-sec-cab"><h3>🎬 Especiales</h3><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todos ›</button></div>
+        ${maraton ? '<div id="esp-maraton-desc"></div>' : ''}
+        <div class="especiales-scroll" style="margin-top:12px">${destacados.map(tile).join('')}</div>`;
+      if(maraton) _espPintarMaraton(maraton, document.getElementById('esp-maraton-desc'));
+    }
     // ══ ESCÁNER «¿CUÁL DE ESTAS?»: lee los títulos de una captura (en el propio móvil) y los ordena por tu nota prevista ══
     function abrirEscaner(){
       if(!sesionActual){ mostrarCuenta(); return; }
@@ -13743,7 +13819,18 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       finally{btn.disabled=false;}
     }
   </script>
-  <script>if('serviceWorker' in navigator && window.isSecureContext) navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+  <script>
+    if('serviceWorker' in navigator && window.isSecureContext){
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+      // hay una versión nueva descargada: se ofrece actualizar (la app se abre siempre al instante con la guardada)
+      navigator.serviceWorker.addEventListener('message', e=>{
+        if(!e.data || e.data.tipo!=='nueva-version' || document.getElementById('aviso-version')) return;
+        const d = document.createElement('div'); d.id = 'aviso-version'; d.className = 'aviso-version';
+        d.innerHTML = '<span>✨ Hay una versión nueva de CineMood</span><button type="button" onclick="location.reload()">Actualizar</button>';
+        document.body.appendChild(d);
+      });
+    }
+  </script>
 <script>
 (()=>{
 let ctx=null,turn=0,blob=null,loading=0;const states=new Map();
