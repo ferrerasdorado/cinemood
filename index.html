@@ -613,12 +613,22 @@
     .buscar-camara { flex: none; width: 46px; border: 1px solid var(--k-dedfd8); border-radius: 8px; background: var(--k-fffefb); font-size: 19px; cursor: pointer; }
     .tu-sec { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 20px 0 10px; }
     /* ── Especiales con más mimo ── */
-    .especiales-scroll { display: flex !important; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 2px 10px; margin: 0 -2px; scrollbar-width: none; }
+    .especiales-scroll { display: flex !important; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 2px; margin: 0 0 8px; scrollbar-width: none; }
     .especiales-scroll::-webkit-scrollbar { display: none; }
-    .especiales-scroll > .especial-tile { flex: 0 0 158px; min-height: 178px; scroll-snap-align: start; display: flex; flex-direction: column; border-radius: 14px; border: 0; border-top: 4px solid var(--esp-c, var(--acento)); background-color: var(--esp-bg, #1b1d1c); background-image: linear-gradient(160deg, var(--esp-bg, #1b1d1c), #101010); color: #faf9f6; }
-    .especiales-scroll > .especial-tile .especial-tile-emoji { font-size: 30px; margin-bottom: auto; }
-    .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; margin-top: 18px; }
-    .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(250,249,246,0.68); }
+    .especiales-scroll > .especial-tile { position: relative; flex: 0 0 228px; height: 128px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px; border: 0; border-radius: 14px; box-shadow: none; overflow: hidden; color: #fff;
+      background-color: var(--esp-bg, #1b1d1c); background-image: linear-gradient(135deg, var(--esp-bg, #1b1d1c), #0d0d0d); background-size: cover; background-position: center; }
+    .especiales-scroll > .especial-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.88)); pointer-events: none; }
+    .especiales-scroll > .especial-tile > * { position: relative; }
+    .especiales-scroll > .especial-tile .especial-tile-emoji { position: absolute; top: 10px; left: 12px; margin: 0; font-size: 18px; }
+    .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; color: #fff; margin: 0; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+    .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(255,255,255,0.78); font-size: 11.5px; margin-top: 2px; }
+    .especiales-scroll > .especial-tile .especial-progreso-texto { display: none; }
+    .especiales-scroll > .especial-tile .especial-progreso-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,0.22); }
+    .especiales-scroll > .col-nueva-tile { background: none !important; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); }
+    .especiales-scroll > .col-nueva-tile::before { display: none; }
+    .especiales-scroll > .col-nueva-tile .especial-tile-titulo { color: var(--ink); text-shadow: none; }
+    .especiales-scroll > .col-nueva-tile .especial-tile-sub { color: var(--muted); }
+    #desc-especiales { margin-bottom: 22px; }
     .esp-maraton { position: relative; border-radius: 18px; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: #1b1d1c center/cover no-repeat; cursor: pointer; margin: 6px 0 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
     .esp-maraton::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.55) 45%, rgba(10,10,10,0.94)); }
     .esp-maraton > * { position: relative; }
@@ -8160,7 +8170,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}">
           <span class="especial-tile-emoji">${e.emoji}</span>
           <div class="especial-tile-titulo">${e.titulo}</div>
-          <div class="especial-tile-sub">${e.sub}</div>
+          <div class="especial-tile-sub">${vistosSet.size && total && vistos ? `${vistos} de ${total} vistas` : e.sub}</div>
           ${vistosSet.size && total?`
           <div class="especial-progreso-texto" style="color:${e.colorSoft||'#61635e'}">${vistos}/${total} vistas</div>
           <div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${pct}%;background:${e.color||'#b52c29'}"></div></div>
@@ -8235,7 +8245,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(!especial || especial.dinamico) return; // los generados no tienen lista fija de la que sacar la imagen
         const ruta = await _resolverImagenHeroEspecial(especial);
         if(ruta && document.body.contains(tileEl)){
-          tileEl.style.backgroundImage = `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
+          tileEl.style.backgroundImage = tileEl.closest('.especiales-scroll') ? `url(https://image.tmdb.org/t/p/w780${ruta})` : `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
           tileEl.style.backgroundSize = 'cover';
           tileEl.style.backgroundPosition = 'center';
         }
@@ -8717,7 +8727,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           </div>
           <div class="tl-filtros-desc" id="tl-filtros-desc"></div>`;
         filtros.style.display = 'block';
-        filtrarTimeline('todo');
+        filtrarTimeline(_espRuta(esp), true);
       } else { filtros.innerHTML = ''; filtros.style.display = 'none'; }
       _prepararAnimacionTimeline();
       actualizarTimeline();
@@ -8759,8 +8769,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       cerrar();
     }
     function _tlFilasVisibles(){ return [...document.querySelectorAll('#especial-lista .tl-row')].filter(r=>!r.classList.contains('tl-oculto')); }
-    function filtrarTimeline(modo){
+    function _espRutaGuardada(id){ try{ return (JSON.parse(localStorage.getItem('cm:espRuta')||'{}')||{})[id] || null; }catch(e){ return null; } }
+    function filtrarTimeline(modo, sinGuardar){
       window.tlFiltro = modo;
+      if(!sinGuardar && window.especialActual){ try{ const o = JSON.parse(localStorage.getItem('cm:espRuta')||'{}')||{}; o[window.especialActual.id] = modo; localStorage.setItem('cm:espRuta', JSON.stringify(o)); }catch(e){} }
       document.querySelectorAll('#tl-filtros .punt-chip').forEach(ch=>ch.classList.toggle('active', ch.dataset.f===modo));
       const desc = document.getElementById('tl-filtros-desc');
       if(desc){
@@ -11269,17 +11281,32 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const r = it.tmdb_id ? {id:it.tmdb_id, tipo:it.tipo} : (window.especialIdsResueltos||{})[_claveIdResuelto(it)];
       return (r && idsSet.size) ? idsSet.has(`${r.id}-${r.tipo}`) : vistosSet.has(`${normalizarTitulo(it.t)}|${it.tipo}`);
     }
-    function _espSiguiente(e){ const i = e.items.findIndex(it=>!_espItemVisto(it)); return i<0 ? null : {it:e.items[i], pos:i+1}; }
+    // Ruta del especial: la que elegiste, o deducida (si hasta donde vas te has saltado todas las opcionales, vas «sin opcionales»)
+    function _espRuta(e){
+      const g = _espRutaGuardada(e.id); if(g) return g;
+      if(!e.items.some(x=>x.imp)) return 'todo';
+      const vistos = e.items.map(_espItemVisto), ult = vistos.lastIndexOf(true); if(ult<0) return 'todo';
+      const antes = e.items.slice(0, ult+1).map((x,i)=>({x, v:vistos[i]}));
+      const opc = antes.filter(o=>o.x.imp==='o'), noClave = antes.filter(o=>o.x.imp==='i');
+      if(opc.length>=2 && !opc.some(o=>o.v)) return noClave.length>=2 && !noClave.some(o=>o.v) ? 'clave' : 'esencial';
+      return 'todo';
+    }
+    function _espItemsRuta(e){ const r = _espRuta(e); return e.items.filter(x=>r==='todo' || (r==='esencial' && x.imp!=='o') || (r==='clave' && x.imp==='c')); }
+    function _espSiguiente(e){
+      const items = _espItemsRuta(e), vistos = items.map(_espItemVisto), ult = vistos.lastIndexOf(true);
+      let i = vistos.indexOf(false, ult+1); if(i<0) i = vistos.indexOf(false); // si ya vas por el final, el primer hueco que te quede
+      return i<0 ? null : {it:items[i], pos:e.items.indexOf(items[i])+1};
+    }
     async function _espPintarMaraton(e, caja){
       if(!caja || !e) return;
-      const total = e.items.length, vistas = e.items.filter(_espItemVisto).length, sig = _espSiguiente(e), pct = Math.round(vistas/total*100);
+      const ruta = _espRuta(e), items = _espItemsRuta(e), total = items.length, vistas = items.filter(_espItemVisto).length, sig = _espSiguiente(e), pct = Math.round(vistas/total*100);
       const it = sig && sig.it, r = it ? (it.tmdb_id ? {id:it.tmdb_id, tipo:it.tipo} : (window.especialIdsResueltos||{})[_claveIdResuelto(it)]) : null;
       window._espMaraton = {e, it, r};
       caja.innerHTML = `<div class="esp-maraton" style="--esp-c:${e.color||'var(--acento)'}" onclick="abrirEspecial('${e.id}')"><div class="in">
           <div class="k">${e.emoji} Tu maratón</div>
           <div class="t">${_escHtml(e.titulo)}</div>
           <div class="barra"><i style="width:${pct}%"></i></div>
-          <div class="cuenta">${vistas} de ${total} vistas · te ${total-vistas===1?'queda 1':`quedan ${total-vistas}`}</div>
+          <div class="cuenta">${vistas} de ${total} vistas${ruta==='esencial' ? ' · ruta sin opcionales' : ruta==='clave' ? ' · solo claves' : ''} · te ${total-vistas===1?'queda 1':`quedan ${total-vistas}`}</div>
           ${it ? `<div class="sig">Te toca: <b>${_escHtml(it.t)}</b>${it.y ? ` (${it.y})` : ''}<small>${[`Nº ${sig.pos} del especial`, it.tag || it.era || '', it.tipo==='tv'?'Serie':'Película'].filter(Boolean).map(_escHtml).join(' · ')}</small></div>` : '<div class="sig">¡Lo has visto todo! 🏆</div>'}
           <div class="noche-b">${it ? `<button type="button" class="noche-btn principal" onclick="event.stopPropagation();espVerSiguiente()">▶ Ver la siguiente</button>` : ''}<button type="button" class="noche-btn" onclick="event.stopPropagation();abrirEspecial('${e.id}')">Abrir el especial ›</button></div>
         </div></div>`;
@@ -11302,11 +11329,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const cont = window._espContarVistos || (()=>0);
       const enCurso = calcularEnCurso(cont), maraton = enCurso[0];
       const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(e=>e.categoria==='saga' || e.categoria==='estudio')])].filter(e=>e!==maraton).slice(0, 12);
-      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
+      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
       box.innerHTML = `<div class="esp-sec-cab"><h3>🎬 Especiales</h3><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todos ›</button></div>
         ${maraton ? '<div id="esp-maraton-desc"></div>' : ''}
         <div class="especiales-scroll" style="margin-top:12px">${destacados.map(tile).join('')}</div>`;
       if(maraton) _espPintarMaraton(maraton, document.getElementById('esp-maraton-desc'));
+      _resolverImagenesHeroEspeciales();
     }
     // ══ ESCÁNER «¿CUÁL DE ESTAS?»: lee los títulos de una captura (en el propio móvil) y los ordena por tu nota prevista ══
     function abrirEscaner(){
