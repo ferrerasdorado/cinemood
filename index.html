@@ -1975,7 +1975,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     <div class="wrap">
       <div class="pantalla-header">
         <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-descubre', true)">‹ Atrás</span>
-        <h2 id="osc-titulo">Los Óscar</h2>
+        <h2 id="osc-titulo">Premios y festivales</h2>
         <span></span>
       </div>
       <div id="osc-cont"></div>
@@ -2057,9 +2057,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
-      <button type="button" class="inicio-trailers qv-entrada osc-entrada" onclick="abrirOscar()">
+      <button type="button" class="inicio-trailers qv-entrada osc-entrada" onclick="abrirPremios('oscar')">
         <span class="inicio-trailers-ic">🏆</span>
-        <span class="inicio-trailers-t"><b>Los Óscar</b><span id="osc-entrada-sub">Nominadas, cuántas has visto y tu porra</span></span>
+        <span class="inicio-trailers-t"><b>Premios y festivales</b><span id="osc-entrada-sub">Óscar, Goya y Cannes: cuántas has visto y tu porra</span></span>
         <span class="inicio-trailers-f">›</span>
       </button>
       <button type="button" class="inicio-trailers qv-entrada imp-entrada" onclick="abrirImprescindibles()">
@@ -11975,160 +11975,219 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){ alert('No se pudo generar la imagen. Inténtalo de nuevo.'); }
       finally{ btn.textContent = original; }
     }
-    // ══ LOS ÓSCAR: nominadas y ganadoras desde Wikipedia (se actualiza al momento), enlazadas a TMDB por Wikidata ══
-    const OSC_CATS = [['Picture','Mejor película'],['Director','Mejor dirección'],['Actor','Mejor actor'],['Actress','Mejor actriz'],['Supporting Actor','Mejor actor de reparto'],['Supporting Actress','Mejor actriz de reparto'],['Original Screenplay','Mejor guion original'],['Adapted Screenplay','Mejor guion adaptado'],['International Feature Film','Mejor película internacional'],['Animated Feature','Mejor película de animación']];
-    const _oscOrdinal = n => n + (n%100>=11 && n%100<=13 ? 'th' : ({1:'st',2:'nd',3:'rd'})[n%10] || 'th');
-    const _oscEdicionDeAnio = y => y - 1928; // la gala de 2026 es la 98.ª
-    async function _oscWikitexto(edicion){
-      const r = await fetch(`https://en.wikipedia.org/w/api.php?action=parse&page=${_oscOrdinal(edicion)}_Academy_Awards&prop=wikitext&format=json&origin=*&redirects=1`);
-      const d = await r.json(); return d?.parse?.wikitext?.['*'] || '';
+    // ══ PREMIOS Y FESTIVALES: Óscar, Goya y Cannes desde Wikipedia (se actualiza al momento), enlazados a TMDB por Wikidata ══
+    const _ordinal = n => n + (n%100>=11 && n%100<=13 ? 'th' : ({1:'st',2:'nd',3:'rd'})[n%10] || 'th');
+    const PREMIOS = {
+      oscar: {n:'Óscar', emoji:'🏆', pagina: y=>`${_ordinal(y-1928)}_Academy_Awards`, temporada:[115,331],
+        cats: [['Picture','Mejor película'],['Director','Mejor dirección',1],['Actor','Mejor actor',1],['Actress','Mejor actriz',1],['Supporting Actor','Mejor actor de reparto',1],['Supporting Actress','Mejor actriz de reparto',1],['Original Screenplay','Mejor guion original'],['Adapted Screenplay','Mejor guion adaptado'],['International','Mejor película internacional'],['Animated','Mejor película de animación']],
+        cat: h => {
+          if(/Documentary|Short|Live Action|Song|Score|Sound|Effects|Editing|Cinematography|Makeup|Costume|Production Design|Casting/i.test(h)) return null;
+          if(/Picture/i.test(h)) return 'Picture'; if(/Direct/i.test(h)) return 'Director';
+          if(/Supporting Actor|Actor in a Supporting/i.test(h)) return 'Supporting Actor'; if(/Supporting Actress|Actress in a Supporting/i.test(h)) return 'Supporting Actress';
+          if(/Actress/i.test(h)) return 'Actress'; if(/Actor/i.test(h)) return 'Actor';
+          if(/Original Screenplay/i.test(h)) return 'Original Screenplay'; if(/Adapted Screenplay/i.test(h)) return 'Adapted Screenplay';
+          if(/International Feature|Foreign Language/i.test(h)) return 'International'; if(/Animated Feature/i.test(h)) return 'Animated';
+          return null; }},
+      goya: {n:'Goya', emoji:'🇪🇸', pagina: y=>`${_ordinal(y-1986)}_Goya_Awards`, temporada:[1201,310],
+        cats: [['Film','Mejor película'],['Director','Mejor dirección',1],['New Director','Mejor dirección novel',1],['Actor','Mejor actor',1],['Actress','Mejor actriz',1],['Supporting Actor','Mejor actor de reparto',1],['Supporting Actress','Mejor actriz de reparto',1],['Original Screenplay','Mejor guion original'],['Adapted Screenplay','Mejor guion adaptado'],['Animated','Mejor película de animación'],['Ibero','Mejor película iberoamericana'],['European','Mejor película europea']],
+        cat: h => {
+          if(/Short|Documentary|Cinematography|Editing|Art Direction|Production|Sound|Effects|Costume|Makeup|Score|Song|New Actor|New Actress/i.test(h)) return null;
+          if(/New Director/i.test(h)) return 'New Director'; if(/Animated/i.test(h)) return 'Animated';
+          if(/Ibero|Spanish Language Foreign/i.test(h)) return 'Ibero'; if(/European/i.test(h)) return 'European';
+          if(/Director/i.test(h)) return 'Director'; if(/Supporting Actor/i.test(h)) return 'Supporting Actor'; if(/Supporting Actress/i.test(h)) return 'Supporting Actress';
+          if(/Actress/i.test(h)) return 'Actress'; if(/Actor/i.test(h)) return 'Actor';
+          if(/Original Screenplay/i.test(h)) return 'Original Screenplay'; if(/Adapted Screenplay/i.test(h)) return 'Adapted Screenplay';
+          if(/Best Film/i.test(h)) return 'Film'; return null; }},
+      cannes: {n:'Cannes', emoji:'🌴', pagina: y=>`${y}_Cannes_Film_Festival`, temporada:[410,610]}
+    };
+    const _PREM_PREMIOS_CANNES = [[/Palme d/i,'Palma de Oro'],[/Grand Prix/i,'Gran Premio'],[/Jury Prize/i,'Premio del Jurado'],[/Best Director/i,'Mejor dirección'],[/Best Actress/i,'Mejor interpretación femenina'],[/Best Actor/i,'Mejor interpretación masculina'],[/Best Screenplay/i,'Mejor guion'],[/Special Award|Special Prize/i,'Premio especial']];
+    async function _premWikitexto(pagina){
+      const d = await (await fetch(`https://en.wikipedia.org/w/api.php?action=parse&page=${pagina}&prop=wikitext&format=json&origin=*&redirects=1`)).json();
+      return d?.parse?.wikitext?.['*'] || '';
     }
-    function _oscParsear(wt){
-      wt = wt.replace(/<ref[^>]*\/>/g,'').replace(/<ref[\s\S]*?<\/ref>/g,''); // fuera notas al pie (algunas ocupan varias líneas)
-      const cats = [], enlaces = {};
-      // las películas que se repiten no vuelven a llevar enlace: se recuerda a qué página apuntaba cada título
-      wt.replace(/''\[\[([^\]|]+)(?:\|([^\]]+))?\]\]''/g, (m, dst, txt)=>{ enlaces[(txt||dst).trim()] = dst.trim(); return m; });
-      const trozos = wt.split(/\{\{Award category\|[^|\n]*\|/);
-      const catDe = h => { h = h.replace(/<ref[\s\S]*$/,'');
-        if(/Documentary|Short|Live Action|Song|Score|Sound|Effects|Editing|Cinematography|Makeup|Costume|Production Design|Casting/i.test(h)) return null;
-        if(/Picture/i.test(h)) return 'Picture';
-        if(/Direct/i.test(h)) return 'Director';
-        if(/Supporting Actor|Actor in a Supporting/i.test(h)) return 'Supporting Actor';
-        if(/Supporting Actress|Actress in a Supporting/i.test(h)) return 'Supporting Actress';
-        if(/Actress/i.test(h)) return 'Actress';
-        if(/Actor/i.test(h)) return 'Actor';
-        if(/Original Screenplay/i.test(h)) return 'Original Screenplay';
-        if(/Adapted Screenplay/i.test(h)) return 'Adapted Screenplay';
-        if(/International Feature|Foreign Language/i.test(h)) return 'International Feature Film';
-        if(/Animated Feature/i.test(h)) return 'Animated Feature';
-        return null; };
+    const _premSinNotas = wt => wt.replace(/<ref[^>]*\/>/g,'').replace(/<ref[\s\S]*?<\/ref>/g,'');
+    const _premLinkCursiva = /''\[\[([^\]|]+)(?:\|([^\]]+))?\]\]''/;
+    function _premEnlaces(wt){ const e = {}; wt.replace(/''\[\[([^\]|]+)(?:\|([^\]]+))?\]\]''/g, (m, dst, txt)=>{ e[(txt||dst).trim()] = dst.trim(); return m; }); return e; }
+    function _premPeli(linea, enlaces){
+      let p = linea.match(_premLinkCursiva);
+      if(!p){ const pl = linea.replace(/'{3}/g,'').match(/''([^'\[\]]+)''/); if(pl) p = [pl[0], enlaces[pl[1].trim()] || pl[1].trim(), pl[1].trim()]; }
+      return p;
+    }
+    const _premTitulo = (p) => (p[2]||p[1]).replace(/\s*\((?:\d{4} )?film\)/,'').trim();
+    // Óscar y Goya: bloques {{Award category}} con * ganadora (‡) y ** nominadas
+    function _premParsearCategorias(wt, def){
+      wt = _premSinNotas(wt); const cats = [], enlaces = _premEnlaces(wt);
+      const trozos = wt.split(/\{\{Award category\|(?:\{\{[^}]*\}\}|[^|\n]*)\|/);
       for(let i=1; i<trozos.length; i++){
         const salto = trozos[i].indexOf('\n'), cab = trozos[i].slice(0, salto<0 ? undefined : salto);
-        const clave = catDe(cab), def = OSC_CATS.find(([k])=>k===clave); if(!def || cats.some(c=>c.k===def[0])) continue;
-        const resto = salto<0 ? '' : trozos[i].slice(salto);
-        const cuerpo = resto.split(/\n\|[-}]|\n\|\s*style=|\n\|\s*\{\{/)[0];
-        const noms = [], lineas = [];
-        for(const l of cuerpo.split('\n')){ if(/^\*/.test(l)) lineas.push(l); else if(lineas.length && l.trim()) break; } // solo la lista de esta categoría
+        const clave = def.cat(cab), c = def.cats.find(([k])=>k===clave); if(!c || cats.some(x=>x.k===c[0])) continue;
+        const lineas = []; for(const l of (salto<0 ? '' : trozos[i].slice(salto)).split('\n')){ if(/^\*/.test(l)) lineas.push(l); else if(lineas.length && l.trim()) break; }
         const anidada = lineas.some(l=>/^\*\*/.test(l)), conDaga = lineas.some(l=>l.includes('‡'));
+        const noms = [];
         lineas.forEach(l=>{
           const m = l.match(/^(\*{1,2})\s*(.*)$/); if(!m) return;
-          // ganadora: con ‡; en páginas antiguas, la primera sin sangría (las nominadas van con **)
-          const linea = m[2], gana = conDaga ? linea.includes('‡') : (anidada && m[1]==='*');
-          let peli = linea.match(/''\[\[([^\]|]+)(?:\|([^\]]+))?\]\]''/);
-          if(!peli){ const pl = linea.replace(/'{3}/g,'').match(/''([^'\[\]]+)''/); if(pl) peli = [pl[0], enlaces[pl[1].trim()] || pl[1].trim(), pl[1].trim()]; }
-          if(!peli) return;
-          const antes = linea.slice(0, linea.indexOf(peli[0])).replace(/'{3}/g,'');
-          const pers = def[0]==='Picture' ? null : (antes.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/)||[]);
-          noms.push({wiki: peli[1].trim(), titulo: (peli[2]||peli[1]).replace(/\s*\(.*?film\)/,'').trim(), persona: pers && pers[0] ? (pers[2]||pers[1]).trim() : null, gana});
+          // fuera la negrita (tres comillas) para no confundirla con la cursiva de los títulos (dos comillas)
+          const linea = m[2].replace(/'{5}/g, "''").replace(/'{3}/g, ''), gana = conDaga ? linea.includes('‡') : (anidada && m[1]==='*');
+          const p = _premPeli(linea, enlaces); if(!p) return;
+          const antes = linea.slice(0, linea.indexOf(p[0])).replace(/'{3}/g,'').replace(/\{\{ill\|([^|}]+)[^}]*\}\}/g, '$1');
+          const pers = c[2] ? (antes.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/) || antes.match(/^\s*([^–—\-\[{]+?)\s+[–—-]\s*$/) || []) : [];
+          noms.push({wiki:p[1].trim(), titulo:_premTitulo(p), persona: pers[0] ? (pers[2]||pers[1]).trim() : null, gana});
         });
-        if(noms.length) cats.push({k:def[0], n:def[1], noms});
+        if(noms.length) cats.push({k:c[0], n:c[1], persona:!!c[2], noms});
       }
-      return cats;
+      def.cats.forEach(([k],i)=>{}); cats.sort((a,b)=>def.cats.findIndex(c=>c[0]===a.k)-def.cats.findIndex(c=>c[0]===b.k));
+      return {cats, palmares:[]};
+    }
+    // Cannes: películas a concurso (tabla) y, al acabar, el palmarés
+    function _premParsearCannes(wt){
+      wt = _premSinNotas(wt); const enlaces = _premEnlaces(wt);
+      const pos = [...wt.matchAll(/===\s*In Competition\s*===/g)].map(m=>m.index);
+      if(!pos.length) return {cats:[], palmares:[]};
+      const seccion = i => { const ini = pos[i], fin = wt.indexOf('\n==', ini+10); return wt.slice(ini, fin<0 ? undefined : fin); };
+      const compet = [], ya = new Set();
+      seccion(0).split('\n').forEach(l=>{ if(!/^\|/.test(l)) return; const p = l.match(_premLinkCursiva); if(p && !ya.has(p[1])){ ya.add(p[1]); compet.push({wiki:p[1].trim(), titulo:_premTitulo(p), persona:null, gana:false}); } });
+      const palmares = []; let premio = null;
+      if(pos.length>1) seccion(1).split('\n').forEach(l=>{
+        const m = l.match(/^(\*{1,2})\s*(.*)$/); if(!m) return;
+        if(m[1]==='*'){ const cab = m[2].split(':')[0]; premio = (_PREM_PREMIOS_CANNES.find(([re])=>re.test(cab))||[])[1] || null; }
+        if(!premio) return;
+        const p = _premPeli(m[2], enlaces); if(!p) return;
+        const antes = m[2].slice(m[2].includes(':') && m[1]==='*' ? m[2].indexOf(':')+1 : 0, m[2].indexOf(p[0]));
+        const pers = antes.match(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/);
+        palmares.push({premio, wiki:p[1].trim(), titulo:_premTitulo(p), persona: pers ? (pers[2]||pers[1]).trim() : null});
+      });
+      const palma = palmares.find(x=>x.premio==='Palma de Oro');
+      compet.forEach(n=>{ n.gana = !!palma && palma.wiki===n.wiki; });
+      return {cats: compet.length ? [{k:'Palme', n:'Palma de Oro · películas a concurso', persona:false, noms:compet}] : [], palmares};
     }
     // título de Wikipedia → Wikidata → id de TMDB
-    async function _oscIdsTmdb(titulos){
+    async function _premIdsTmdb(titulos){
       const res = {};
       for(let i=0; i<titulos.length; i+=40){
         const lote = titulos.slice(i, i+40);
         const q = await (await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=pageprops&ppprop=wikibase_item&redirects=1&format=json&origin=*&titles=${encodeURIComponent(lote.join('|'))}`)).json();
         const norm = {}; (q.query?.normalized||[]).concat(q.query?.redirects||[]).forEach(x=>{ norm[x.to] = (norm[x.from] || x.from); });
-        const qid = {}; Object.values(q.query?.pages||{}).forEach(pg=>{ if(pg.pageprops?.wikibase_item){ let t = pg.title; while(norm[t] && norm[t]!==t) t = norm[t]; qid[pg.pageprops.wikibase_item] = t; } });
+        const qid = {}; Object.values(q.query?.pages||{}).forEach(pg=>{ if(pg.pageprops?.wikibase_item){ let t = pg.title, n = 0; while(norm[t] && norm[t]!==t && n++<5) t = norm[t]; qid[pg.pageprops.wikibase_item] = t; } });
         const ids = Object.keys(qid); if(!ids.length) continue;
         const w = await (await fetch(`https://www.wikidata.org/w/api.php?action=wbgetentities&props=claims&format=json&origin=*&ids=${ids.join('|')}`)).json();
         Object.entries(w.entities||{}).forEach(([id,e])=>{ const c = e.claims?.P4947?.[0]?.mainsnak?.datavalue?.value; if(c) res[qid[id]] = Number(c); });
       }
       return res;
     }
-    async function _oscCargar(anio){
-      const clave = `cm:oscar:${anio}`;
-      try{ const c = JSON.parse(localStorage.getItem(clave)||'null'); if(c && Date.now()-c.t < (c.final ? 7*864e5 : 3*3600e3)) return c; }catch(e){}
-      const cats = _oscParsear(await _oscWikitexto(_oscEdicionDeAnio(anio)));
-      if(!cats.length) return null;
-      const titulos = [...new Set(cats.flatMap(c=>c.noms.map(n=>n.wiki)))];
-      const ids = await _oscIdsTmdb(titulos);
-      const pelis = {};
-      await _fetchEnLotes(titulos.filter(t=>ids[t]), async t=>{
-        try{
-          const d = await _tmdbJson(`/movie/${ids[t]}&language=es-ES`);
-          const pv = await _tmdbJson(`/movie/${ids[t]}/watch/providers`).catch(()=>({}));
-          const donde = (((pv.results||{}).ES||{}).flatrate||[]).map(x=>x.provider_name).slice(0,2);
-          pelis[t] = {id: ids[t], t: d.title || t, poster: d.poster_path, f: d.release_date || '', donde};
-        }catch(e){}
-      }, 5);
-      const datos = {t: Date.now(), anio, cats, pelis, final: cats.some(c=>c.noms.some(n=>n.gana))};
-      try{ localStorage.setItem(clave, JSON.stringify(datos)); }catch(e){}
-      return datos;
+    // Carga con caché: lo guardado se enseña al momento y, si es viejo, se actualiza por detrás (alAvanzar se llama según llegan datos)
+    async function _premCargar(fest, anio, alAvanzar){
+      const clave = `cm:premios:${fest}:${anio}`;
+      let guardado = null; try{ guardado = JSON.parse(localStorage.getItem(clave)||'null'); }catch(e){}
+      const viejo = !guardado || Date.now()-guardado.t > (guardado.final ? 7*864e5 : 3*3600e3);
+      if(guardado && !viejo) return guardado;
+      const nuevo = (async()=>{
+        const wt = await _premWikitexto(PREMIOS[fest].pagina(anio));
+        const {cats, palmares} = fest==='cannes' ? _premParsearCannes(wt) : _premParsearCategorias(wt, PREMIOS[fest]);
+        if(!cats.length) return null;
+        const titulos = [...new Set([...cats.flatMap(c=>c.noms.map(n=>n.wiki)), ...palmares.map(p=>p.wiki)])];
+        const ids = await _premIdsTmdb(titulos);
+        const datos = {t: Date.now(), fest, anio, cats, palmares, pelis: {}, final: cats.some(c=>c.noms.some(n=>n.gana)) || palmares.length>0};
+        // las pelis ya conocidas se reaprovechan; las nuevas se piden (ficha + reparto, que sirve también para tu nota, y plataformas)
+        Object.assign(datos.pelis, guardado?.pelis || {});
+        if(!guardado && alAvanzar) alAvanzar(datos);
+        let ultimo = 0;
+        await _fetchEnLotes(titulos.filter(t=>ids[t] && !datos.pelis[t]), async t=>{
+          try{
+            const [pak, pv] = await Promise.all([_fetchDetalleYCreditos('movie', ids[t]), _tmdbJson(`/movie/${ids[t]}/watch/providers`).catch(()=>({}))]);
+            const d = pak && pak.detalle; if(!d || !d.id) return;
+            _piGuardar('movie', d.id, _infoDesdePak('movie', pak));
+            datos.pelis[t] = {id:d.id, t:d.title || t, poster:d.poster_path, f:d.release_date || '', donde:(((pv.results||{}).ES||{}).flatrate||[]).map(x=>x.provider_name).slice(0,2)};
+            if(alAvanzar && Date.now()-ultimo > 500){ ultimo = Date.now(); alAvanzar(datos); }
+          }catch(e){}
+        }, 6);
+        datos.completo = true;
+        try{ localStorage.setItem(clave, JSON.stringify(datos)); }catch(e){}
+        return datos;
+      })();
+      if(guardado){ nuevo.then(d=>{ if(d && alAvanzar) alAvanzar(d); }).catch(()=>{}); return guardado; }
+      return nuevo;
     }
-    // la edición «actual»: la de este año si ya hay nominaciones; si no, la anterior
-    async function _oscAnioActual(){
+    async function _premAnioActual(fest){
       const y = new Date().getFullYear();
-      for(const a of [y, y-1]){ try{ const d = await _oscCargar(a); if(d) return a; }catch(e){} }
+      for(const a of [y, y-1]){ try{ const d = await _premCargar(fest, a); if(d) return a; }catch(e){} }
       return y-1;
     }
-    // porra: en tu cuenta (como tus notas por temporada)
+    // porra: en tu cuenta (como tus notas por temporada). Óscar con la clave del año (como antes); el resto, «festival:año»
     const PORRA_LS = 'cm:porra'; let _porraT = null;
     function _porraLeer(){ try{ return JSON.parse(localStorage.getItem(PORRA_LS)||'{}') || {}; }catch(e){ return {}; } }
     function _porraGuardar(o){ try{ localStorage.setItem(PORRA_LS, JSON.stringify(o)); }catch(e){} if(!sesionActual) return; clearTimeout(_porraT); _porraT = setTimeout(async ()=>{ try{ await sb.auth.updateUser({ data: { cm_porra: o } }); }catch(e){} }, 700); }
     function porraDesdeCuenta(){ const r = sesionActual?.user?.user_metadata?.cm_porra; if(r && typeof r==='object'){ try{ localStorage.setItem(PORRA_LS, JSON.stringify(r)); }catch(e){} } else if(sesionActual){ const o = _porraLeer(); if(Object.keys(o).length) _porraGuardar(o); } }
-    async function abrirOscar(anio){
+    const _porraClave = (fest, anio) => fest==='oscar' ? String(anio) : `${fest}:${anio}`;
+    function abrirOscar(anio){ return abrirPremios('oscar', anio); }
+    async function abrirPremios(fest, anio){
       if(!sesionActual){ mostrarCuenta(); return; }
-      irA('p-oscar');
-      const cont = document.getElementById('osc-cont');
-      cont.innerHTML = '<p class="rk-ayuda">Cargando las nominadas…</p>';
+      if(document.querySelector('.pantalla.activa')?.id!=='p-oscar') irA('p-oscar');
+      fest = fest || window._premFest || 'oscar'; window._premFest = fest;
+      const cont = document.getElementById('osc-cont'), turno = (window._premTurno = (window._premTurno||0)+1);
+      document.getElementById('osc-titulo').textContent = 'Premios y festivales';
+      cont.innerHTML = _premPestanas(fest) + '<p class="rk-ayuda">Cargando…</p>';
       try{
-        anio = anio || window._oscAnio || await _oscAnioActual();
-        window._oscAnio = anio;
-        const d = await _oscCargar(anio);
-        if(!d){ cont.innerHTML = '<p class="rk-ayuda">Todavía no hay nominaciones publicadas para esa gala.</p>'; return; }
-        window._oscDatos = d;
+        window._premAnios = window._premAnios || {};
+        anio = anio || window._premAnios[fest] || await _premAnioActual(fest);
+        if(turno!==window._premTurno) return;
+        window._premAnios[fest] = anio;
         if(sesionActual && !(window.idsVistosSet && window.idsVistosSet.size)){ try{ await refrescarIdsVistos(); }catch(e){} }
-        await _modeloNotaObtener().catch(()=>null);
-        // nota prevista: con los datos completos de cada película (como en la ficha)
-        await _fetchEnLotes(Object.values(d.pelis), async x=>{ if(!_infoCompleta('movie', x.id)){ try{ _piGuardar('movie', x.id, _infoDesdePak('movie', await _fetchDetalleYCreditos('movie', x.id))); }catch(e){} } }, 5);
-        _oscPintar();
-      }catch(e){ cont.innerHTML = '<p class="rk-ayuda">No se pudieron cargar los Óscar. Comprueba tu conexión e inténtalo de nuevo.</p>'; }
+        _modeloNotaObtener().then(()=>{ if(turno===window._premTurno && window._premDatos) _premPintar(); }).catch(()=>{});
+        const d = await _premCargar(fest, anio, dd=>{ if(turno===window._premTurno){ window._premDatos = dd; _premPintar(); } });
+        if(turno!==window._premTurno) return;
+        if(!d){ cont.innerHTML = _premPestanas(fest) + _premAnios(fest, anio) + '<p class="rk-ayuda">Todavía no hay datos publicados de esa edición.</p>'; return; }
+        window._premDatos = d; _premPintar();
+      }catch(e){ if(turno===window._premTurno) cont.innerHTML = _premPestanas(fest) + '<p class="rk-ayuda">No se pudieron cargar. Comprueba tu conexión e inténtalo de nuevo.</p>'; }
     }
-    function _oscPintar(){
-      const d = window._oscDatos, cont = document.getElementById('osc-cont'); if(!d) return;
-      const vistos = window.idsVistosSet || new Set(), porra = (_porraLeer()[d.anio] || {});
-      document.getElementById('osc-titulo').textContent = `Óscar ${d.anio}`;
-      const pelisNom = Object.values(d.pelis), nVistas = pelisNom.filter(x=>vistos.has(`${x.id}-movie`)).length;
-      const elegidas = Object.keys(porra).length, aciertos = d.final ? d.cats.filter(c=>{ const g = c.noms.findIndex(n=>n.gana); return g>=0 && porra[c.k]===g; }).length : 0;
-      const hoy = new Date().getFullYear();
+    const _premPestanas = fest => `<div class="osc-ediciones prem-pestanas">${Object.entries(PREMIOS).map(([k,v])=>`<button type="button" class="noche-chip${k===fest?' activo':''}" onclick="abrirPremios('${k}')">${v.emoji} ${v.n}</button>`).join('')}</div>`;
+    const _premAnios = (fest, anio) => { const y = new Date().getFullYear(); return `<div class="osc-ediciones">${[y, y-1, y-2, y-3].map(a=>`<button type="button" class="noche-chip${a===anio?' activo':''}" onclick="abrirPremios('${fest}', ${a})">${a}</button>`).join('')}</div>`; };
+    function _premPintar(){
+      const d = window._premDatos, cont = document.getElementById('osc-cont'); if(!d) return;
+      const def = PREMIOS[d.fest], vistos = window.idsVistosSet || new Set(), porra = (_porraLeer()[_porraClave(d.fest, d.anio)] || {});
+      const y = window.scrollY;
+      const pelisNom = [...new Set(d.cats.flatMap(c=>c.noms.map(n=>n.wiki)))].map(w=>d.pelis[w]).filter(Boolean), nVistas = pelisNom.filter(x=>vistos.has(`${x.id}-movie`)).length, total = [...new Set(d.cats.flatMap(c=>c.noms.map(n=>n.wiki)))].length;
+      const elegidas = d.cats.filter(c=>porra[c.k]!=null).length, aciertos = d.final ? d.cats.filter(c=>porra[c.k]!=null && c.noms[porra[c.k]]?.gana).length : 0;
+      const cargando = !d.completo;
       window._oscFilas = [];
-      cont.innerHTML = `<div class="osc-ediciones">${[hoy, hoy-1, hoy-2, hoy-3].map(a=>`<button type="button" class="noche-chip${a===d.anio?' activo':''}" onclick="window._oscAnio=${a};abrirOscar(${a})">${a}</button>`).join('')}</div>
-        <div class="osc-hero"><div class="k">🏆 ${d.final ? `Gala ${d.anio} · ya celebrada` : `Gala ${d.anio} · nominadas`}</div>
-          <div class="t">Has visto ${nVistas} de las ${pelisNom.length} películas nominadas</div>
-          <div class="barra"><i style="width:${pelisNom.length ? Math.round(nVistas/pelisNom.length*100) : 0}%"></i></div>
-          <div class="m">${d.final ? (elegidas ? `Tu porra: <b>acertaste ${aciertos} de ${elegidas}</b>.` : 'Las ganadoras llevan 🏆.') : `Tu porra: ${elegidas} de ${d.cats.length} categorías elegidas. Toca 🗳️ en tu favorita de cada una.`}</div></div>
-        ${d.cats.map(c=>{
-          const g = c.noms.findIndex(n=>n.gana), mia = porra[c.k];
-          return `<div class="osc-cat"><h3>${_escHtml(c.n)}${mia!=null ? `<small>${d.final && g>=0 ? (mia===g ? '✅ acertaste' : '❌ fallaste') : '🗳️ elegida'}</small>` : ''}</h3>${c.noms.map((n,i)=>{
-            const x = d.pelis[n.wiki], idx = window._oscFilas.push(x ? {id:x.id, _tipo:'movie', title:x.t, poster_path:x.poster, release_date:x.f} : null) - 1;
-            const visto = x && vistos.has(`${x.id}-movie`), nota = x && !visto ? _notaExacta({id:x.id, _tipo:'movie'}) : null;
-            const porPersona = n.persona && c.k!=='Picture' && !/Screenplay|Feature/.test(c.k);
-            const sub = [porPersona ? '' : n.persona, x && n.persona ? x.t : '', visto ? '✓ Vista' : nota!=null ? `🔮 ${_notaFmt(nota)}` : '', x && x.donde.length ? `En ${x.donde.join(', ')}` : ''].filter(Boolean).map(_escHtml).join(' · ');
-            const abrir = x ? `onclick="abrirDetalle(_oscFilas[${idx}])"` : '';
-            return `<div class="osc-fila${n.gana?' gana':''}">${x && x.poster ? `<img src="https://image.tmdb.org/t/p/w92${x.poster}" alt="" ${abrir}>` : '<img alt="">'}<div class="i" ${abrir}><b>${_escHtml(porPersona ? n.persona : (x ? x.t : n.titulo))}</b><small>${sub}</small></div>${d.final ? (mia===i ? `<span class="osc-acierto">${n.gana ? '✅' : '❌'}</span>` : '') : `<button type="button" class="osc-voto${mia===i?' activo':''}" onclick="oscVotar('${c.k}', ${i})" aria-label="Mi porra">🗳️</button>`}</div>`;
-          }).join('')}</div>`;
-        }).join('')}
-        <p class="esc-pie">Nominadas y ganadoras de la Wikipedia en inglés, que se actualiza al momento; los títulos y dónde verlas, de TMDB.</p>`;
+      const fila = (n, c, i, mia, g) => {
+        const x = d.pelis[n.wiki], idx = window._oscFilas.push(x ? {id:x.id, _tipo:'movie', title:x.t, poster_path:x.poster, release_date:x.f} : null) - 1;
+        const visto = x && vistos.has(`${x.id}-movie`), nota = x && !visto ? _notaExacta({id:x.id, _tipo:'movie'}) : null;
+        const porPersona = c.persona && n.persona;
+        const sub = [porPersona ? (x ? x.t : n.titulo) : n.persona, visto ? '✓ Vista' : nota!=null ? `🔮 ${_notaFmt(nota)}` : '', x && x.donde.length ? `En ${x.donde.join(', ')}` : ''].filter(Boolean).map(_escHtml).join(' · ');
+        const abrir = x ? `onclick="abrirDetalle(_oscFilas[${idx}])"` : '';
+        return `<div class="osc-fila${n.gana?' gana':''}">${x && x.poster ? `<img src="https://image.tmdb.org/t/p/w92${x.poster}" alt="" ${abrir}>` : '<img alt="">'}<div class="i" ${abrir}><b>${_escHtml(porPersona ? n.persona : (x ? x.t : n.titulo))}</b><small>${sub}</small></div>${d.final ? (mia===i ? `<span class="osc-acierto">${n.gana ? '✅' : '❌'}</span>` : '') : `<button type="button" class="osc-voto${mia===i?' activo':''}" onclick="oscVotar('${c.k}', ${i})" aria-label="Mi porra">🗳️</button>`}</div>`;
+      };
+      const palm = d.palmares.length ? `<div class="osc-cat"><h3>Palmarés</h3>${d.palmares.map(p=>{ const x = d.pelis[p.wiki], idx = window._oscFilas.push(x ? {id:x.id, _tipo:'movie', title:x.t, poster_path:x.poster, release_date:x.f} : null) - 1;
+          return `<div class="osc-fila"${x ? ` onclick="abrirDetalle(_oscFilas[${idx}])"` : ''}>${x && x.poster ? `<img src="https://image.tmdb.org/t/p/w92${x.poster}" alt="">` : '<img alt="">'}<div class="i"><small style="margin:0 0 2px;color:#b08a2e;font-weight:800">${_escHtml(p.premio)}</small><b>${_escHtml(x ? x.t : p.titulo)}</b>${p.persona ? `<small>${_escHtml(p.persona)}</small>` : ''}</div></div>`; }).join('')}</div>` : '';
+      cont.innerHTML = _premPestanas(d.fest) + _premAnios(d.fest, d.anio) + `
+        <div class="osc-hero"><div class="k">${def.emoji} ${def.n} ${d.anio} · ${d.final ? (d.fest==='cannes' ? 'palmarés' : 'ya celebrado') : (d.fest==='cannes' ? 'a concurso' : 'nominadas')}</div>
+          <div class="t">Has visto ${nVistas} de las ${total} películas ${d.fest==='cannes' ? 'a concurso' : 'nominadas'}</div>
+          <div class="barra"><i style="width:${total ? Math.round(nVistas/total*100) : 0}%"></i></div>
+          <div class="m">${d.final ? (elegidas ? `Tu porra: <b>acertaste ${aciertos} de ${elegidas}</b>.` : (d.fest==='cannes' ? 'La Palma de Oro lleva 🏆.' : 'Las ganadoras llevan 🏆.')) : `Tu porra: ${elegidas} de ${d.cats.length} elegidas. Toca 🗳️ en ${d.fest==='cannes' ? 'la que crees que ganará la Palma de Oro' : 'tu favorita de cada categoría'}.`}${cargando ? '<br><span style="opacity:.7">Completando pósters y dónde verlas…</span>' : ''}</div></div>
+        ${palm}
+        ${d.cats.map(c=>{ const g = c.noms.findIndex(n=>n.gana), mia = porra[c.k];
+          return `<div class="osc-cat"><h3>${_escHtml(c.n)}${mia!=null ? `<small>${d.final && g>=0 ? (c.noms[mia]?.gana ? '✅ acertaste' : '❌ fallaste') : '🗳️ elegida'}</small>` : ''}</h3>${c.noms.map((n,i)=>fila(n, c, i, mia, g)).join('')}</div>`; }).join('')}
+        <p class="esc-pie">Datos de la Wikipedia en inglés, que se actualiza al momento; títulos y dónde verlas, de TMDB.</p>`;
+      window.scrollTo(0, y);
     }
     function oscVotar(cat, i){
-      const d = window._oscDatos; if(!d || d.final) return;
-      const o = _porraLeer(); o[d.anio] = o[d.anio] || {};
-      if(o[d.anio][cat]===i) delete o[d.anio][cat]; else o[d.anio][cat] = i;
-      _porraGuardar(o); const y = window.scrollY; _oscPintar(); window.scrollTo(0, y);
+      const d = window._premDatos; if(!d || d.final) return;
+      const o = _porraLeer(), k = _porraClave(d.fest, d.anio); o[k] = o[k] || {};
+      if(o[k][cat]===i) delete o[k][cat]; else o[k][cat] = i;
+      _porraGuardar(o); _premPintar();
     }
-    // Inicio: en temporada (de mediados de enero a final de marzo), una tarjeta con tus nominadas vistas
+    // Inicio: en temporada de cada festival, una tarjeta con lo que has visto
     async function cargarOscarInicio(){
       const box = document.getElementById('inicio-oscar'); if(!box) return;
       const h = new Date(), md = (h.getMonth()+1)*100 + h.getDate();
-      if(!sesionActual || md < 115 || md > 331){ box.innerHTML = ''; return; }
+      const enTemp = ([a,b]) => a<=b ? (md>=a && md<=b) : (md>=a || md<=b);
+      const fest = Object.keys(PREMIOS).find(k=>enTemp(PREMIOS[k].temporada));
+      if(!sesionActual || !fest){ box.innerHTML = ''; return; }
+      const anio = md>=1201 ? h.getFullYear()+1 : h.getFullYear(); // los Goya de febrero se anuncian en diciembre
       try{
-        const d = await _oscCargar(h.getFullYear()); if(!d){ box.innerHTML = ''; return; }
-        const vistos = window.idsVistosSet || new Set(), ps = Object.values(d.pelis), n = ps.filter(x=>vistos.has(`${x.id}-movie`)).length;
-        box.innerHTML = `<button type="button" class="inicio-trailers osc-entrada" style="margin-bottom:18px" onclick="abrirOscar(${h.getFullYear()})"><span class="inicio-trailers-ic">🏆</span><span class="inicio-trailers-t"><b>Óscar ${h.getFullYear()}${d.final ? ' · ganadoras' : ''}</b><span>Has visto ${n} de ${ps.length} nominadas${d.final ? '' : ' · haz tu porra'}</span></span><span class="inicio-trailers-f">›</span></button>`;
+        const d = await _premCargar(fest, anio); if(!d){ box.innerHTML = ''; return; }
+        const vistos = window.idsVistosSet || new Set(), ps = Object.values(d.pelis), n = ps.filter(x=>vistos.has(`${x.id}-movie`)).length, def = PREMIOS[fest];
+        box.innerHTML = `<button type="button" class="inicio-trailers osc-entrada" style="margin-bottom:18px" onclick="abrirPremios('${fest}', ${anio})"><span class="inicio-trailers-ic">${def.emoji}</span><span class="inicio-trailers-t"><b>${def.n} ${anio}${d.final ? (fest==='cannes' ? ' · palmarés' : ' · ganadoras') : ''}</b><span>Has visto ${n} de ${ps.length} ${fest==='cannes' ? 'a concurso' : 'nominadas'}${d.final ? '' : ' · haz tu porra'}</span></span><span class="inicio-trailers-f">›</span></button>`;
       }catch(e){ box.innerHTML = ''; }
     }
     // ══ ESTA NOCHE: lo que más te va a gustar de lo que tienes en tus plataformas, a la medida de tu tiempo ══
