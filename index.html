@@ -647,6 +647,8 @@
 
     /* ── Saga en la ficha ── */
     #d-coleccion-box .detalle-box-label { text-transform: none; letter-spacing: 0; margin: 0 0 12px; }
+    .saga-en-ficha { margin-top: 16px; }
+    #d-siguiente + .btn-ocultar, #d-siguiente ~ #d-mas-gustado, #d-mas-gustado { margin-top: 18px; }
     .saga-ban { position: relative; border-radius: 14px; overflow: hidden; min-height: 150px; display: flex; align-items: flex-end; background: #1b1d1c center/cover no-repeat; color: #fff; cursor: pointer; }
     .saga-ban::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.9)); }
     .saga-ban-in { position: relative; padding: 14px 15px; width: 100%; box-sizing: border-box; }
@@ -2224,6 +2226,14 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="d-antes" id="d-antes" style="display:none"></div>
       <div class="d-puntuacion-row" id="d-puntuacion-row" style="display:none"></div>
       <div class="d-nivel-row" id="d-nivel-row" style="display:none"></div>
+      <div class="detalle-box saga-en-ficha" id="d-coleccion-box" style="display:none">
+        <div class="detalle-box-label" id="d-coleccion-label">Pertenece a una colección</div>
+        <div class="scroll-wrap">
+          <div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-coleccion',-1)">‹</div>
+          <div class="similares-scroll" id="d-coleccion"></div>
+          <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-coleccion',1)">›</div>
+        </div>
+      </div>
       <div class="d-siguiente" id="d-siguiente" style="display:none"></div>
       <button type="button" class="btn-abandonada btn-ocultar" id="btn-ocultar" style="display:none" onclick="alternarOcultaFicha()">🙅 No me interesa</button>
       <div class="detalle-box" id="d-mas-gustado" style="display:none"></div>
@@ -2235,14 +2245,6 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="detalle-box" id="d-rodaje-box" style="display:none"><div class="detalle-box-label">📍 Dónde se rodó</div><div class="rodaje-mapa" id="d-rodaje-mapa"></div><div class="rodaje-lista" id="d-rodaje-lista"></div></div>
       <div class="detalle-box" id="d-wiki-box" style="display:none"><div class="detalle-box-label" id="d-wiki-label">Sobre la película</div><div id="d-wiki"></div></div>
       <div class="detalle-box" id="d-premios-box" style="display:none"><div class="detalle-box-label">🏆 Premios</div><div id="d-premios"></div></div>
-      <div class="detalle-box" id="d-coleccion-box" style="display:none">
-        <div class="detalle-box-label" id="d-coleccion-label">Pertenece a una colección</div>
-        <div class="scroll-wrap">
-          <div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-coleccion',-1)">‹</div>
-          <div class="similares-scroll" id="d-coleccion"></div>
-          <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-coleccion',1)">›</div>
-        </div>
-      </div>
       <div class="detalle-box" id="d-galeria-box" style="display:none"><div class="detalle-box-label">Imágenes</div><div class="galeria-tira" id="d-galeria"></div></div>
       <div class="detalle-box"><div class="detalle-box-label">Tráiler</div><div id="d-trailer-content"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="d-videos" id="d-videos"></div></div>
       <div class="detalle-box"><div class="detalle-box-label">Banda sonora</div><div id="d-bso"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
@@ -4300,7 +4302,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const fondo = col.backdrop_path || (partes.find(x=>x.backdrop_path)||{}).backdrop_path;
         document.getElementById('d-coleccion-label').innerHTML = `<div class="saga-ban" style="${fondo ? `background-image:url(https://image.tmdb.org/t/p/w780${fondo})` : ''}" onclick="abrirSaga(${Number(d.belongs_to_collection.id)})">
             <div class="saga-ban-in">
-              <div class="saga-ban-k">🎞️ Saga · esta es la ${pos}ª de ${partes.length}</div>
+              <div class="saga-ban-k">🎞️ Saga · ${pos}ª de ${partes.length}</div>
               <div class="saga-ban-t">${_escHtml(nombre)}</div>
               <div class="saga-ban-barra"><i style="width:${pct}%"></i></div>
               <div class="saga-ban-m">${vistas===partes.length ? '¡Las has visto todas! 🏆' : `${vistas} de ${partes.length} vistas`}${falta ? ` · te falta <b>${_escHtml(falta.title||falta.name)}</b>` : ''}</div>
@@ -8178,12 +8180,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       try{ localStorage.setItem('especialIdsResueltos_v2', JSON.stringify(window.especialIdsResueltos)); }catch(e){}
     }
     const ESP_OCULTOS = new Set(['bond','terminator','mision-imposible','matrix','joyas-ocultas','clasicos-siempre','series-imprescindibles']);
-    const _espVisible = e => ['saga','genero'].includes(e.categoria) && !ESP_OCULTOS.has(e.id);
+    const ESP_VISIBLES = new Set(['ucm']); // de los que trae la app, solo Marvel; además, las colecciones que crees tú
+    const _espVisible = e => ESP_VISIBLES.has(e.id) || String(e.id).startsWith('col-');
     function renderEspecialesTiles(){
       const vistosSet = window.vistosNormSet || new Set();
       const SECCIONES = [
-        {cat:'saga',titulo:'Maratones · sagas en su orden, con películas y series'},
-        {cat:'genero',titulo:'Listas · temáticas escogidas'}
+        {cat:'saga',titulo:'Maratones'}
       ];
       const ordenAlfabetico = arr => [...arr].sort((a,b)=>a.titulo.localeCompare(b.titulo,'es',{sensitivity:'base'}));
       const idsSet = window.idsVistosSet || new Set();
@@ -8560,9 +8562,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function calcularEnCurso(contarVistos){
       const man = enCursoManualLeer();
-      const fijados = man.fijados.map(id=>ESPECIALES.find(e=>e.id===id)).filter(Boolean);
+      const fijados = man.fijados.map(id=>ESPECIALES.find(e=>e.id===id)).filter(e=>e && _espVisible(e));
       const abiertos = _espAbiertosLeer();
-      const auto = ESPECIALES.filter(e=>!man.fijados.includes(e.id) && !man.quitados.includes(e.id))
+      const auto = ESPECIALES.filter(e=>_espVisible(e) && !man.fijados.includes(e.id) && !man.quitados.includes(e.id))
         .map(e=>({e, v:contarVistos(e), ts:abiertos[e.id]||0}))
         .filter(x=>x.v>0 && x.v<x.e.items.length && (x.e.categoria==='saga' || x.v>=2 || x.ts))
         .sort((a,b)=>(b.ts-a.ts) || (b.v-a.v))
@@ -11349,8 +11351,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       try{ renderEspecialesTiles(); }catch(e){} // calcula «En curso» con lo que has visto
       const cont = window._espContarVistos || (()=>0);
       const enCurso = calcularEnCurso(cont), maraton = enCurso[0];
-      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(e=>e.categoria==='saga' && _espVisible(e))])].filter(e=>e!==maraton).slice(0, 12);
-      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
+      const cols = (window.misColecciones||[]).map(col=>_espDesdeColeccion('col-'+col.id)).filter(Boolean);
+      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(_espVisible), ...cols])].filter(e=>e!==maraton).slice(0, 12);
+      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji||'📋'}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
       box.innerHTML = `<div class="esp-sec-cab"><h3>🎬 Especiales</h3><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todos ›</button></div>
         ${maraton ? '<div id="esp-maraton-desc"></div>' : ''}
         <div class="especiales-scroll" style="margin-top:12px">${destacados.map(tile).join('')}</div>`;
