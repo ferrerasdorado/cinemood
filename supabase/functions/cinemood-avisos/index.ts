@@ -51,19 +51,28 @@ async function avisosDe(sb: any, uid: string, perfil: any) {
   }
   const m = perfil?.modelo, umbral = m ? Math.max(8, m.media + 1.2) : 99;
   const estado = perfil?.estado || {};
-  // 2 · novedades en tus plataformas que te van a encantar (se compara con lo que había ayer)
-  if (m && tipos.includes("llegadas") && perfil.plats?.length) {
+  // 2 · novedades en tus plataformas que te van a encantar (se compara con lo que había ayer).
+  //     Sin plataformas marcadas: en cualquiera de las principales de España.
+  if (m && tipos.includes("llegadas")) {
     const nuevoEstado: Record<string, number[]> = {};
-    for (const prov of perfil.plats.slice(0, 4)) for (const t of ["movie", "tv"]) {
-      const sin = t === "movie" ? "99,10770" : "10763,10764,10767,99";
-      const pags = await Promise.all([1, 2, 3].map((pg) => tmdb(`/discover/${t}&language=es-ES&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate&without_genres=${sin}&sort_by=popularity.desc&vote_count.gte=${t === "movie" ? 80 : 40}&page=${pg}`)));
-      const lista = pags.flatMap((d: any) => d.results || []), clave = `${prov}:${t}`, antes = estado.catalogo?.[clave];
+    const grupos: string[][] = perfil.plats?.length ? perfil.plats.map((x: string) => [x]) : [Object.keys(PLATS)];
+    for (const grupo of grupos) for (const t of ["movie", "tv"]) {
+      const sin = t === "movie" ? "99,10770" : "10763,10764,10767,99", n = grupo.length > 1 ? 5 : 3;
+      const pags = await Promise.all(Array.from({ length: n }, (_, i) => i + 1).map((pg) => tmdb(`/discover/${t}&language=es-ES&watch_region=ES&with_watch_providers=${grupo.join("|")}&with_watch_monetization_types=flatrate&without_genres=${sin}&sort_by=popularity.desc&vote_count.gte=${t === "movie" ? 80 : 40}&page=${pg}`)));
+      const lista = pags.flatMap((d: any) => d.results || []), clave = `${grupo.join("|")}:${t}`, antes = estado.catalogo?.[clave];
       nuevoEstado[clave] = lista.map((x: any) => x.id);
       if (!antes) continue; // primera vez: solo se guarda lo que hay
       const ya = new Set(antes);
       const mejor = lista.filter((x: any) => !ya.has(x.id) && !vistos.has(`${x.id}-${t}`)).map((x: any) => ({ x, v: predecir(m, t, x) })).sort((a: any, b: any) => b.v - a.v)[0];
-      if (mejor && mejor.v >= umbral) avisos.push({ clave: `llega:${t}:${mejor.x.id}`, prio: mejor.v,
-        title: `🔮 Llega a ${PLATS[prov] || "tu plataforma"} algo que le pondrías un ${fmt(mejor.v)}`, body: `${mejor.x.title || mejor.x.name}${(mejor.x.release_date || mejor.x.first_air_date || "").slice(0, 4) ? ` (${(mejor.x.release_date || mejor.x.first_air_date).slice(0, 4)})` : ""} · ${t === "tv" ? "serie" : "película"}`, url: `./?id=${mejor.x.id}&tipo=${t}`, tag: `llega-${mejor.x.id}` });
+      if (!mejor || mejor.v < umbral) continue;
+      let donde = grupo.length === 1 ? PLATS[grupo[0]] : "";
+      if (!donde) { // en qué plataforma está, para decirlo en el aviso
+        const pv = await tmdb(`/${t}/${mejor.x.id}/watch/providers`);
+        const f = (pv?.results?.ES?.flatrate || []).find((x: any) => PLATS[String(x.provider_id)]);
+        donde = f ? PLATS[String(f.provider_id)] : "tus plataformas";
+      }
+      avisos.push({ clave: `llega:${t}:${mejor.x.id}`, prio: mejor.v,
+        title: `🔮 Llega a ${donde} algo que le pondrías un ${fmt(mejor.v)}`, body: `${mejor.x.title || mejor.x.name}${(mejor.x.release_date || mejor.x.first_air_date || "").slice(0, 4) ? ` (${(mejor.x.release_date || mejor.x.first_air_date).slice(0, 4)})` : ""} · ${t === "tv" ? "serie" : "película"}`, url: `./?id=${mejor.x.id}&tipo=${t}`, tag: `llega-${mejor.x.id}` });
     }
     estado.catalogo = nuevoEstado;
   }

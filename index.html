@@ -11139,7 +11139,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     // ══ AVISOS EN EL MÓVIL (Web Push): episodios de hoy, novedades que te van a encantar y el estreno del finde ══
     const VAPID_PUBLICO = 'BInIGCCADygEMmBV-jFsbqkZV4vjoBmt2Yg6aacYn5Ts6d_MsKhWZLQk7j2uAA2c7XYWgphnU5wx1ZT3GGx7Css';
     const _AVISOS_FN = TMDB_PROXY.replace('tmdb-proxy', 'cinemood-avisos');
-    const _avisosTipos = [['episodios','📺 Cuando salga un episodio nuevo de tus series'],['llegadas','🔮 Cuando llegue a tus plataformas algo que te va a encantar'],['estrenos','🍿 Los viernes, el estreno de cine que más encaja contigo']];
+    const _avisosTipos = [['episodios','📺 Cuando salga un episodio nuevo de tus series'],['llegadas','🔮 Cuando llegue a una plataforma algo que te va a encantar'],['estrenos','🍿 Los viernes, el estreno de cine que más encaja contigo']];
     const _avisosOn = () => { try{ return localStorage.getItem('cm:avisosOn')==='1'; }catch(e){ return false; } };
     const _esIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
     const _instalada = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
@@ -11166,14 +11166,14 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       let sub = null; try{ const reg = await navigator.serviceWorker.getRegistration(); sub = reg ? await reg.pushManager.getSubscription() : null; }catch(e){}
       if(!sub || Notification.permission!=='granted'){
         try{ localStorage.removeItem('cm:avisosOn'); }catch(e){}
-        box.innerHTML = `<p>Te aviso solo de lo que te interesa: cuando sale un episodio de tus series, cuando llega a tus plataformas algo que le pondrías un 8 o más, y el estreno del finde que más encaja contigo. Como mucho, 3 avisos al día.</p>
+        box.innerHTML = `<p>Te aviso solo de lo que te interesa: cuando sale un episodio de tus series, cuando llega a cualquier plataforma (o solo a las que elijas) algo que le pondrías un 8 o más, y el estreno del finde que más encaja contigo. Como mucho, 3 avisos al día.</p>
           ${Notification.permission==='denied' ? '<p><b>Los avisos están bloqueados.</b> Actívalos en Ajustes del iPhone → Notificaciones → CineMood.</p>' : '<button type="button" class="cta-btn" onclick="activarAvisos(this)">🔔 Activar avisos</button>'}`;
         return;
       }
       const perfil = await _avisosPerfilLeer() || {}, tipos = perfil.tipos || _avisosTipos.map(x=>x[0]), plats = perfil.plats || [];
       box.innerHTML = `<div class="avisos-ok">✓ Avisos activados en este móvil</div>
         ${_avisosTipos.map(([k,t])=>`<label class="ml-preferencia"><input type="checkbox" ${tipos.includes(k)?'checked':''} onchange="avisosTipo('${k}', this.checked)"> ${t}</label>`).join('')}
-        <div class="section-label" style="margin-top:12px">Tus plataformas</div>
+        <div class="section-label" style="margin-top:12px">¿De qué plataformas? <span style="text-transform:none;letter-spacing:0;font-weight:500">(sin marcar ninguna: de cualquiera)</span></div>
         <div class="noche-chips">${DESC_PLATAFORMAS.filter(([id])=>id).map(([id,n])=>`<button type="button" class="noche-chip${plats.includes(id)?' activo':''}" onclick="avisosPlat('${id}', this)">${_escHtml(n)}</button>`).join('')}</div>
         <div class="avisos-btns"><button type="button" class="ml-secundario" onclick="avisosPrueba(this)">Enviarme uno de prueba</button><button type="button" class="ml-secundario" onclick="desactivarAvisos(this)">Desactivar</button></div>`;
     }
@@ -11191,9 +11191,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(error) throw error;
         try{ localStorage.setItem('cm:avisosOn','1'); }catch(e){}
         await _modeloNotaObtener().catch(()=>null);
-        const prev = await _avisosPerfilLeer(), prov = _descPlataforma(), np = _nocheOpts().plats;
-        const plats = (prev && prev.plats && prev.plats.length) ? prev.plats : (np.length ? np : (prov ? [prov] : []));
-        await _avisosSubirPerfil({plats});
+        await _avisosSubirPerfil(); // sin plataformas marcadas = avisos de cualquiera
       }catch(e){ alert('No se pudieron activar los avisos. Inténtalo de nuevo.'); }
       _avisosPintar();
     }
