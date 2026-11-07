@@ -610,7 +610,20 @@
 
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
-    .esc-subir { display: block; text-align: center; cursor: pointer; }
+    .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
+    .esc-vivo { position: relative; border-radius: 18px; overflow: hidden; background: #000; aspect-ratio: 3 / 4; margin-bottom: 12px; }
+    .esc-vivo video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .esc-mira { position: absolute; inset: 14% 8%; border: 2px solid rgba(255,255,255,0.55); border-radius: 16px; pointer-events: none; box-shadow: 0 0 0 999px rgba(0,0,0,0.18); }
+    .esc-vivo-estado { position: absolute; left: 12px; right: 12px; top: 12px; padding: 7px 12px; border-radius: 999px; background: rgba(0,0,0,0.6); color: #fff; font-size: 12.5px; font-weight: 700; text-align: center; backdrop-filter: blur(6px); }
+    .esc-cerrar { position: absolute; right: 12px; bottom: 12px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 18px; cursor: pointer; }
+    .esc-chips { position: absolute; left: 10px; right: 60px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+    .esc-chip { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 12px 6px 6px; border-radius: 999px; border: 0; background: rgba(255,255,255,0.94); color: #111; font: 700 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; animation: escAparece .35s ease; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+    .esc-chip img { width: 26px; height: 38px; object-fit: cover; border-radius: 5px; }
+    .esc-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .esc-chip b { color: var(--acento); white-space: nowrap; }
+    .esc-chip.mejor { background: var(--acento); color: #fff; }
+    .esc-chip.mejor b { color: #fff; }
+    @keyframes escAparece { from { opacity: 0; transform: translateY(8px) scale(.96); } to { opacity: 1; transform: none; } }
     #esc-estado { margin: 14px 0; font-size: 13px; color: var(--k-767973); }
     .esc-barra { height: 6px; border-radius: 3px; background: var(--k-e9e7e0); overflow: hidden; margin-top: 8px; }
     .esc-barra i { display: block; height: 100%; background: var(--acento); transition: width .3s; }
@@ -1836,8 +1849,16 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <h2>¿Cuál de estas?</h2>
         <span></span>
       </div>
-      <p class="esc-intro">Haz una captura de lo que te ofrece Netflix, de una cartelera o de la lista que te ha mandado alguien, y te digo cuál te va a gustar más.</p>
-      <label class="cta-btn esc-subir"><input type="file" accept="image/*" id="esc-archivo" onchange="escanearImagen(this.files[0])" hidden>📸 Elegir captura o foto</label>
+      <p class="esc-intro">Apunta con la cámara a la tele, a una cartelera o a una lista y te digo, en directo, cuál te va a gustar más. También vale una captura.</p>
+      <div class="esc-vivo" id="esc-vivo" hidden>
+        <video id="esc-video" playsinline muted autoplay></video>
+        <div class="esc-mira"></div>
+        <div class="esc-vivo-estado" id="esc-vivo-estado">Apunta a los títulos…</div>
+        <button type="button" class="esc-cerrar" onclick="pararEscanerVivo()" aria-label="Parar la cámara">✕</button>
+      </div>
+      <div id="esc-vivo-res"></div>
+      <button type="button" class="cta-btn esc-subir" id="esc-btn-camara" onclick="escanerVivo()">📷 Escanear con la cámara</button>
+      <label class="ml-secundario esc-subir" style="margin-top:10px"><input type="file" accept="image/*" id="esc-archivo" onchange="pararEscanerVivo();escanearImagen(this.files[0])" hidden>🖼️ Usar una captura o foto</label>
       <div id="esc-estado"></div>
       <div id="esc-res"></div>
     </div>
@@ -2741,6 +2762,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     // La pantalla inicial no pasa por irA: marcar su pestaña al arrancar
     requestAnimationFrame(()=>{ const a = document.querySelector('.pantalla.activa'); if(a) _tabActualizar(a.id); });
     function irA(id, restaurar, desdeHistorial) {
+      if(id!=='p-escaner' && window._escStream) pararEscanerVivo(); // la cámara se apaga al salir del escáner
       const _esRaiz = !!window._navRaiz;
       // los botones «‹ Atrás» que llevan a la pantalla anterior retroceden en el historial (así no se acumulan pasos)
       if(!desdeHistorial && window._navRaiz){ window._navRaiz = false; if(_navIrARaiz(id, restaurar)) return; }
@@ -11316,6 +11338,100 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         + `<p class="esc-pie">${conModelo ? '' : 'Puntúa al menos 8 títulos para ver tu nota en cada uno. '}${sin.length ? `No he reconocido: ${sin.slice(0,8).map(_escHtml).join(' · ')}${sin.length>8?'…':''}. ` : ''}La lectura se hace en tu móvil; si falta alguna, búscala en Buscar.</p>`;
     }
 
+    // ── Modo en directo (tipo Lens): lee lo que ve la cámara cada segundo y va añadiendo lo que reconoce, con tu nota ──
+    function _escPrepararDesde(fuente, w, h){
+      const esc = Math.min(2, 1600/Math.max(w, h)) || 1, W = Math.round(w*esc), H = Math.round(h*esc);
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); ctx.drawImage(fuente, 0, 0, W, H);
+      const d = ctx.getImageData(0,0,W,H), px = d.data; let suma = 0;
+      for(let i=0;i<px.length;i+=4){ const g = 0.299*px[i]+0.587*px[i+1]+0.114*px[i+2]; px[i]=px[i+1]=px[i+2]=g; suma += g; }
+      const oscuro = suma/(px.length/4) < 110;
+      for(let i=0;i<px.length;i+=4){ let g = px[i]; if(oscuro) g = 255-g; g = Math.max(0, Math.min(255, (g-128)*1.5+128)); px[i]=px[i+1]=px[i+2]=g; }
+      ctx.putImageData(d,0,0); return cv;
+    }
+    async function _escWorkerListo(){
+      await _cargarScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+      if(!window._escWorker) window._escWorker = await Tesseract.createWorker(['spa','eng'], 1);
+      return window._escWorker;
+    }
+    // busca un texto leído en TMDB (con caché: el mismo título no se busca dos veces)
+    async function _escBuscarUno(c){
+      const n = _escNorm(c); window._escBuscados = window._escBuscados || new Map();
+      if(window._escBuscados.has(n)) return window._escBuscados.get(n);
+      const p = (async()=>{
+        try{
+          const r = (await _tmdbJson(`/search/multi&language=es-ES&include_adult=false&query=${encodeURIComponent(c)}`)).results || [];
+          const m = r.filter(x=>(x.media_type==='movie'||x.media_type==='tv') && x.poster_path)
+            .map(x=>({x, s:Math.max(_escParecido(c, x.title||x.name), _escParecido(c, x.original_title||x.original_name))}))
+            .filter(o=>o.s>=0.8).sort((a,b)=>(b.s-a.s) || ((b.x.vote_count||0)-(a.x.vote_count||0)))[0];
+          if(!m) return null;
+          const x = {...m.x, _tipo:m.x.media_type, title:m.x.title||m.x.name, release_date:m.x.release_date||m.x.first_air_date};
+          if(!_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} }
+          x._nota = _notaExacta(x); x._visto = (window.idsVistosSet||new Set()).has(`${x.id}-${x._tipo}`);
+          return x;
+        }catch(e){ return null; }
+      })();
+      window._escBuscados.set(n, p); return p;
+    }
+    async function escanerVivo(){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      if(!navigator.mediaDevices?.getUserMedia){ alert('Este navegador no deja usar la cámara. Usa una captura o foto.'); return; }
+      const caja = document.getElementById('esc-vivo'), video = document.getElementById('esc-video'), est = document.getElementById('esc-vivo-estado');
+      document.getElementById('esc-res').innerHTML = ''; document.getElementById('esc-estado').innerHTML = '';
+      try{
+        window._escStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1440}}, audio:false});
+      }catch(e){ alert('No se ha podido abrir la cámara. Revisa el permiso de cámara para CineMood (o Safari) en Ajustes del iPhone.'); return; }
+      video.srcObject = window._escStream; caja.hidden = false; document.getElementById('esc-btn-camara').style.display = 'none';
+      caja.querySelector('.esc-chips')?.remove(); document.getElementById('esc-vivo-res').innerHTML = '';
+      try{ await video.play(); }catch(e){}
+      window._escVivo = {encontrados: new Map(), activo: true};
+      est.textContent = 'Preparando el lector…';
+      try{ await _escWorkerListo(); }catch(e){ est.textContent = 'No se pudo cargar el lector de texto. Revisa tu conexión.'; return; }
+      await _modeloNotaObtener().catch(()=>null);
+      est.textContent = 'Apunta a los títulos…';
+      const V = window._escVivo;
+      while(V.activo && window._escVivo===V){
+        if(!document.getElementById('p-escaner').classList.contains('activa') || document.hidden){ pararEscanerVivo(); break; }
+        if(video.videoWidth){
+          // solo el recuadro central (lo que hay dentro de la mira)
+          const vw = video.videoWidth, vh = video.videoHeight, cx = Math.round(vw*0.08), cy = Math.round(vh*0.14);
+          const rec = document.createElement('canvas'); rec.width = vw-2*cx; rec.height = vh-2*cy;
+          rec.getContext('2d').drawImage(video, cx, cy, rec.width, rec.height, 0, 0, rec.width, rec.height);
+          try{
+            const {data} = await window._escWorker.recognize(_escPrepararDesde(rec, rec.width, rec.height));
+            const cands = _escCandidatos(data.text||'').slice(0, 12);
+            if(cands.length && !V.encontrados.size) est.textContent = `Leyendo: «${cands[0].slice(0,28)}»…`;
+            cands.forEach(c=>_escBuscarUno(c).then(x=>{
+              if(!x || !V.activo || V.encontrados.has(`${x.id}-${x._tipo}`)) return;
+              V.encontrados.set(`${x.id}-${x._tipo}`, x); _escPintarVivo(); if(navigator.vibrate) navigator.vibrate(30);
+            }));
+          }catch(e){}
+        }
+        await new Promise(r=>setTimeout(r, 500));
+      }
+    }
+    function _escPintarVivo(){
+      const V = window._escVivo; if(!V) return;
+      const media = window._modeloNota?.fit?.media ?? 6;
+      const l = [...V.encontrados.values()].sort((a,b)=>(a._visto-b._visto) || ((b._nota??-1)-(a._nota??-1)));
+      window._escLista = l;
+      const mejor = l.find(x=>!x._visto && x._nota!=null);
+      document.getElementById('esc-vivo-estado').textContent = mejor ? `👉 La que más te va a gustar: ${mejor.title}` : `${l.length} reconocida${l.length===1?'':'s'}`;
+      let chips = document.querySelector('#esc-vivo .esc-chips'); if(!chips){ chips = document.createElement('div'); chips.className = 'esc-chips'; document.getElementById('esc-vivo').appendChild(chips); }
+      chips.innerHTML = l.slice(0,4).map((x,i)=>`<button type="button" class="esc-chip${x===mejor?' mejor':''}" onclick="abrirDetalle(_escLista[${i}])"><img src="https://image.tmdb.org/t/p/w92${x.poster_path}" alt=""><span>${_escHtml(x.title)}</span>${x._visto ? '<b>✓ vista</b>' : x._nota!=null ? `<b>🔮 ${_notaFmt(x._nota)}</b>` : ''}</button>`).join('');
+      const fila = (x,i) => `<div class="esc-fila" onclick="abrirDetalle(_escLista[${i}])"><img loading="lazy" src="https://image.tmdb.org/t/p/w154${x.poster_path}" alt=""><div class="i"><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x._tipo==='tv'?'Serie':'Película', x._visto?'✓ Ya la viste':''].filter(Boolean).join(' · ')}</small></div>${x._nota!=null && !x._visto ? `<span class="esc-nota${x._nota < media ? ' baja' : ''}">🔮 ${_notaFmt(x._nota)}</span>` : ''}</div>`;
+      document.getElementById('esc-vivo-res').innerHTML = l.length>4 ? `<div class="section-label" style="margin-top:4px">Todas las que he visto (${l.length})</div>${l.map(fila).join('')}` : '';
+    }
+    function pararEscanerVivo(){
+      if(window._escVivo) window._escVivo.activo = false;
+      try{ (window._escStream?.getTracks()||[]).forEach(t=>t.stop()); }catch(e){}
+      window._escStream = null;
+      const caja = document.getElementById('esc-vivo'); if(caja) caja.hidden = true;
+      const b = document.getElementById('esc-btn-camara'); if(b) b.style.display = '';
+      // lo encontrado se queda abajo como lista
+      const V = window._escVivo;
+      if(V && V.encontrados.size){ document.getElementById('esc-vivo-res').innerHTML = ''; _escPintar(window._escLista||[], [], !!window._modeloNota?.fit); }
+    }
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden && window._escStream) pararEscanerVivo(); });
     // ══ EL MUNDIAL DE TU LISTA: eliminatorias entre tus pendientes hasta quedarte con una ══
     async function abrirMundial(){
       if(!sesionActual){ mostrarCuenta(); return; }
