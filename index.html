@@ -645,6 +645,19 @@
     .aviso-version { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 2147483000; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #1b1d1c; color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: escAparece .3s ease; }
     .aviso-version button { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--acento); color: #fff; font: 800 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
 
+
+    /* ── Motivos al puntuar ── */
+    .d-motivos { margin: 12px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--k-fffefb); border: 1px solid var(--line); }
+    .mot-k { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--k-767973); margin: 2px 0 8px; }
+    .mot-fila { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .mot-chip { border: 1px solid var(--line); background: none; color: inherit; border-radius: 999px; padding: 6px 11px; font: 700 12.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
+    .mot-chip.activo { background: var(--k-3d6651); border-color: var(--k-3d6651); color: #fff; }
+    .mot-chip.menos.activo { background: var(--k-9c2723); border-color: var(--k-9c2723); }
+    .mot-pie { font-size: 11.5px; color: var(--k-767973); }
+    .d-motivos.plegado { padding: 0; border: 0; background: none; }
+    .mot-resumen { display: block; width: 100%; text-align: left; padding: 10px 13px; border-radius: 12px; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; font: 600 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; line-height: 1.4; }
+    .mot-resumen.vacio { border-style: dashed; color: var(--k-61635e); }
+    .mot-resumen span { float: right; color: var(--acento); }
     /* ── Saga en la ficha ── */
     #d-coleccion-box .detalle-box-label { text-transform: none; letter-spacing: 0; margin: 0 0 12px; }
     .saga-en-ficha { margin-top: 16px; }
@@ -2226,6 +2239,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="d-antes" id="d-antes" style="display:none"></div>
       <div class="d-puntuacion-row" id="d-puntuacion-row" style="display:none"></div>
       <div class="d-nivel-row" id="d-nivel-row" style="display:none"></div>
+      <div class="d-motivos" id="d-motivos" style="display:none"></div>
       <div class="detalle-box saga-en-ficha" id="d-coleccion-box" style="display:none">
         <div class="detalle-box-label" id="d-coleccion-label">Pertenece a una colección</div>
         <div class="scroll-wrap">
@@ -9234,7 +9248,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       colOrdenDesdeCuenta();
       abandonadasDesdeCuenta();
       ocultasDesdeCuenta();
-      notasTempDesdeCuenta();
+      notasTempDesdeCuenta(); motivosDesdeCuenta();
       rankingDesdeCuenta();
       Promise.all([refrescarIdsVistos(), refrescarVistosNormalizados()]).then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); _enCursoPintarBoton(); });
       colSync().then(()=>{ renderEspecialesTiles(); colActualizarBotonFicha(); });
@@ -9397,6 +9411,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     function renderPuntuacionRow(visible, valorActual){
       _pintarMasGustado(visible ? Number(valorActual)||0 : 0);
       _pintarNivelFicha(visible);
+      _pintarMotivos(visible, valorActual);
       const row = document.getElementById('d-puntuacion-row');
       if(!visible){ row.style.display='none'; row.innerHTML=''; return; }
       row.style.display='flex';
@@ -9465,6 +9480,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const extra = pv==null ? '' : ` · predije ${_notaFmt(pv)}${dif<=0.5 ? ' 🎯' : ''}`;
       await upsertBiblioteca({ visto: true, puntuacion: n }, {texto: pv==null ? `⭐ Guardada con un ${n}` : `⭐ Un ${n}${extra}`, rk});
       window._modeloNota = null; window._previstaFicha = null;
+      _pintarMotivos(true, n, true);
       const chip = document.getElementById('d-prevista'); if(chip){ chip.style.display = 'none'; document.getElementById('d-prevista-por').style.display = 'none'; }
     }
 
@@ -11762,6 +11778,61 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       try{ localStorage.removeItem('cm:avisosOn'); }catch(e){}
       _avisosPintar();
     }
+    // ══ POR QUÉ TE GUSTÓ (O NO): motivos al puntuar, en tu cuenta. Alimentan «Tu ADN de cine» ══
+    const MOTIVOS_MAS = [['g','✍️ Guion'],['a','🎭 Actores'],['p','🧩 Personajes'],['t','😰 Tensión'],['e','🥹 Emoción'],['h','😂 Humor'],['v','🎨 Visual'],['m','🎵 Música'],['f','🎯 El final'],['r','⚡ Ritmo']];
+    const MOTIVOS_MENOS = [['L','🐢 Lenta'],['D','⏳ Larga'],['P','🙄 Predecible'],['F','🫠 Final flojo'],['G','📝 Guion flojo'],['A','🎭 Actores flojos'],['X','😑 Sin emoción']];
+    const MOTIVOS_LS = 'cm:motivos';
+    let _motivosT = null;
+    function _motivosLeer(){ try{ return JSON.parse(localStorage.getItem(MOTIVOS_LS)||'{}') || {}; }catch(e){ return {}; } }
+    function _motivosGuardar(o){
+      try{ localStorage.setItem(MOTIVOS_LS, JSON.stringify(o)); }catch(e){}
+      if(!sesionActual) return;
+      clearTimeout(_motivosT);
+      _motivosT = setTimeout(async ()=>{ try{ await sb.auth.updateUser({ data: { cm_motivos: o } }); }catch(e){} }, 700);
+    }
+    function motivosDesdeCuenta(){
+      const r = sesionActual?.user?.user_metadata?.cm_motivos;
+      if(r && typeof r==='object'){ try{ localStorage.setItem(MOTIVOS_LS, JSON.stringify(r)); }catch(e){} }
+      else if(sesionActual){ const o = _motivosLeer(); if(Object.keys(o).length) _motivosGuardar(o); }
+    }
+    function _pintarMotivos(visible, nota, abierto){
+      const box = document.getElementById('d-motivos'), p = peliculaActual; if(!box) return;
+      if(!visible || !p || !nota){ box.style.display = 'none'; box.innerHTML = ''; return; }
+      const k = `${p._tipo}:${p.id}`, sel = _motivosLeer()[k] || '';
+      window._motivosNota = nota;
+      if(!abierto){ // plegado: resumen de lo marcado, o un botón para añadirlo
+        const nom = c => ([...MOTIVOS_MAS, ...MOTIVOS_MENOS].find(x=>x[0]===c)||[])[1]?.split(' ').slice(1).join(' ') || '';
+        const mas = [...sel].filter(c=>c===c.toLowerCase()).map(nom), menos = [...sel].filter(c=>c!==c.toLowerCase()).map(nom);
+        box.innerHTML = sel ? `<button type="button" class="mot-resumen" onclick="_pintarMotivos(true, window._motivosNota, true)">💬 ${mas.length ? `Te gustó: <b>${_escHtml(mas.join(', '))}</b>` : ''}${mas.length && menos.length ? ' · ' : ''}${menos.length ? `No: <b>${_escHtml(menos.join(', '))}</b>` : ''} <span>✎</span></button>`
+          : `<button type="button" class="mot-resumen vacio" onclick="_pintarMotivos(true, window._motivosNota, true)">💬 ¿Por qué esta nota? Añade qué te gustó y qué no <span>›</span></button>`;
+        box.classList.add('plegado'); box.style.display = 'block'; return;
+      }
+      box.classList.remove('plegado');
+      const chip = ([c,t]) => `<button type="button" class="mot-chip${sel.includes(c)?' activo':''}${c===c.toUpperCase()?' menos':''}" onclick="alternarMotivo('${c}', this)" aria-pressed="${sel.includes(c)}">${t}</button>`;
+      const bien = `<div class="mot-k">¿Qué te ha gustado?</div><div class="mot-fila">${MOTIVOS_MAS.map(chip).join('')}</div>`;
+      const mal = `<div class="mot-k">¿Y lo que menos?</div><div class="mot-fila">${MOTIVOS_MENOS.map(chip).join('')}</div>`;
+      box.innerHTML = (Number(nota) <= 5 ? mal + bien : bien + mal) + `<div class="mot-pie">Opcional. Con esto tu ADN de cine sabe qué valoras de verdad.</div>`;
+      box.style.display = 'block';
+    }
+    function alternarMotivo(c, btn){
+      const p = peliculaActual; if(!p || !sesionActual) return;
+      const o = _motivosLeer(), k = `${p._tipo}:${p.id}`; let v = o[k] || '';
+      v = v.includes(c) ? v.replace(c, '') : v + c;
+      if(v) o[k] = v; else delete o[k];
+      _motivosGuardar(o);
+      btn.classList.toggle('activo', v.includes(c)); btn.setAttribute('aria-pressed', String(v.includes(c)));
+    }
+    // Para Tu ADN: qué motivos marcas más y con qué nota
+    function _adnMotivos(m){
+      const o = _motivosLeer(), notas = {}; (m?.muestras||[]).forEach(x=>{ notas[`${x.tipo}:${x.tmdb_id}`] = Number(x.puntuacion); });
+      const cuenta = {}, suma = {}; let titulos = 0;
+      Object.entries(o).forEach(([k,v])=>{ titulos++; [...v].forEach(c=>{ cuenta[c] = (cuenta[c]||0)+1; if(notas[k]!=null) suma[c] = (suma[c]||[]).concat(notas[k]); }); });
+      const nombre = c => ([...MOTIVOS_MAS, ...MOTIVOS_MENOS].find(x=>x[0]===c)||[])[1] || c;
+      const media = c => suma[c] && suma[c].length ? suma[c].reduce((a,b)=>a+b,0)/suma[c].length : null;
+      const mas = MOTIVOS_MAS.map(([c])=>c).filter(c=>cuenta[c]).sort((a,b)=>cuenta[b]-cuenta[a]).slice(0,4).map(c=>({c, t:nombre(c), n:cuenta[c], media:media(c)}));
+      const menos = MOTIVOS_MENOS.map(([c])=>c).filter(c=>cuenta[c]).sort((a,b)=>cuenta[b]-cuenta[a]).slice(0,3).map(c=>({c, t:nombre(c), n:cuenta[c], media:media(c)}));
+      return {titulos, mas, menos};
+    }
     // ══ TU ADN DE CINE: lo que ha aprendido «Le pondrías un…» de tus notas, en claro ══
     async function abrirADN(){
       if(!sesionActual){ mostrarCuenta(); return; }
@@ -11784,6 +11855,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
             <div class="adn-dato"><span>${m.fit.s<0.45?'🧭':m.fit.s<0.85?'🤝':'👥'}</span><div>${_escHtml(d.textoPublico)}</div></div>
             <div class="adn-dato"><span>⭐</span><div>Tu nota media es un <b>${_notaFmt(m.fit.media)}</b>.</div></div>
           </div>
+          ${(()=>{ const mo = _adnMotivos(m); if(mo.titulos<3) return `<div class="adn-caja"><h3>Lo que valoras de verdad</h3><p>Cuando puntúes algo, marca qué te gustó y qué no (guion, actores, final…). Con unos pocos títulos aquí verás lo que de verdad valoras. Llevas ${mo.titulos}.</p></div>`;
+            const lin = x => `<div class="adn-dato"><span>${x.t.split(' ')[0]}</span><div><b>${_escHtml(x.t.split(' ').slice(1).join(' '))}</b> · lo marcas en ${x.n} ${x.n===1?'título':'títulos'}${x.media!=null ? ` (nota media ${_notaFmt(x.media)})` : ''}</div></div>`;
+            return `<div class="adn-caja"><h3>Lo que valoras de verdad</h3><p>Según lo que marcas al puntuar (${mo.titulos} títulos).</p>${mo.mas.map(lin).join('')}${mo.menos.length ? `<div class="mot-k" style="margin-top:10px">Lo que no perdonas</div>${mo.menos.map(lin).join('')}` : ''}</div>`; })()}
           ${d.mas.length ? `<div class="adn-caja"><h3>Lo que más te tira</h3><p>Cuánto sube tu nota, de media, cuando una película o serie tiene esto.</p>${d.mas.map(x=>fila(x,max)).join('')}</div>` : ''}
           ${d.menos.length ? `<div class="adn-caja"><h3>Lo que no va contigo</h3><p>Aquí sueles poner menos nota de lo que esperarías.</p>${d.menos.map(x=>fila(x,max)).join('')}</div>` : ''}
           ${d.deberias.length ? `<div class="adn-caja"><h3>Deberías ver más…</h3><p>Has visto poco de esto, pero lo que has visto te ha gustado mucho.</p>${d.deberias.map(x=>fila(x,max)).join('')}</div>` : ''}
