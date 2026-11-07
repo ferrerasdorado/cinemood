@@ -613,21 +613,21 @@
     .buscar-camara { flex: none; width: 46px; border: 1px solid var(--k-dedfd8); border-radius: 8px; background: var(--k-fffefb); font-size: 19px; cursor: pointer; }
     .tu-sec { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 20px 0 10px; }
     /* ── Especiales con más mimo ── */
-    .especiales-scroll { display: flex !important; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 2px; margin: 0 0 8px; scrollbar-width: none; }
-    .especiales-scroll::-webkit-scrollbar { display: none; }
-    .especiales-scroll > .especial-tile { position: relative; flex: 0 0 228px; height: 128px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px; border: 0; border-radius: 14px; box-shadow: none; overflow: hidden; color: #fff;
+    #desc-especiales .especiales-scroll { display: flex !important; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 2px; margin: 0 0 8px; scrollbar-width: none; }
+    #desc-especiales .especiales-scroll::-webkit-scrollbar { display: none; }
+    #desc-especiales .especiales-scroll > .especial-tile { position: relative; flex: 0 0 228px; height: 128px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px; border: 0; border-radius: 14px; box-shadow: none; overflow: hidden; color: #fff;
       background-color: var(--esp-bg, #1b1d1c); background-image: linear-gradient(135deg, var(--esp-bg, #1b1d1c), #0d0d0d); background-size: cover; background-position: center; }
-    .especiales-scroll > .especial-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.88)); pointer-events: none; }
-    .especiales-scroll > .especial-tile > * { position: relative; }
-    .especiales-scroll > .especial-tile .especial-tile-emoji { position: absolute; top: 10px; left: 12px; margin: 0; font-size: 18px; }
-    .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; color: #fff; margin: 0; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
-    .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(255,255,255,0.78); font-size: 11.5px; margin-top: 2px; }
-    .especiales-scroll > .especial-tile .especial-progreso-texto { display: none; }
-    .especiales-scroll > .especial-tile .especial-progreso-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,0.22); }
-    .especiales-scroll > .col-nueva-tile { background: none !important; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); }
-    .especiales-scroll > .col-nueva-tile::before { display: none; }
-    .especiales-scroll > .col-nueva-tile .especial-tile-titulo { color: var(--ink); text-shadow: none; }
-    .especiales-scroll > .col-nueva-tile .especial-tile-sub { color: var(--muted); }
+    #desc-especiales .especiales-scroll > .especial-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.88)); pointer-events: none; }
+    #desc-especiales .especiales-scroll > .especial-tile > * { position: relative; }
+    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-emoji { position: absolute; top: 10px; left: 12px; margin: 0; font-size: 18px; }
+    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; color: #fff; margin: 0; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(255,255,255,0.78); font-size: 11.5px; margin-top: 2px; }
+    #desc-especiales .especiales-scroll > .especial-tile .especial-progreso-texto { display: none; }
+    #desc-especiales .especiales-scroll > .especial-tile .especial-progreso-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,0.22); }
+    #desc-especiales .especiales-scroll > .col-nueva-tile { background: none !important; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); }
+    #desc-especiales .especiales-scroll > .col-nueva-tile::before { display: none; }
+    #desc-especiales .especiales-scroll > .col-nueva-tile .especial-tile-titulo { color: var(--ink); text-shadow: none; }
+    #desc-especiales .especiales-scroll > .col-nueva-tile .especial-tile-sub { color: var(--muted); }
     #desc-especiales { margin-bottom: 22px; }
     .esp-maraton { position: relative; border-radius: 18px; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: #1b1d1c center/cover no-repeat; cursor: pointer; margin: 6px 0 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
     .esp-maraton::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.55) 45%, rgba(10,10,10,0.94)); }
@@ -5433,7 +5433,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function volverDeEspecial(){
       const o = window._origenEspecial; window._origenEspecial = null;
-      irA(o || 'p-especiales-hub', true);
+      if(o) irA(o, true);
+      else if(_navEstado().i>0) history.back(); // a la pantalla de la que viniste (Descubre, Especiales…)
+      else irA('p-especiales-hub', true);
     }
     // ── Guion y música, a partir de los créditos ──
     function _pintarEquipo(crew, p){
@@ -8170,7 +8172,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}">
           <span class="especial-tile-emoji">${e.emoji}</span>
           <div class="especial-tile-titulo">${e.titulo}</div>
-          <div class="especial-tile-sub">${vistosSet.size && total && vistos ? `${vistos} de ${total} vistas` : e.sub}</div>
+          <div class="especial-tile-sub">${e.sub}</div>
           ${vistosSet.size && total?`
           <div class="especial-progreso-texto" style="color:${e.colorSoft||'#61635e'}">${vistos}/${total} vistas</div>
           <div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${pct}%;background:${e.color||'#b52c29'}"></div></div>
@@ -8179,6 +8181,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       };
       // "En curso": especiales empezados y sin terminar; primero los abiertos más recientemente (máx. 6)
       // Sagas: basta 1 visto. Directores/temáticas: 2, o 1 si has abierto esa lista (evita que una película compartida las meta todas).
+      window._espContarVistos = contarVistos;
       const enCurso = calcularEnCurso(contarVistos);
       window._enCursoIds = new Set(enCurso.map(e=>e.id));
       const man = enCursoManualLeer();
@@ -8192,22 +8195,13 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="especiales-scroll">${cols.map(e=>tile(e).replace('class="especial-tile"','class="especial-tile col-tile"').replace(`onclick="abrirEspecial('${e.id}')"`, `onclick="abrirEspecial('${e.id}')"${e.fondo?` style="background-image:linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${e.fondo});background-size:cover;background-position:center"`:''}`)).join('')}
             <div class="especial-tile col-nueva-tile" onclick="abrirColOverlay('crear')"><span class="especial-tile-emoji">＋</span><div class="especial-tile-titulo">Nueva colección</div><div class="especial-tile-sub">Tu propia lista, en el orden que quieras</div></div>
           </div>`;
-      window._espContarVistos = contarVistos;
-      const maraton = enCurso[0] || null;
-      document.getElementById('especiales-secciones').innerHTML = (maraton ? `<div id="esp-maraton-hub"></div>` : '') + filaEnCurso.replace('<div class="section-label" style="margin-top:4px">En curso</div>', `<div class="section-label" style="margin-top:20px">${maraton ? 'Tus otros maratones' : 'En curso'}</div>`) + SECCIONES.map(sec=>{
+      document.getElementById('especiales-secciones').innerHTML = filaCols + filaEnCurso.replace('margin-top:4px','margin-top:20px') + SECCIONES.map(sec=>{
         const items = ordenAlfabetico(ESPECIALES.filter(e=>e.categoria===sec.cat));
         if(!items.length) return '';
         return `
           <div class="section-label" style="margin-top:20px">${sec.titulo}</div>
           <div class="especiales-scroll">${items.map(tile).join('')}</div>`;
-      }).join('') + filaCols.replace('margin-top:4px','margin-top:20px');
-      if(maraton){
-        _espPintarMaraton(maraton, document.getElementById('esp-maraton-hub'));
-        // la del maratón no se repite en «Tus otros maratones»
-        const fila = document.querySelector('#especiales-secciones .esp-en-curso');
-        fila?.querySelector(`.especial-tile[data-esp-id="${maraton.id}"]`)?.remove();
-        if(fila && !fila.querySelector('.especial-tile')){ fila.previousElementSibling?.remove(); fila.remove(); }
-      }
+      }).join('');
       _resolverImagenesHeroEspeciales();
     }
 
@@ -8245,7 +8239,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(!especial || especial.dinamico) return; // los generados no tienen lista fija de la que sacar la imagen
         const ruta = await _resolverImagenHeroEspecial(especial);
         if(ruta && document.body.contains(tileEl)){
-          tileEl.style.backgroundImage = tileEl.closest('.especiales-scroll') ? `url(https://image.tmdb.org/t/p/w780${ruta})` : `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
+          tileEl.style.backgroundImage = tileEl.closest('#desc-especiales') ? `url(https://image.tmdb.org/t/p/w780${ruta})` : `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
           tileEl.style.backgroundSize = 'cover';
           tileEl.style.backgroundPosition = 'center';
         }
