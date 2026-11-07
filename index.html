@@ -360,10 +360,10 @@
     .sem-titulo { font: 800 17px 'Cabinet Grotesk', -apple-system, sans-serif; margin-top: 2px; }
     .sem-bloque + .sem-bloque { margin-top: 12px; }
     .sem-bk { font-size: 12px; font-weight: 700; color: var(--k-4d514a); margin-bottom: 6px; }
-    .sem-fila { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+    .sem-fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
     .sem-fila::-webkit-scrollbar { display: none; }
-    .sem-item { flex: none; width: 78px; border: 0; background: none; padding: 0; color: inherit; text-align: left; cursor: pointer; }
-    .sem-img { position: relative; display: block; width: 78px; height: 117px; border-radius: 8px; overflow: hidden; background: var(--k-e9e7e0); }
+    .sem-item { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; min-width: 0; border: 0; background: none; padding: 0; color: inherit; text-align: left; cursor: pointer; }
+    .sem-img { position: relative; display: block; width: 100%; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden; background: var(--k-e9e7e0); }
     .sem-img img { width: 100%; height: 100%; object-fit: cover; }
     .sem-img em { position: absolute; left: 4px; bottom: 4px; padding: 2px 6px; border-radius: 5px; background: rgba(15,15,15,0.82); color: #fff; font: 800 10px 'Satoshi', -apple-system, sans-serif; font-style: normal; text-transform: capitalize; }
     .sem-t { display: block; font-size: 11px; font-weight: 700; line-height: 1.2; margin-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -10296,7 +10296,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const fila = (l, tipo, k) => l.map((x,i)=>`<button type="button" class="sem-item" onclick="abrirDetalle({id:_semana.${k}[${i}].id,_tipo:'${tipo}',title:_semana.${k}[${i}].t,poster_path:_semana.${k}[${i}].poster,release_date:_semana.${k}[${i}].f})">
           <span class="sem-img">${x.poster ? `<img loading="lazy" src="https://image.tmdb.org/t/p/w154${x.poster}" alt="">` : ''}<em>${dia(x.f)}</em></span>
           <span class="sem-t">${_escHtml(x.t)}</span>${x.s ? `<span class="sem-m">T${x.s} · E${x.e}</span>` : ''}</button>`).join('');
-      const bloques = [['🍿 En cines', datos.cines, 'movie', 'cines'], ['🏠 Para ver en casa', datos.casa, 'movie', 'casa'], ['📺 Tus series', datos.eps, 'tv', 'eps']].filter(([,l])=>l.length);
+      const bloques = [['🍿 En cines', datos.cines, 'movie', 'cines'], ['🏠 Para ver en casa', datos.casa, 'movie', 'casa'], ['📺 Tus series', datos.eps.slice(0,4), 'tv', 'eps']].filter(([,l])=>l.length);
       box.innerHTML = `<div class="sem-cab"><div><div class="sem-k">Tu semana</div><div class="sem-titulo">Lo que llega de hoy al ${dia(d2)}</div></div><button type="button" class="d-saga-link" onclick="abrirCalendario()">Calendario ›</button></div>
         ${bloques.map(([t,l,tipo,k])=>`<div class="sem-bloque"><div class="sem-bk">${t}</div><div class="sem-fila">${fila(l, tipo, k)}</div></div>`).join('')}`;
       box.style.display = 'block';
