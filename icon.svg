@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#b52c29"/>
+  <g transform="translate(0 18)">
+    <!-- brazo de la claqueta, levantado desde la bisagra izquierda -->
+    <g transform="rotate(-14 136 206)">
+      <rect x="136" y="160" width="240" height="46" rx="10" fill="#f5f3ef"/>
+      <path d="M176 160h32l-26 46h-32zM240 160h32l-26 46h-32zM304 160h32l-26 46h-32z" fill="#b52c29"/>
+    </g>
+    <!-- cuerpo con cara sonriente -->
+    <rect x="136" y="214" width="240" height="168" rx="22" fill="#f5f3ef"/>
+    <circle cx="206" cy="270" r="13" fill="#b52c29"/>
+    <circle cx="306" cy="270" r="13" fill="#b52c29"/>
+    <path d="M196 310 Q256 358 316 310" fill="none" stroke="#b52c29" stroke-width="18" stroke-linecap="round"/>
+  </g>
+</svg>
