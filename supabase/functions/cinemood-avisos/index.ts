@@ -8,7 +8,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SB_URL = Deno.env.get("SUPABASE_URL")!;
 const SB_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PROXY = `${SB_URL}/functions/v1/tmdb-proxy`;
+// La clave de TMDB es la misma que usa tmdb-proxy (los secretos se comparten entre funciones): se busca por nombre
+const TMDB_SECRETO = (() => { const e = Deno.env.toObject(); const k = Object.keys(e).filter((k) => /TMDB/i.test(k) && e[k]).sort((a, b) => (e[b].startsWith("eyJ") ? 1 : 0) - (e[a].startsWith("eyJ") ? 1 : 0))[0]; return k ? e[k] : ""; })();
 const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-cron-secret", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 const PLATS: Record<string, string> = { "8": "Netflix", "119": "Prime Video", "337": "Disney+", "1899": "Max", "149": "Movistar+", "350": "Apple TV+", "76": "SkyShowtime", "63": "Filmin" };
 const W: Record<string, number> = { g: 1, d: 1, e: 0.7, l: 0.6, p: 0.5, t: 0.8, r: 0.5 };
@@ -18,8 +19,17 @@ webpush.setVapidDetails("https://ferrerasdorado.github.io/cinemood/", Deno.env.g
 
 const hoyMadrid = (d = new Date()) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Madrid" }).format(d);
 const fmt = (v: number) => v.toFixed(1).replace(".", ",");
+// path con el mismo formato que la app: "/tv/123&language=es-ES&page=2"
 async function tmdb(path: string): Promise<any> {
-  try { const r = await fetch(`${PROXY}?path=${path}`); return r.ok ? await r.json() : {}; } catch { return {}; }
+  try {
+    const [ruta, ...params] = path.split("&");
+    const url = new URL("https://api.themoviedb.org/3" + ruta);
+    params.forEach((kv) => { const i = kv.indexOf("="); if (i > 0) url.searchParams.set(kv.slice(0, i), decodeURIComponent(kv.slice(i + 1))); });
+    const h: Record<string, string> = { accept: "application/json" };
+    if (TMDB_SECRETO.startsWith("eyJ")) h.Authorization = `Bearer ${TMDB_SECRETO}`; else url.searchParams.set("api_key", TMDB_SECRETO);
+    const r = await fetch(url, { headers: h });
+    return r.ok ? await r.json() : {};
+  } catch { return {}; }
 }
 // Mismo cálculo que la app (con los datos de una lista de TMDB: sin director ni duración)
 function predecir(m: any, tipo: string, x: any): number {
@@ -112,6 +122,7 @@ Deno.serve(async (req) => {
     return json({ enviados: n });
   }
   if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return json({ error: "no autorizado" }, 401);
+  if (cuerpo.diagnostico) { const d = await tmdb("/movie/27205&language=es-ES"); return json({ clave_tmdb: !!TMDB_SECRETO, prueba_tmdb: d.title || null }); }
   const { data: todas } = await sb.from("push_suscripciones").select("*");
   const porUsuario: Record<string, any[]> = {};
   (todas || []).forEach((s: any) => (porUsuario[s.user_id] = porUsuario[s.user_id] || []).push(s));

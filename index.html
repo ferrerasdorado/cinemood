@@ -4624,7 +4624,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
     function mostrarSimilares(items,div){
       div.innerHTML=items.length
-        ?items.map((s,i)=>`<div class="similar-card" onclick="abrirDetalle(similaresActuales[${i}])" ${_lp({id:s.id,tipo:s._tipo,t:s.title,poster:s.poster_path,f:s.release_date})}><img loading="lazy" src="https://image.tmdb.org/t/p/w200${s.poster_path}" alt="${_escHtml(s.title)}"><div class="similar-titulo">${_escHtml(s.title)}</div><div class="similar-meta">${s.release_date?s.release_date.substring(0,4):''} · ★${s.vote_average?s.vote_average.toFixed(1):'-'}${(()=>{ const v = sesionActual && !(window.idsVistosSet||new Set()).has(`${s.id}-${s._tipo}`) ? _notaRapida(s) : null; return v==null ? '' : ` · <b class="prev-txt">🔮 ${_notaFmt(v)}</b>`; })()}</div></div>`).join('')
+        ?items.map((s,i)=>`<div class="similar-card" onclick="abrirDetalle(similaresActuales[${i}])" ${_lp({id:s.id,tipo:s._tipo,t:s.title,poster:s.poster_path,f:s.release_date})}><img loading="lazy" src="https://image.tmdb.org/t/p/w200${s.poster_path}" alt="${_escHtml(s.title)}"><div class="similar-titulo">${_escHtml(s.title)}</div><div class="similar-meta">${s.release_date?s.release_date.substring(0,4):''} · ★${s.vote_average?s.vote_average.toFixed(1):'-'}${(()=>{ const v = sesionActual && !(window.idsVistosSet||new Set()).has(`${s.id}-${s._tipo}`) ? _notaExacta(s) : null; return v==null ? '' : ` · <b class="prev-txt">🔮 ${_notaFmt(v)}</b>`; })()}</div></div>`).join('')
         :'<span style="color:var(--k-767973);font-size:13px">No encontramos títulos similares.</span>';
     }
 
@@ -9702,6 +9702,11 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     document.documentElement.classList.toggle('sin-logros', !LOGROS_VISIBLES);
     const LI_PREFIJO = 'cm:li2:';
     function _guardarInfoLogro(tipo, id, pak){
+      const info = _infoDesdePak(tipo, pak); if(!info) return null;
+      try{ localStorage.setItem(`${LI_PREFIJO}${tipo}:${id}`, JSON.stringify(info)); }catch(e){}
+      return info;
+    }
+    function _infoDesdePak(tipo, pak){
       if(!pak || !pak.detalle || !pak.detalle.id) return null;
       const d = pak.detalle, cr = pak.creditos || {};
       const fecha = d.release_date || d.first_air_date || '';
@@ -9711,7 +9716,6 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         g: (d.genres||[]).map(x=>x.id), vc: d.vote_count||0, va: d.vote_average||0,
         r: d.runtime || 0, ns: d.number_of_seasons || 0,
         d: dir ? {id: dir.id, n: dir.name} : null};
-      try{ localStorage.setItem(`${LI_PREFIJO}${tipo}:${id}`, JSON.stringify(info)); }catch(e){}
       return info;
     }
     function _leerInfoLogro(tipo, id){ try{ return JSON.parse(localStorage.getItem(`${LI_PREFIJO}${tipo}:${id}`)||'null'); }catch(e){ return null; } }
@@ -11347,7 +11351,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           if(!donde.length) return null;
           const dur = x._tipo==='movie' ? (d.runtime||0) : ((d.episode_run_time||[])[0] || d.last_episode_to_air?.runtime || 0);
           if(x._tipo==='movie' && o.min && dur > o.min) return null;
-          const info = _guardarInfoLogro(x._tipo, x.id, pak), pr = _notaPredecir(m.fit, x._tipo, info); if(!pr) return null;
+          const info = _infoDesdePak(x._tipo, pak); _piGuardar(x._tipo, x.id, info);
+          const pr = _notaPredecir(m.fit, x._tipo, info); if(!pr) return null;
           window._prevCache.set(`${x.id}-${x._tipo}`, {t:m.t, v:pr.nota});
           const fuertes = pr.partes.filter(q=>q.a>=0.15).sort((a,b)=>b.a-a.a).slice(0,2);
           const dirs = {}; if(info.d?.id) dirs[info.d.id] = info.d.n;
@@ -11531,18 +11536,66 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     const _notaFmt = v => v.toFixed(1).replace('.', ',');
     window._prevCache = window._prevCache || new Map(); window._prevItems = window._prevItems || new Map();
+    // Datos completos de títulos que no has visto (para que el póster diga lo mismo que la ficha). Caché limitada en el dispositivo
+    let _piMapa = null, _piT = null;
+    function _piLeer(){ if(!_piMapa){ try{ _piMapa = JSON.parse(localStorage.getItem('cm:prevInfo')||'{}') || {}; }catch(e){ _piMapa = {}; } } return _piMapa; }
+    function _piGuardar(tipo, id, info){
+      if(!info) return; const m = _piLeer(); m[`${tipo}:${id}`] = {...info, _t: Date.now()};
+      const ks = Object.keys(m); if(ks.length > 700) ks.sort((a,b)=>(m[a]._t||0)-(m[b]._t||0)).slice(0, ks.length-550).forEach(k=>delete m[k]);
+      clearTimeout(_piT); _piT = setTimeout(()=>{ try{ localStorage.setItem('cm:prevInfo', JSON.stringify(m)); }catch(e){} }, 800);
+    }
+    function _infoCompleta(tipo, id){ return _leerInfoLogro(tipo, id) || _piLeer()[`${tipo}:${id}`] || null; }
     function _prevInfo(p){
-      const local = _leerInfoLogro(p._tipo, p.id); if(local) return local;
+      const local = _infoCompleta(p._tipo, p.id); if(local) return local;
       const f = p.release_date || p.first_air_date || '';
       return {y: f ? Number(f.slice(0,4)) : null, l: p.original_language || null, p: (p.origin_country||[]).slice(0,2),
         g: p.genre_ids || (p.genres||[]).map(g=>g.id), va: p.vote_average || 0, vc: p.vote_count || 0, r: p.runtime || 0, d: null};
     }
-    function _notaRapida(p){
+    // La nota que se enseña: solo con los datos completos del título (los mismos que usa la ficha)
+    function _notaExacta(p){
       const m = window._modeloNota; if(!p || !p.id || !p._tipo || !m || !m.fit || m.uid!==sesionActual?.user.id) return null;
       const k = `${p.id}-${p._tipo}`, c = window._prevCache.get(k);
       if(c && c.t===m.t) return c.v;
-      const pr = _notaPredecir(m.fit, p._tipo, _prevInfo(p)); const v = pr ? pr.nota : null;
+      const info = _infoCompleta(p._tipo, p.id); if(!info) return null;
+      const pr = _notaPredecir(m.fit, p._tipo, info), v = pr ? pr.nota : null;
       window._prevCache.set(k, {t:m.t, v}); return v;
+    }
+    // Aproximada (con los datos de la lista) solo para ordenar y filtrar; si ya hay datos completos, la exacta
+    function _notaRapida(p){
+      const m = window._modeloNota; if(!p || !p.id || !p._tipo || !m || !m.fit || m.uid!==sesionActual?.user.id) return null;
+      const v = _notaExacta(p); if(v!=null) return v;
+      const pr = _notaPredecir(m.fit, p._tipo, _prevInfo(p)); return pr ? pr.nota : null;
+    }
+    // Pósters en pantalla sin datos completos: se piden (pocos a la vez) y se les pone la nota al llegar
+    let _prevCola = [], _prevActivas = 0, _prevObsT = null;
+    function _prevProgramarObservar(){ clearTimeout(_prevObsT); _prevObsT = setTimeout(_prevObservar, 120); }
+    // los que están en pantalla (o casi) y aún no tienen nota: se piden sus datos completos
+    function _prevObservar(){
+      const vh = window.innerHeight, vw = window.innerWidth;
+      document.querySelectorAll('.pantalla.activa .desc-card[data-k], .pantalla.activa .desc-rk[data-k]').forEach(c=>{
+        if(c.querySelector('.prev-badge') || !window._prevItems.has(c.dataset.k)) return;
+        const r = c.getBoundingClientRect();
+        if(r.width && r.bottom > -150 && r.top < vh+150 && r.right > -100 && r.left < vw+250) _prevEncolar(c.dataset.k);
+      });
+    }
+    document.addEventListener('scroll', _prevProgramarObservar, {capture:true, passive:true});
+    function _prevEncolar(k){ if(!_prevCola.includes(k)) _prevCola.push(k); _prevSiguiente(); }
+    async function _prevSiguiente(){
+      while(_prevActivas < 4 && _prevCola.length){
+        const k = _prevCola.shift(), p = window._prevItems.get(k); if(!p) continue;
+        if(_infoCompleta(p._tipo, p.id)){ _prevPonerBadge(k); continue; }
+        _prevActivas++;
+        _fetchDetalleYCreditos(p._tipo, p.id).then(pak=>{ const info = _infoDesdePak(p._tipo, pak); if(info){ _piGuardar(p._tipo, p.id, info); _prevPonerBadge(k); } })
+          .catch(()=>{}).finally(()=>{ _prevActivas--; _prevSiguiente(); });
+      }
+    }
+    function _prevPonerBadge(k){
+      const p = window._prevItems.get(k); if(!p) return;
+      document.querySelectorAll(`.desc-card[data-k="${k}"], .desc-rk[data-k="${k}"]`).forEach(c=>{
+        const pos = c.classList.contains('desc-rk') ? c : c.querySelector('.desc-poster');
+        if(!pos || pos.querySelector('.prev-badge')) return;
+        const b = _prevBadge(p); if(b) pos.insertAdjacentHTML('beforeend', b);
+      });
     }
     function _prevPrecargar(){
       if(!sesionActual || window._modeloNotaCargando || (window._modeloNota && window._modeloNota.uid===sesionActual.user.id)) return;
@@ -11553,18 +11606,16 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const k = `${p.id}-${p._tipo}`;
       if((window.idsVistosSet||new Set()).has(k)) return '';
       window._prevItems.set(k, p);
-      const v = _notaRapida(p);
-      if(v==null){ _prevPrecargar(); return ''; }
+      if(!window._modeloNota){ _prevPrecargar(); return ''; }
+      const v = _notaExacta(p);
+      if(v==null){ _prevProgramarObservar(); return ''; }
       const m = window._modeloNota, alta = v >= Math.max(8, m.fit.media+1.2);
       return `<span class="prev-badge${alta?' alta':''}" title="Le pondrías un ${_notaFmt(v)}">🔮 ${_notaFmt(v)}</span>`;
     }
     // cuando llega el modelo, se añade la nota a los pósters que ya estaban pintados
     function _prevRefrescar(){
-      document.querySelectorAll('.desc-card[data-k], .desc-rk[data-k]').forEach(c=>{
-        const p = window._prevItems.get(c.dataset.k), pos = c.classList.contains('desc-rk') ? c : c.querySelector('.desc-poster');
-        if(!p || !pos || pos.querySelector('.prev-badge')) return;
-        const b = _prevBadge(p); if(b) pos.insertAdjacentHTML('beforeend', b);
-      });
+      document.querySelectorAll('.desc-card[data-k], .desc-rk[data-k]').forEach(c=>_prevPonerBadge(c.dataset.k));
+      _prevProgramarObservar();
     }
     const _NOTA_GEN = {28:'acción',12:'aventura',16:'animación',35:'comedia',80:'crimen',99:'documental',18:'drama',10751:'familiar',14:'fantasía',36:'historia',27:'terror',10402:'música',9648:'misterio',10749:'romance',878:'ciencia ficción',10770:'película de TV',53:'thriller',10752:'bélico',37:'western',10759:'acción y aventura',10762:'infantil',10763:'noticias',10764:'reality',10765:'ciencia ficción y fantasía',10766:'telenovela',10767:'entrevistas',10768:'guerra y política'};
     async function _notaNombreRasgo(k, nombres){
@@ -11586,8 +11637,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const [m, fila] = await Promise.all([_modeloNotaObtener(), obtenerFilaBiblioteca(p.id, p._tipo).catch(()=>null)]);
         if(peliculaActual!==p || !m || !m.fit) return;
         if(fila && fila.visto && fila.puntuacion!=null) return; // ya tiene tu nota
-        let info = _leerInfoLogro(p._tipo, p.id);
-        if(!info){ const pak = await _fetchDetalleYCreditos(p._tipo, p.id); if(peliculaActual!==p) return; info = _guardarInfoLogro(p._tipo, p.id, pak); }
+        let info = _infoCompleta(p._tipo, p.id);
+        if(!info){ const pak = await _fetchDetalleYCreditos(p._tipo, p.id); if(peliculaActual!==p) return; info = _infoDesdePak(p._tipo, pak); _piGuardar(p._tipo, p.id, info); }
         if(!info) return;
         // fuera el propio título si ya estaba entre tus notas (p. ej. tras quitarle la nota)
         const pr = _notaPredecir(m.fit, p._tipo, info); if(!pr) return;
