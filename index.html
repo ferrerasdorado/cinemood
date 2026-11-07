@@ -644,6 +644,22 @@
     .esp-sec-cab h3 { font: 800 19px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 0; }
     .aviso-version { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 2147483000; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #1b1d1c; color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: escAparece .3s ease; }
     .aviso-version button { border: 0; border-radius: 999px; padding: 8px 14px; background: var(--acento); color: #fff; font: 800 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
+
+    /* ── Saga en la ficha ── */
+    #d-coleccion-box .detalle-box-label { text-transform: none; letter-spacing: 0; margin: 0 0 12px; }
+    .saga-ban { position: relative; border-radius: 14px; overflow: hidden; min-height: 150px; display: flex; align-items: flex-end; background: #1b1d1c center/cover no-repeat; color: #fff; cursor: pointer; }
+    .saga-ban::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.9)); }
+    .saga-ban-in { position: relative; padding: 14px 15px; width: 100%; box-sizing: border-box; }
+    .saga-ban-k { padding-right: 104px; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+    .saga-ban-t { font: 800 22px/1.1 'Cabinet Grotesk', -apple-system, sans-serif; margin: 4px 0 10px; }
+    .saga-ban-barra { height: 5px; border-radius: 3px; background: rgba(255,255,255,0.22); overflow: hidden; }
+    .saga-ban-barra i { display: block; height: 100%; background: var(--acento); border-radius: 3px; }
+    .saga-ban-m { font-size: 12.5px; color: rgba(255,255,255,0.85); margin-top: 7px; line-height: 1.4; }
+    .saga-ban-btn { position: absolute; right: 14px; top: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.92); color: #111; font-size: 12px; font-weight: 800; }
+    .saga-card { position: relative; }
+    .saga-num { position: absolute; left: 6px; top: 6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: rgba(15,15,15,0.82); color: #fff; font: 800 11px/22px 'Satoshi', -apple-system, sans-serif; text-align: center; }
+    .saga-card.aqui img { outline: 3px solid var(--acento); outline-offset: -3px; }
+    .saga-aqui { position: absolute; left: 6px; right: 6px; bottom: 11px; padding: 3px 0; border-radius: 6px; background: var(--acento); color: #fff; font: 800 10.5px 'Satoshi', -apple-system, sans-serif; text-align: center; }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
     .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
@@ -4278,11 +4294,23 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const vistas = partes.filter(p=>vistosSet.has(`${p.id}-movie`)).length;
         _pintarAntesVe(d, col, partes, vistosSet);
         window._sagaFicha = {p, col, partes}; _pintarSiguienteSaga();
-        document.getElementById('d-coleccion-label').innerHTML = `Pertenece a: ${_escHtml(col.name)} · ${vistas} de ${partes.length} vistas <button type="button" class="d-saga-link" onclick="abrirSaga(${Number(d.belongs_to_collection.id)})">Ver la saga ›</button>`;
+        const nombre = String(col.name||'').replace(/\s*[-–:]?\s*\(?(colecci[oó]n|collection|saga)\)?\s*$/i,'').replace(/^(colecci[oó]n|saga)\s*(de\s*)?/i,'') || col.name;
+        const falta = partes.find(x=>!vistosSet.has(`${x.id}-movie`) && x.id!==p.id), pos = partes.findIndex(x=>x.id===p.id)+1, pct = Math.round(vistas/partes.length*100);
+        window._sagaFalta = falta ? {...falta, _tipo:'movie', title:falta.title||falta.name} : null;
+        const fondo = col.backdrop_path || (partes.find(x=>x.backdrop_path)||{}).backdrop_path;
+        document.getElementById('d-coleccion-label').innerHTML = `<div class="saga-ban" style="${fondo ? `background-image:url(https://image.tmdb.org/t/p/w780${fondo})` : ''}" onclick="abrirSaga(${Number(d.belongs_to_collection.id)})">
+            <div class="saga-ban-in">
+              <div class="saga-ban-k">🎞️ Saga · esta es la ${pos}ª de ${partes.length}</div>
+              <div class="saga-ban-t">${_escHtml(nombre)}</div>
+              <div class="saga-ban-barra"><i style="width:${pct}%"></i></div>
+              <div class="saga-ban-m">${vistas===partes.length ? '¡Las has visto todas! 🏆' : `${vistas} de ${partes.length} vistas`}${falta ? ` · te falta <b>${_escHtml(falta.title||falta.name)}</b>` : ''}</div>
+              <span class="saga-ban-btn">Ver la saga ›</span>
+            </div></div>`;
         window.coleccionActual = partes.map(p=>({...p, _tipo:'movie', title:p.title||p.name}));
         document.getElementById('d-coleccion').innerHTML = window.coleccionActual.map((p,i)=>{
           const visto = vistosSet.has(`${p.id}-movie`);
-          return `<div class="similar-card" onclick="abrirDetalle(coleccionActual[${i}])"><div style="position:relative"><img loading="lazy" src="https://image.tmdb.org/t/p/w200${p.poster_path}" alt="${_escHtml(p.title)}">${visto?'<div style="position:absolute;top:6px;right:6px;background:rgba(61,102,81,0.95);color:#fff;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✓</div>':''}</div><div class="similar-titulo">${_escHtml(p.title)}</div><div class="similar-meta">${p.release_date?p.release_date.substring(0,4):''} · ★${p.vote_average?p.vote_average.toFixed(1):'-'}</div></div>`;
+          const aqui = p.id===peliculaActual?.id;
+          return `<div class="similar-card saga-card${aqui?' aqui':''}" onclick="abrirDetalle(coleccionActual[${i}])"><div style="position:relative"><img loading="lazy" src="https://image.tmdb.org/t/p/w200${p.poster_path}" alt="${_escHtml(p.title)}"><span class="saga-num">${i+1}</span>${aqui?'<span class="saga-aqui">Estás aquí</span>':''}${visto?'<div style="position:absolute;top:6px;right:6px;background:rgba(61,102,81,0.95);color:#fff;font-size:11px;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.4)">✓</div>':''}</div><div class="similar-titulo">${_escHtml(p.title)}</div><div class="similar-meta">${p.release_date?p.release_date.substring(0,4):''} · ★${p.vote_average?p.vote_average.toFixed(1):'-'}</div></div>`;
         }).join('');
         box.style.display='block';
       }catch(e){ /* se queda oculta: no rompe el resto de la ficha */ }
@@ -8149,14 +8177,13 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       window.especialIdsResueltos[_claveIdResuelto(it)] = { id, tipo };
       try{ localStorage.setItem('especialIdsResueltos_v2', JSON.stringify(window.especialIdsResueltos)); }catch(e){}
     }
+    const ESP_OCULTOS = new Set(['bond','terminator','mision-imposible','matrix','joyas-ocultas','clasicos-siempre','series-imprescindibles']);
+    const _espVisible = e => ['saga','genero'].includes(e.categoria) && !ESP_OCULTOS.has(e.id);
     function renderEspecialesTiles(){
       const vistosSet = window.vistosNormSet || new Set();
       const SECCIONES = [
-        {cat:'actual',titulo:'Al día'},
-        {cat:'saga',titulo:'Sagas y franquicias'},
-        {cat:'estudio',titulo:'Estudios'},
-        {cat:'director',titulo:'Directores'},
-        {cat:'genero',titulo:'Géneros y temáticas'}
+        {cat:'saga',titulo:'Maratones · sagas en su orden, con películas y series'},
+        {cat:'genero',titulo:'Listas · temáticas escogidas'}
       ];
       const ordenAlfabetico = arr => [...arr].sort((a,b)=>a.titulo.localeCompare(b.titulo,'es',{sensitivity:'base'}));
       const idsSet = window.idsVistosSet || new Set();
@@ -8196,7 +8223,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
             <div class="especial-tile col-nueva-tile" onclick="abrirColOverlay('crear')"><span class="especial-tile-emoji">＋</span><div class="especial-tile-titulo">Nueva colección</div><div class="especial-tile-sub">Tu propia lista, en el orden que quieras</div></div>
           </div>`;
       document.getElementById('especiales-secciones').innerHTML = filaCols + filaEnCurso.replace('margin-top:4px','margin-top:20px') + SECCIONES.map(sec=>{
-        const items = ordenAlfabetico(ESPECIALES.filter(e=>e.categoria===sec.cat));
+        const items = ordenAlfabetico(ESPECIALES.filter(e=>e.categoria===sec.cat && _espVisible(e)));
         if(!items.length) return '';
         return `
           <div class="section-label" style="margin-top:20px">${sec.titulo}</div>
@@ -11322,7 +11349,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       try{ renderEspecialesTiles(); }catch(e){} // calcula «En curso» con lo que has visto
       const cont = window._espContarVistos || (()=>0);
       const enCurso = calcularEnCurso(cont), maraton = enCurso[0];
-      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(e=>e.categoria==='saga' || e.categoria==='estudio')])].filter(e=>e!==maraton).slice(0, 12);
+      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(e=>e.categoria==='saga' && _espVisible(e))])].filter(e=>e!==maraton).slice(0, 12);
       const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
       box.innerHTML = `<div class="esp-sec-cab"><h3>🎬 Especiales</h3><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todos ›</button></div>
         ${maraton ? '<div id="esp-maraton-desc"></div>' : ''}
