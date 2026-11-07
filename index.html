@@ -1814,7 +1814,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <button type="button" class="inicio-atajo" onclick="irA('p-especiales-hub')"><span>🎬</span><b>Especiales</b><small>Listas temáticas</small></button>
           <button type="button" class="inicio-atajo" onclick="sorprendeme()"><span>🎲</span><b>Sorpréndeme</b><small>Una al azar para ti</small></button>
           <button type="button" class="inicio-atajo" onclick="abrirEscaner()"><span>📸</span><b>¿Cuál de estas?</b><small>Desde una captura o foto</small></button>
-          <button type="button" class="inicio-atajo" onclick="abrirMundial()"><span>🏆</span><b>Mundial de tu lista</b><small>Eliminatorias de tus pendientes</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirMundial()"><span>🏆</span><b>El Mundial</b><small>Eliminatorias hasta quedarte con una</small></button>
         </div>
       </div>
       <div id="hoy-cine" style="display:none"></div>
@@ -1868,7 +1868,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     <div class="wrap">
       <div class="pantalla-header">
         <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-biblioteca', true)">‹ Atrás</span>
-        <h2>El Mundial de tu lista</h2>
+        <h2>El Mundial</h2>
         <span></span>
       </div>
       <div id="mun-cont"></div>
@@ -11444,26 +11444,48 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const pend = (data||[]).filter(x=>!x.visto && x.poster_path);
         window._munPend = pend;
         let ultima = null; try{ ultima = JSON.parse(localStorage.getItem('cm:mundial')||'null'); }catch(e){}
-        if(pend.length<4){ cont.innerHTML = `<div class="noche-vacia"><b>🏆 Hacen falta al menos 4 pendientes</b><span>Tienes ${pend.length} en «Para ver». Añade alguno más y vuelve.</span></div>`; return; }
-        const tam = [32,16,8,4].filter(n=>n<=pend.length);
-        const pel = pend.filter(x=>x.tipo==='movie').length, ser = pend.length-pel;
-        cont.innerHTML = `<div class="mun-campeona"><div class="copa">🏆</div><h3>El Mundial de tu lista</h3><p class="esc-intro" style="text-align:center">Tienes ${pend.length} pendientes. Se enfrentan de dos en dos y tú eliges cuál te apetece más, hasta que quede una campeona.</p></div>
+        const conLista = pend.length>=4, sel = "this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('activo', b===this))";
+        const fuentes = [['recom','✨ Recomendadas para ti'], ...(conLista ? [['lista',`🔖 Tu lista (${pend.length})`], ['mezcla','🔀 Mezcla']] : [])];
+        cont.innerHTML = `<div class="mun-campeona"><div class="copa">🏆</div><h3>El Mundial</h3><p class="esc-intro" style="text-align:center">Se enfrentan de dos en dos y tú eliges cuál te apetece más, hasta que quede una campeona.</p></div>
+          <div class="section-label">¿De dónde salen?</div>
+          <div class="mun-elegir" style="justify-content:flex-start">${fuentes.map(([k,t],i)=>`<button type="button" class="noche-chip${i===(conLista?2:0)?' activo':''}" data-fuente="${k}" onclick="${sel}">${t}</button>`).join('')}</div>
+          ${conLista ? '' : `<p class="esc-pie" style="margin:-6px 0 8px">Tu lista «Para ver» tiene ${pend.length}; con 4 o más también podrás usarla.</p>`}
           <div class="section-label">¿Qué entra?</div>
-          <div class="mun-elegir" style="justify-content:flex-start">${[['todo','Todo'],['movie',`Películas (${pel})`],['tv',`Series (${ser})`]].map(([k,t],i)=>`<button type="button" class="noche-chip${i===0?' activo':''}" data-tipo="${k}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('activo', b===this))">${t}</button>`).join('')}</div>
+          <div class="mun-elegir" style="justify-content:flex-start">${[['todo','Todo'],['movie','Películas'],['tv','Series']].map(([k,t],i)=>`<button type="button" class="noche-chip${i===0?' activo':''}" data-tipo="${k}" onclick="${sel}">${t}</button>`).join('')}</div>
           <div class="section-label">¿Cuántas compiten?</div>
-          <div class="mun-elegir" style="justify-content:flex-start">${tam.map((n,i)=>`<button type="button" class="noche-chip${i===Math.min(1,tam.length-1)?' activo':''}" data-n="${n}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('activo', b===this))">${n}</button>`).join('')}</div>
+          <div class="mun-elegir" style="justify-content:flex-start">${[4,8,16,32].map(n=>`<button type="button" class="noche-chip${n===16?' activo':''}" data-n="${n}" onclick="${sel}">${n}</button>`).join('')}</div>
           <button type="button" class="cta-btn" style="margin-top:16px" onclick="empezarMundial()">¡Que empiece el Mundial!</button>
           ${ultima ? `<p class="esc-pie" style="text-align:center">Última campeona: <b>${_escHtml(ultima.t)}</b> (${new Date(ultima.f).toLocaleDateString('es-ES',{day:'numeric',month:'long'})})</p>` : ''}`;
       }catch(e){ cont.innerHTML = '<p class="rk-ayuda">No se pudo cargar tu lista. Inténtalo de nuevo.</p>'; }
     }
+    // Recomendadas: lo que TMDB recomienda a partir de lo que mejor has puntuado + lo mejor valorado, ordenado por tu nota prevista
+    async function _munRecomendadas(tipo, cuantas){
+      const m = await _modeloNotaObtener().catch(()=>null); if(!m || !m.fit) return [];
+      const tipos = tipo==='todo' ? ['movie','tv'] : [tipo], vistos = window.idsVistosSet || new Set();
+      const favs = m.muestras.filter(x=>tipos.includes(x.tipo) && Number(x.puntuacion)>=8).sort((a,b)=>Number(b.puntuacion)-Number(a.puntuacion)).slice(0, 10);
+      const rutas = [...favs.map(x=>[x.tipo, `/${x.tipo}/${x.tmdb_id}/recommendations&language=es-ES&page=1`]),
+        ...tipos.flatMap(t=>[1,2].map(pg=>[t, `/discover/${t}&language=es-ES&sort_by=vote_average.desc&vote_count.gte=${t==='movie'?800:300}&without_genres=${t==='movie'?'99,10770':'10763,10764,10767,99'}&page=${pg}`]))];
+      const listas = await Promise.all(rutas.map(([t,r])=>_tmdbJson(r).then(d=>(d.results||[]).map(x=>({...x, _tipo:t}))).catch(()=>[])));
+      const ya = new Set(), cands = [];
+      listas.flat().forEach(x=>{ const k = `${x.id}-${x._tipo}`; if(!x.poster_path || ya.has(k) || vistos.has(k) || esOculta(x.id, x._tipo)) return; ya.add(k); cands.push({id:x.id, _tipo:x._tipo, title:x.title||x.name, poster_path:x.poster_path, release_date:x.release_date||x.first_air_date||'', genre_ids:x.genre_ids, original_language:x.original_language, origin_country:x.origin_country, vote_average:x.vote_average, vote_count:x.vote_count}); });
+      const top = cands.map(x=>({x, v:_notaRapida(x)??0})).sort((a,b)=>b.v-a.v).slice(0, Math.max(cuantas+8, Math.round(cuantas*1.5))).map(o=>o.x);
+      await _fetchEnLotes(top, async x=>{ if(!_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} } }, 5);
+      return top.map(x=>({...x, _nota:_notaExacta(x), _recom:true})).sort((a,b)=>(b._nota??0)-(a._nota??0)).slice(0, cuantas);
+    }
     async function empezarMundial(){
       const cont = document.getElementById('mun-cont');
-      const tipo = cont.querySelector('[data-tipo].activo')?.dataset.tipo || 'todo';
-      let n = Number(cont.querySelector('[data-n].activo')?.dataset.n) || 8;
-      const pool = (window._munPend||[]).filter(x=>tipo==='todo' || x.tipo===tipo).map(x=>({id:x.tmdb_id, _tipo:x.tipo, title:x.titulo, poster_path:x.poster_path, release_date:x.anio ? x.anio+'-01-01' : ''}));
-      if(pool.length<4){ alert('Con ese filtro hay menos de 4 pendientes.'); return; }
+      const tipo = cont.querySelector('[data-tipo].activo')?.dataset.tipo || 'todo', fuente = cont.querySelector('[data-fuente].activo')?.dataset.fuente || 'recom';
+      let n = Number(cont.querySelector('[data-n].activo')?.dataset.n) || 16;
+      const deLista = (window._munPend||[]).filter(x=>tipo==='todo' || x.tipo===tipo).map(x=>({id:x.tmdb_id, _tipo:x.tipo, title:x.titulo, poster_path:x.poster_path, release_date:x.anio ? x.anio+'-01-01' : ''}));
+      cont.innerHTML = `<p class="rk-ayuda" style="text-align:center">${fuente==='lista' ? 'Haciendo el sorteo…' : 'Buscando lo que más te va a gustar y haciendo el sorteo…'}</p>`;
+      let pool = fuente==='lista' ? deLista : [];
+      if(fuente!=='lista'){
+        const recom = await _munRecomendadas(tipo, fuente==='mezcla' ? Math.ceil(n/2)+4 : n);
+        if(fuente==='mezcla'){ const mitad = n/2, lista = deLista.sort(()=>Math.random()-0.5).slice(0, mitad), ids = new Set(lista.map(x=>`${x.id}-${x._tipo}`)); pool = [...lista, ...recom.filter(x=>!ids.has(`${x.id}-${x._tipo}`))]; }
+        else pool = recom;
+      }
+      if(pool.length<4){ cont.innerHTML = `<div class="noche-vacia"><b>No hay bastantes candidatas</b><span>${fuente==='lista' ? 'Con ese filtro tu lista tiene menos de 4.' : 'Para las recomendadas hace falta que hayas puntuado al menos 8 títulos.'}</span></div><button type="button" class="ml-secundario" style="margin-top:12px;width:100%" onclick="window._mun=null;abrirMundial()">Volver</button>`; return; }
       while(n>pool.length) n/=2;
-      cont.innerHTML = '<p class="rk-ayuda">Haciendo el sorteo…</p>';
       await _modeloNotaObtener().catch(()=>null);
       // cabezas de serie: las que más te van a gustar; el resto entra al azar
       await _fetchEnLotes(pool, async x=>{ if(!_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} } }, 5);
@@ -11481,7 +11503,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const M = window._mun, cont = document.getElementById('mun-cont'); if(!M) return;
       if(M.fin) return _munFinal();
       const ronda = M.rondas[M.rondas.length-1], i = M.gan.length, a = ronda[2*i], b = ronda[2*i+1];
-      const op = (x, lado) => `<button type="button" class="mun-op" onclick="munElegir(${lado})"><img src="https://image.tmdb.org/t/p/w342${x.poster_path}" alt=""><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x._tipo==='tv'?'Serie':'Película'].filter(Boolean).join(' · ')}</small>${x._nota!=null ? `<b class="prev-txt">🔮 ${_notaFmt(x._nota)}</b>` : ''}</button>`;
+      const op = (x, lado) => `<button type="button" class="mun-op" onclick="munElegir(${lado})"><img src="https://image.tmdb.org/t/p/w342${x.poster_path}" alt=""><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x._tipo==='tv'?'Serie':'Película'].filter(Boolean).join(' · ')}</small>${x._nota!=null ? `<b class="prev-txt">🔮 ${_notaFmt(x._nota)}</b>` : ''}${x._recom ? '' : '<small style="margin-top:3px">🔖 De tu lista</small>'}</button>`;
       cont.innerHTML = `<div class="mun-ronda"><b>${_munNombreRonda(ronda.length)}</b><span>${ronda.length>2 ? `Partido ${i+1} de ${ronda.length/2} · ` : ''}¿Cuál te apetece más ver?</span></div>
         <div class="mun-duelo">${op(a,0)}<span class="mun-vs">VS</span>${op(b,1)}</div>
         <div class="mun-acc"><button type="button" onclick="munDeshacer()" ${M.hist.length?'':'disabled style="opacity:.35"'}>‹ Deshacer</button><button type="button" onclick="munFicha()">Ver las fichas ›</button></div>`;
@@ -11508,6 +11530,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       cont.querySelector('.mun-acc').insertAdjacentHTML('afterend', `<div class="mun-elegir"><button type="button" class="noche-chip" onclick="abrirDetalle(_munDuelo[0])">${_escHtml(window._munDuelo[0].title)}</button><button type="button" class="noche-chip" onclick="abrirDetalle(_munDuelo[1])">${_escHtml(window._munDuelo[1].title)}</button></div>`);
       cont.querySelector('.mun-acc button:last-child').remove();
     }
+    async function munAnadir(btn){
+      const c = window._mun?.campeona; if(!c) return; btn.disabled = true;
+      if(await _lpGuardar({id:c.id, tipo:c._tipo, t:c.title, poster:c.poster_path, f:c.release_date}, {pendiente:true}, `＋ «${c.title}» añadida a «Para ver»`)) btn.textContent = '✓ En tu lista'; else btn.disabled = false;
+    }
     function _munFinal(){
       const M = window._mun, c = M.campeona, cont = document.getElementById('mun-cont');
       const fin = M.rondas[M.rondas.length-1], semis = M.rondas.length>1 ? M.rondas[M.rondas.length-2].filter(x=>!fin.includes(x)) : [];
@@ -11516,7 +11542,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       window._munPodio = [c, finalista, ...semis].filter(Boolean);
       cont.innerHTML = `<div class="mun-campeona"><div class="copa">🏆</div><div class="noche-k" style="color:var(--k-767973)">Tu campeona</div>
         <img src="https://image.tmdb.org/t/p/w342${c.poster_path}" alt=""><h3>${_escHtml(c.title)}</h3>${c._nota!=null ? `<span class="noche-nota" style="color:#fff">🔮 Le pondrías un <b>${_notaFmt(c._nota)}</b></span>` : ''}
-        <div class="mun-elegir"><button type="button" class="cta-btn" style="width:auto;padding:12px 22px" onclick="abrirDetalle(_munPodio[0])">▶ ¡A por ella!</button><button type="button" class="ml-secundario" onclick="window._mun=null;abrirMundial()">Otro Mundial</button></div></div>
+        <div class="mun-elegir"><button type="button" class="cta-btn" style="width:auto;padding:12px 22px" onclick="abrirDetalle(_munPodio[0])">▶ ¡A por ella!</button>${c._recom ? `<button type="button" class="ml-secundario" onclick="munAnadir(this)">＋ A «Para ver»</button>` : ''}<button type="button" class="ml-secundario" onclick="window._mun=null;abrirMundial()">Otro Mundial</button></div></div>
         <div class="mun-podio">${window._munPodio.map((x,i)=>`<div onclick="abrirDetalle(_munPodio[${i}])"><span>${i===0?'🥇':i===1?'🥈':'🥉'}</span>${_escHtml(x.title)}${i>1?' <small style="color:var(--k-767973)">· semifinal</small>':''}</div>`).join('')}</div>`;
     }
     // ══ AVISOS EN EL MÓVIL (Web Push): episodios de hoy, novedades que te van a encantar y el estreno del finde ══
