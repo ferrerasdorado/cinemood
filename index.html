@@ -137,7 +137,19 @@
     .detalle-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
     .detalle-titulo { font-size: 18px; font-weight: 700; line-height: 1.2; margin-bottom: 6px; }
     .detalle-meta { font-size: 12px; color: var(--k-61635e); margin-bottom: 8px; }
-    .detalle-score-wrap { display: flex; align-items: baseline; gap: 8px; }
+    .detalle-score-wrap { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .nota-prevista { align-self: center; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.1); color: #fff; border-radius: 999px; padding: 4px 11px; font: 700 12px 'Satoshi', -apple-system, sans-serif; cursor: pointer; white-space: nowrap; }
+    .nota-prevista b { font: 800 14px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--acento-claro, #f2a19b); margin-left: 2px; }
+    .nota-prevista[aria-expanded="true"] { background: rgba(255,255,255,0.18); }
+    .nota-prevista-por { margin: 0 0 14px; padding: 13px 15px; border-radius: 14px; background: var(--k-fffefb); border: 1px solid var(--line); font-size: 13px; line-height: 1.5; }
+    .nota-prevista-por .np-cab { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin-bottom: 8px; }
+    .nota-prevista-por .np-cab b { color: var(--acento); }
+    .nota-prevista-por .np-k { font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--k-767973); margin: 8px 0 2px; }
+    .nota-prevista-por .np-mas { color: var(--k-3d6651); font-weight: 700; }
+    .nota-prevista-por .np-menos { color: var(--k-9c2723); font-weight: 700; }
+    .nota-prevista-por .np-pie { margin-top: 10px; color: var(--k-767973); font-size: 12px; }
+    .ml-prevista { display: inline-block; margin-top: 3px; font-size: 12px; font-weight: 700; color: var(--acento); }
+    .desc-marca.prevista { background: rgba(15,15,15,0.82); color: #fff; }
     .detalle-score { display: inline-flex; align-items: center; gap: 5px; background: var(--acento-detalle-bg, var(--k-f6e6df)); border: 1px solid var(--acento-detalle, var(--acento)); border-radius: 4px; padding: 4px 10px; font-size: 13px; font-weight: 700; color: var(--acento-detalle-suave, var(--k-9c2723)); }
     .detalle-votos { font-size: 11px; color: var(--k-767973); }
     .detalle-box { background: var(--k-fffefb); border: 1px solid var(--k-dedfd8); border-radius: 6px; padding: 14px; margin-bottom: 12px; }
@@ -1958,10 +1970,13 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="detalle-score-wrap">
             <div class="detalle-score">★ <span id="d-score"></span></div>
             <span class="detalle-votos" id="d-votos"></span>
+            <button type="button" class="nota-prevista" id="d-prevista" style="display:none" onclick="alternarPorQuePrevista()" aria-expanded="false"></button>
           </div>
+
           <div class="notas-ext" id="d-notas-ext" style="display:none"></div>
         </div>
       </div>
+      <div class="nota-prevista-por" id="d-prevista-por" style="display:none"></div>
       <div class="d-acciones-row" id="d-acciones">
         <div class="d-accion-btn" id="btn-pendiente" onclick="togglePendiente()"><span>➕</span><span>Pendiente</span></div>
         <div class="d-accion-btn" id="btn-visto" onclick="toggleVisto()"><span>✅</span><span>Vista</span></div>
@@ -2248,6 +2263,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <option value="antiguo">Más antiguas primero</option>
           <option value="titulo">Título A–Z</option>
           <option value="nota">Mi valoración</option>
+          <option value="prevista">Lo que más te gustará</option>
           <option value="publico">Nota del público</option>
           <option value="estreno">Estreno: más recientes</option>
           <option value="estreno-ant">Estreno: más antiguas</option>
@@ -3892,6 +3908,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       window.episodiosVistosGuardado = {};
       irA('p-detalle', false, desdeHistorial);
       cargarEstadoBiblioteca();
+      _pintarNotaPrevista(p);
       await Promise.all([
         cargarDetallesCompletos(p.id,p._tipo),
         cargarCreditos(p.id,p._tipo),
@@ -9142,7 +9159,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       // si aún no está en tu ranking, se coloca con el mismo criterio que «Colocar automáticamente»
       const p = peliculaActual, rk = sesionActual ? _rkCopia() : null;
       if(p && sesionActual && !_nivelDeTitulo(_claveRk(p))) _colocarEnNivel(_claveRk(p), n>=10 ? 'A' : n>=8 ? 'B' : n>=7 ? 'C' : 'D');
-      await upsertBiblioteca({ visto: true, puntuacion: n }, {texto:`⭐ Guardada con un ${n}`, rk});
+      const pv = window._previstaFicha && p && window._previstaFicha.k===`${p._tipo}:${p.id}` ? window._previstaFicha.nota : null;
+      const dif = pv!=null ? Math.abs(pv-n) : null;
+      const extra = pv==null ? '' : ` · predije ${_notaFmt(pv)}${dif<=0.5 ? ' 🎯' : ''}`;
+      await upsertBiblioteca({ visto: true, puntuacion: n }, {texto: pv==null ? `⭐ Guardada con un ${n}` : `⭐ Un ${n}${extra}`, rk});
+      window._modeloNota = null; window._previstaFicha = null;
+      const chip = document.getElementById('d-prevista'); if(chip){ chip.style.display = 'none'; document.getElementById('d-prevista-por').style.display = 'none'; }
     }
 
     let bibliotecaTabActual = 'pendiente';
@@ -10971,6 +10993,142 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){ return null; }
     }
 
+    // ══ «LE PONDRÍAS UN…»: predicción de tu nota a partir de las que ya has dado ══
+    // Punto de partida: tu media, corregida por la nota del público (cuánto te dejas llevar por ella).
+    // Encima, lo que te desvías de eso según géneros, director o creador, época, idioma, país, tipo y duración,
+    // con contracción hacia cero (con pocos títulos, un rasgo apenas cuenta). Se calcula en el dispositivo.
+    const _NOTA_K = {g:4, d:1.5, e:4, l:3, p:4, t:3, r:5}, _NOTA_W = {g:1, d:1, e:0.7, l:0.6, p:0.5, t:0.8, r:0.5};
+    function _notaRasgos(tipo, info){
+      const f = {g:[], d:[], e:[], l:[], p:[], t:['t'+tipo], r:[]};
+      if(!info) return f;
+      (info.g||[]).slice(0,3).forEach(g=>f.g.push('g'+g));
+      if(info.d && info.d.id) f.d.push('d'+info.d.id);
+      if(info.y) f.e.push('e'+Math.floor(info.y/10)*10);
+      if(info.l) f.l.push('l'+info.l);
+      (info.p||[]).slice(0,2).forEach(c=>f.p.push('p'+c));
+      if(tipo==='movie' && info.r) f.r.push(info.r<95 ? 'rcorta' : info.r>140 ? 'rlarga' : 'rmedia');
+      return f;
+    }
+    const _notaConPublico = info => !!(info && info.va>0 && info.vc>=20);
+    function _notaEntrenar(muestras){
+      const n = muestras.length; if(n<8) return null;
+      const R = muestras.map(x=>Number(x.puntuacion)), media = R.reduce((a,b)=>a+b,0)/n;
+      const cv = muestras.filter(x=>_notaConPublico(x.info));
+      let mva = 7, s = 0.8;
+      if(cv.length>=8){
+        mva = cv.reduce((a,x)=>a+x.info.va,0)/cv.length;
+        const mr = cv.reduce((a,x)=>a+Number(x.puntuacion),0)/cv.length;
+        let cov = 0, vr = 0; cv.forEach(x=>{ cov += (x.info.va-mva)*(Number(x.puntuacion)-mr); vr += (x.info.va-mva)**2; });
+        const bruta = vr>0 ? Math.max(0.2, Math.min(1.5, cov/vr)) : 0.8;
+        s = (bruta*cv.length + 0.8*10)/(cv.length+10);
+      }
+      const base = info => media + (_notaConPublico(info) ? s*(info.va-mva) : 0);
+      const rasgos = muestras.map(x=>_notaRasgos(x.tipo, x.info)), bases = muestras.map(x=>base(x.info));
+      const ef = {}, grupos = Object.keys(_NOTA_K);
+      const aporte = (f, g) => f[g].length ? _NOTA_W[g]*f[g].reduce((a,k)=>a+(ef[k]||0),0)/f[g].length : 0;
+      for(let vuelta=0; vuelta<3; vuelta++){
+        grupos.forEach(g=>{
+          const suma = {}, cuenta = {};
+          muestras.forEach((x,i)=>{
+            const f = rasgos[i]; if(!f[g].length) return;
+            const resto = R[i] - bases[i] - grupos.filter(h=>h!==g).reduce((a,h)=>a+aporte(f,h),0);
+            f[g].forEach(k=>{ suma[k] = (suma[k]||0) + resto; cuenta[k] = (cuenta[k]||0) + 1; });
+          });
+          Object.keys(suma).forEach(k=>{ ef[k] = suma[k]/(cuenta[k]+_NOTA_K[g]) / _NOTA_W[g]; });
+        });
+      }
+      const cuenta = {}; rasgos.forEach(f=>grupos.forEach(g=>f[g].forEach(k=>{ cuenta[k] = (cuenta[k]||0)+1; })));
+      return {media, mva, s, ef, cuenta, n, base, aporte};
+    }
+    function _notaPredecir(fit, tipo, info){
+      if(!fit) return null;
+      const f = _notaRasgos(tipo, info), partes = [];
+      let v = fit.base(info);
+      Object.keys(_NOTA_K).forEach(g=>{ if(!f[g].length) return; f[g].forEach(k=>{ const a = _NOTA_W[g]*(fit.ef[k]||0)/f[g].length; v += a; if(fit.cuenta[k]) partes.push({k, a, n:fit.cuenta[k]}); }); });
+      return {nota: Math.max(1, Math.min(10, v)), partes, publico: _notaConPublico(info) ? fit.s*(info.va-fit.mva) : 0};
+    }
+    // Puntería: se predice cada nota que ya diste como si no la conocieras (dejando ese título fuera)
+    function _notaPunteria(m){
+      if(m.punteria!==undefined) return m.punteria;
+      const xs = m.muestras; if(xs.length<12){ m.punteria = null; return null; }
+      let err = 0, errPub = 0, nPub = 0, cerca = 0;
+      xs.forEach((x,i)=>{
+        const fit = _notaEntrenar(xs.filter((_,j)=>j!==i)), pr = _notaPredecir(fit, x.tipo, x.info);
+        const e = Math.abs(pr.nota - Number(x.puntuacion)); err += e; if(e<=1) cerca++;
+        if(_notaConPublico(x.info)){ errPub += Math.abs(x.info.va - Number(x.puntuacion)); nPub++; }
+      });
+      m.punteria = {err: err/xs.length, cerca: cerca/xs.length, errPub: nPub ? errPub/nPub : null};
+      return m.punteria;
+    }
+    async function _modeloNotaObtener(){
+      if(!sesionActual) return null;
+      const uid = sesionActual.user.id, m = window._modeloNota;
+      if(m && m.uid===uid && Date.now()-m.t < 15*60e3) return m;
+      if(window._modeloNotaCargando) return window._modeloNotaCargando;
+      window._modeloNotaCargando = (async()=>{
+        const vistos = await _vistosConInfo(false);
+        const muestras = vistos.filter(v=>v.puntuacion!=null && v.info);
+        const nuevo = {uid, t:Date.now(), muestras, fit:_notaEntrenar(muestras)};
+        if(sesionActual?.user.id===uid) window._modeloNota = nuevo;
+        // los títulos puntuados sin datos guardados en este dispositivo se completan una vez, en segundo plano
+        if(vistos.some(v=>v.puntuacion!=null && !v.info) && !window._modeloNotaCompletando){
+          window._modeloNotaCompletando = true;
+          _vistosConInfo(true).then(()=>{ window._modeloNota = null; }).catch(()=>{});
+        }
+        return nuevo;
+      })().finally(()=>{ window._modeloNotaCargando = null; });
+      return window._modeloNotaCargando;
+    }
+    const _notaFmt = v => v.toFixed(1).replace('.', ',');
+    const _NOTA_GEN = {28:'acción',12:'aventura',16:'animación',35:'comedia',80:'crimen',99:'documental',18:'drama',10751:'familiar',14:'fantasía',36:'historia',27:'terror',10402:'música',9648:'misterio',10749:'romance',878:'ciencia ficción',10770:'película de TV',53:'thriller',10752:'bélico',37:'western',10759:'acción y aventura',10762:'infantil',10763:'noticias',10764:'reality',10765:'ciencia ficción y fantasía',10766:'telenovela',10767:'entrevistas',10768:'guerra y política'};
+    async function _notaNombreRasgo(k, nombres){
+      const t = k[0], v = k.slice(1);
+      if(t==='g'){ let n = null; try{ n = (await _mapaGenerosGlobal())[v]; }catch(e){} n = n || _NOTA_GEN[v]; return n ? `el género ${n.toLowerCase()}` : 'este género'; }
+      if(t==='d') return (nombres && nombres[v]) || 'su director';
+      if(t==='e') return `el cine de los ${Number(v)<2000 ? String(v).slice(2) : v}`;
+      if(t==='l') return `lo rodado en ${_idioma(v)}`;
+      if(t==='p'){ try{ return `lo de ${new Intl.DisplayNames(['es'], {type:'region'}).of(v)}`; }catch(e){ return v; } }
+      if(t==='t') return v==='tv' ? 'las series' : 'las películas';
+      if(t==='r') return v==='corta' ? 'las pelis cortas' : v==='larga' ? 'las pelis largas' : 'las pelis de duración normal';
+      return k;
+    }
+    async function _pintarNotaPrevista(p){
+      const chip = document.getElementById('d-prevista'), por = document.getElementById('d-prevista-por');
+      chip.style.display = 'none'; por.style.display = 'none'; chip.setAttribute('aria-expanded','false'); window._previstaFicha = null;
+      if(!sesionActual || !p) return;
+      try{
+        const [m, fila] = await Promise.all([_modeloNotaObtener(), obtenerFilaBiblioteca(p.id, p._tipo).catch(()=>null)]);
+        if(peliculaActual!==p || !m || !m.fit) return;
+        if(fila && fila.visto && fila.puntuacion!=null) return; // ya tiene tu nota
+        let info = _leerInfoLogro(p._tipo, p.id);
+        if(!info){ const pak = await _fetchDetalleYCreditos(p._tipo, p.id); if(peliculaActual!==p) return; info = _guardarInfoLogro(p._tipo, p.id, pak); }
+        if(!info) return;
+        // fuera el propio título si ya estaba entre tus notas (p. ej. tras quitarle la nota)
+        const pr = _notaPredecir(m.fit, p._tipo, info); if(!pr) return;
+        window._previstaFicha = {k:`${p._tipo}:${p.id}`, nota:pr.nota};
+        chip.innerHTML = `🔮 Le pondrías un <b>${_notaFmt(pr.nota)}</b>`;
+        chip.style.display = '';
+        const fuertes = pr.partes.filter(x=>Math.abs(x.a)>=0.12).sort((a,b)=>Math.abs(b.a)-Math.abs(a.a)).slice(0,5);
+        const dirs = {}; m.muestras.forEach(x=>{ if(x.info?.d?.id) dirs[x.info.d.id] = x.info.d.n; }); if(info.d?.id) dirs[info.d.id] = info.d.n;
+        const nombres = await Promise.all(fuertes.map(x=>_notaNombreRasgo(x.k, dirs)));
+        if(peliculaActual!==p) return;
+        const linea = (x,i) => `${_escHtml(nombres[i])} <span class="${x.a>0?'np-mas':'np-menos'}">${x.a>0?'+':'−'}${_notaFmt(Math.abs(x.a))}</span>`;
+        const mas = fuertes.map((x,i)=>x.a>0 ? linea(x,i) : null).filter(Boolean), menos = fuertes.map((x,i)=>x.a<0 ? linea(x,i) : null).filter(Boolean);
+        const pub = Math.abs(pr.publico)>=0.15 ? `<div class="np-k">El público</div>Le da un ${_notaFmt(info.va)}: ${pr.publico>0 ? 'eso sube' : 'eso baja'} tu nota <span class="${pr.publico>0?'np-mas':'np-menos'}">${pr.publico>0?'+':'−'}${_notaFmt(Math.abs(pr.publico))}</span>` : '';
+        por.innerHTML = `<div class="np-cab">🔮 Por qué le pondrías un <b>${_notaFmt(pr.nota)}</b></div><div class="np-k">Tu punto de partida</div>Tu nota media es un ${_notaFmt(m.fit.media)}${mas.length ? `<div class="np-k">Suma porque te suele gustar</div>${mas.join(' · ')}` : ''}${menos.length ? `<div class="np-k">Resta porque te suele gustar menos</div>${menos.join(' · ')}` : ''}${pub}
+          <div class="np-pie" id="np-pie">Aprendido de tus ${m.fit.n} notas.</div>`;
+        setTimeout(()=>{ // la puntería tarda un poco más: se calcula aparte, sin frenar la ficha
+          if(peliculaActual!==p) return;
+          const pt = _notaPunteria(m), pie = document.getElementById('np-pie');
+          if(pt && pie) pie.textContent = `Aprendido de tus ${m.fit.n} notas. Acierta con ±1 punto el ${Math.round(pt.cerca*100)} % de las veces (se equivoca de media ${_notaFmt(pt.err)}${pt.errPub!=null && pt.errPub>pt.err+0.05 ? `; la nota del público, ${_notaFmt(pt.errPub)}` : ''}).`;
+        }, 300);
+      }catch(e){}
+    }
+    function alternarPorQuePrevista(){
+      const chip = document.getElementById('d-prevista'), por = document.getElementById('d-prevista-por');
+      const abrir = por.style.display==='none'; por.style.display = abrir ? 'block' : 'none'; chip.setAttribute('aria-expanded', String(abrir));
+    }
+
     // ── PERFIL DE GUSTO ─────────────────────────────────────────────────
     function _perfilGustoStorageKey(){ return sesionActual ? `perfilGusto_v2_${sesionActual.user.id}` : null; }
 
@@ -12387,7 +12545,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function _mlBase(it){ return (bibliotecaTabActual==='pendiente'?it.pendiente&&!it.visto:it.visto)&&(bibliotecaTipoActual==='todos'||it.tipo===bibliotecaTipoActual); }
     const _mlVal = id => (document.getElementById(id)?.value||'');
-    function _mlNecesitaInfo(){ return !!(_mlVal('ml-genero') || _mlVal('ml-duracion') || ['corta','publico'].includes(_mlVal('ml-orden'))); }
+    function _mlNecesitaInfo(){ return !!(_mlVal('ml-genero') || _mlVal('ml-duracion') || ['corta','publico','prevista'].includes(_mlVal('ml-orden'))); }
+    const _mlPrevista = it => { const m = window._mlModelo; if(!m || !m.fit || !it._info) return null; if(it._prev===undefined || it._prevT!==m.t){ it._prev = _notaPredecir(m.fit, it.tipo, it._info)?.nota ?? null; it._prevT = m.t; } return it._prev; };
     function _mlHayFiltros(){ return !!(_mlVal('ml-buscar').trim() || _mlVal('ml-genero') || _mlVal('ml-decada') || _mlVal('ml-duracion')); }
     function _mlFiltrar(filas){
       const q = normalizarTitulo(_mlVal('ml-buscar')), gen = Number(_mlVal('ml-genero'))||0, dec = Number(_mlVal('ml-decada'))||0, dur = _mlVal('ml-duracion');
@@ -12423,6 +12582,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(orden==='antiguo') return _mlFecha(a)-_mlFecha(b)||cmpTitulo(a,b);
         if(orden==='nota') return (Number(b.puntuacion??-1)-Number(a.puntuacion??-1))||cmpTitulo(a,b);
         if(orden==='publico') return ((b._info?.va||0)-(a._info?.va||0))||cmpTitulo(a,b);
+        if(orden==='prevista') return ((_mlPrevista(b)??-1)-(_mlPrevista(a)??-1))||cmpTitulo(a,b);
         if(orden==='estreno') return ((Number(b.anio)||b._info?.y||0)-(Number(a.anio)||a._info?.y||0))||cmpTitulo(a,b);
         if(orden==='estreno-ant') return ((Number(a.anio)||a._info?.y||9999)-(Number(b.anio)||b._info?.y||9999))||cmpTitulo(a,b);
         if(orden==='corta'){ const r = x => x.tipo==='movie' && x._info?.r ? x._info.r : 9999; return (r(a)-r(b))||cmpTitulo(a,b); }
@@ -12454,6 +12614,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
             if(turno!==_mlTurno) return;
           }
         }
+        window._mlModelo = _mlVal('ml-orden')==='prevista' ? await _modeloNotaObtener().catch(()=>null) : null;
+        if(turno!==_mlTurno) return;
+        const verPrev = !!(window._mlModelo && window._mlModelo.fit);
+        if(_mlVal('ml-orden')==='prevista' && !verPrev) estado.textContent='Para ordenar por lo que más te va a gustar hacen falta al menos 8 títulos con tu nota.';
         const visibles=_mlOrdenar(_mlFiltrar(filas));
         window.bibliotecaActual=visibles;
         btn.disabled=!visibles.length;
@@ -12471,7 +12635,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           // rejilla de pósters: en «Vistas» con tu nota encima
           cont.className='ml-rejilla';
           cont.innerHTML=visibles.map((it,i)=>`<div class="desc-card" onclick="abrirDetalleDesdeBiblioteca(${i})" ${_lp({id:it.tmdb_id,tipo:it.tipo,t:it.titulo,poster:it.poster_path,f:it.anio?it.anio+'-01-01':''})}>
-            <div class="desc-poster">${it.poster_path?`<img loading="lazy" src="https://image.tmdb.org/t/p/w342${it.poster_path}" alt="">`:''}${!pendiente&&it.puntuacion!=null?`<span class="desc-marca nota">★ ${it.puntuacion}</span>`:''}</div>
+            <div class="desc-poster">${it.poster_path?`<img loading="lazy" src="https://image.tmdb.org/t/p/w342${it.poster_path}" alt="">`:''}${!pendiente&&it.puntuacion!=null?`<span class="desc-marca nota">★ ${it.puntuacion}</span>`:''}${verPrev&&it.puntuacion==null&&_mlPrevista(it)!=null?`<span class="desc-marca prevista">🔮 ${_notaFmt(_mlPrevista(it))}</span>`:''}</div>
             <div class="desc-t">${_escHtml(it.titulo||'Sin título')}</div><div class="desc-m">${it.anio||''}${it.tipo==='tv'?' · Serie':' · Película'}</div></div>`).join('');
           return;
         }
@@ -12481,6 +12645,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           const info=_fEl('div',{class:'ml-info'},
             _fEl('button',{class:'ml-titulo',type:'button',onclick:()=>abrirDetalleDesdeBiblioteca(i)},String(it.titulo||'Sin título')),
             _fEl('p',{class:'ml-meta',text:[it.anio,it.tipo==='tv'?(it._info?.ns?`Serie · ${it._info.ns} temp.`:'Serie'):'Película',it.tipo==='movie'&&it._info?.r?formatDuracion(it._info.r):'',it._info?.va?'★ '+Number(it._info.va).toFixed(1):'',it.tipo==='tv'&&esAbandonada(it.tmdb_id)?'La dejé':''].filter(Boolean).join(' · ')}));
+          if(verPrev&&it.puntuacion==null&&_mlPrevista(it)!=null) info.append(_fEl('span',{class:'ml-prevista',text:'🔮 Le pondrías un '+_notaFmt(_mlPrevista(it))}));
           if(!pendiente) info.append(_fEl('p',{class:'ml-nota',text:it.puntuacion!=null?'Mi valoración: '+it.puntuacion+'/10':'Sin valorar'}));
           else info.append(_fEl('div',{class:'ml-fila-acciones'},
             _fEl('button',{class:'ml-secundario',type:'button',onclick:e=>_mlCambiarEstado(it.id,{visto:true,pendiente:false},e.currentTarget)},'Marcar como vista'),
