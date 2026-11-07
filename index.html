@@ -613,22 +613,23 @@
     .buscar-camara { flex: none; width: 46px; border: 1px solid var(--k-dedfd8); border-radius: 8px; background: var(--k-fffefb); font-size: 19px; cursor: pointer; }
     .tu-sec { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 20px 0 10px; }
     /* ── Especiales con más mimo ── */
-    #desc-especiales .especiales-scroll { display: flex !important; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 2px; margin: 0 0 8px; scrollbar-width: none; }
-    #desc-especiales .especiales-scroll::-webkit-scrollbar { display: none; }
-    #desc-especiales .especiales-scroll > .especial-tile { position: relative; flex: 0 0 228px; height: 128px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px; border: 0; border-radius: 14px; box-shadow: none; overflow: hidden; color: #fff;
+    .esp-bonita .especiales-scroll { display: flex !important; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 0 2px; margin: 0 0 8px; scrollbar-width: none; }
+    .esp-bonita .especiales-scroll::-webkit-scrollbar { display: none; }
+    .esp-bonita .especiales-scroll > .especial-tile { position: relative; flex: 0 0 228px; height: 128px; scroll-snap-align: start; display: flex; flex-direction: column; justify-content: flex-end; padding: 12px 14px; border: 0; border-radius: 14px; box-shadow: none; overflow: hidden; color: #fff;
       background-color: var(--esp-bg, #1b1d1c); background-image: linear-gradient(135deg, var(--esp-bg, #1b1d1c), #0d0d0d); background-size: cover; background-position: center; }
-    #desc-especiales .especiales-scroll > .especial-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.88)); pointer-events: none; }
-    #desc-especiales .especiales-scroll > .especial-tile > * { position: relative; }
-    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-emoji { position: absolute; top: 10px; left: 12px; margin: 0; font-size: 18px; }
-    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; color: #fff; margin: 0; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
-    #desc-especiales .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(255,255,255,0.78); font-size: 11.5px; margin-top: 2px; }
-    #desc-especiales .especiales-scroll > .especial-tile .especial-progreso-texto { display: none; }
-    #desc-especiales .especiales-scroll > .especial-tile .especial-progreso-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,0.22); }
-    #desc-especiales .especiales-scroll > .col-nueva-tile { background: none !important; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); }
-    #desc-especiales .especiales-scroll > .col-nueva-tile::before { display: none; }
-    #desc-especiales .especiales-scroll > .col-nueva-tile .especial-tile-titulo { color: var(--ink); text-shadow: none; }
-    #desc-especiales .especiales-scroll > .col-nueva-tile .especial-tile-sub { color: var(--muted); }
-    #desc-especiales { margin-bottom: 22px; }
+    .esp-bonita .especiales-scroll > .especial-tile::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0) 15%, rgba(0,0,0,0.35) 45%, rgba(0,0,0,0.88)); pointer-events: none; }
+    .esp-bonita .especiales-scroll > .especial-tile > * { position: relative; }
+    .esp-bonita .especiales-scroll > .especial-tile .especial-tile-emoji { position: absolute; top: 10px; left: 12px; margin: 0; font-size: 18px; }
+    .esp-bonita .especiales-scroll > .especial-tile .especial-tile-titulo { font: 800 16px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; color: #fff; margin: 0; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+    .esp-bonita .especiales-scroll > .especial-tile .especial-tile-sub { color: rgba(255,255,255,0.78); font-size: 11.5px; margin-top: 2px; }
+    .esp-bonita .especiales-scroll > .especial-tile .especial-progreso-texto { display: none; }
+    .esp-bonita .especiales-scroll > .especial-tile .especial-progreso-bar { height: 3px; margin-top: 7px; background: rgba(255,255,255,0.22); }
+    .esp-bonita .especiales-scroll > .col-nueva-tile { background: none !important; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); }
+    .esp-bonita .especiales-scroll > .col-nueva-tile::before { display: none; }
+    .esp-bonita .especiales-scroll > .col-nueva-tile .especial-tile-titulo { color: var(--ink); text-shadow: none; }
+    .esp-bonita .especiales-scroll > .col-nueva-tile .especial-tile-sub { color: var(--muted); }
+    #ml-especiales { margin: 4px 0 18px; }
+    #ml-especiales .especiales-scroll > .especial-tile { flex-basis: 196px; height: 108px; }
     .esp-maraton { position: relative; border-radius: 18px; overflow: hidden; min-height: 250px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; background: #1b1d1c center/cover no-repeat; cursor: pointer; margin: 6px 0 4px; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
     .esp-maraton::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,10,0.2), rgba(10,10,10,0.55) 45%, rgba(10,10,10,0.94)); }
     .esp-maraton > * { position: relative; }
@@ -640,6 +641,13 @@
     .esp-maraton .cuenta { font-size: 12.5px; color: rgba(255,255,255,0.78); margin-top: 6px; }
     .esp-maraton .sig { margin-top: 12px; font-size: 13.5px; line-height: 1.4; }
     .esp-maraton .sig small { display: block; color: rgba(255,255,255,0.7); font-size: 12px; }
+    .maraton-mini { display: flex; align-items: center; gap: 12px; padding: 11px 12px; margin: 0 0 18px; border-radius: 14px; background: #1b1d1c; color: #fff; cursor: pointer; border-left: 4px solid var(--esp-c); }
+    .maraton-mini-ic { flex: none; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.1); display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+    .maraton-mini-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .maraton-mini-t span { font-size: 11.5px; color: rgba(255,255,255,0.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .maraton-mini-t b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .maraton-mini-t i { display: block; height: 3px; margin-top: 5px; border-radius: 2px; background: linear-gradient(to right, var(--esp-c) var(--p), rgba(255,255,255,0.18) var(--p)); }
+    .maraton-mini-play { flex: none; width: 38px; height: 38px; border-radius: 50%; border: 0; background: #fff; color: #111; font-size: 14px; cursor: pointer; }
     .esp-sec-cab { display: flex; justify-content: space-between; align-items: baseline; margin: 26px 0 10px; }
     .esp-sec-cab h3 { font: 800 19px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 0; }
     .aviso-version { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); z-index: 2147483000; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px 11px 16px; border-radius: 14px; background: #1b1d1c; color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: escAparece .3s ease; }
@@ -1781,6 +1789,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('continuar-viendo-scroll',1)">›</div>
         </div>
       </div>
+      <div id="inicio-maraton"></div>
       <div id="tu-semana" style="display:none"></div>
       <div id="para-ti-wrap" style="display:none">
         <div id="para-ti-pelis-wrap" style="display:none">
@@ -2018,7 +2027,6 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <span class="inicio-trailers-t"><b>Las 100 imprescindibles</b><span id="imp-entrada-sub">Las mejor valoradas de la historia: ¿cuántas has visto?</span></span>
         <span class="inicio-trailers-f">›</span>
       </button>
-      <div id="desc-especiales"></div>
       <div id="desc-top10"></div>
       <div id="desc-generos"></div>
       <div id="desc-estudios"></div>
@@ -2499,6 +2507,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <button class="ml-enlace" type="button" onclick="abrirEstadisticas()">Tus estadísticas</button>
       </div>
       <p class="ml-ayuda">Lo que quieres ver y lo que ya has visto, en un solo sitio.</p>
+      <div id="ml-especiales" class="esp-bonita"></div>
       <div class="tipo-row" id="biblioteca-tab-row">
         <button type="button" class="tipo-btn active" data-tab="pendiente" aria-pressed="true" onclick="selectBibliotecaTab(this)"><span class="tipo-text">Pendientes</span></button>
         <button type="button" class="tipo-btn" data-tab="visto" aria-pressed="false" onclick="selectBibliotecaTab(this)"><span class="tipo-text">Vistas</span></button>
@@ -3692,7 +3701,6 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       _descImagenesGeneros(prov);
       _descPintarTop10(prov);
       _descPintarEstudios();
-      _descPintarEspeciales();
       cont.innerHTML = filas.map((f,fi)=>`<section class="desc-fila"><div class="desc-fila-cab"><h3>${_escHtml(f.t.replace(/ · (Películas|Series)$/,''))}${/ · (Películas|Series)$/.test(f.t) ? `<span class="desc-tipo">${f.tipo==='tv'?'Series':'Películas'}</span>` : ''}</h3>${f.calendario ? `<button type="button" class="desc-todo desc-cal-btn" onclick="abrirCalendario()">📅 Calendario</button>` : ''}<button type="button" class="desc-todo" onclick="descVerTodo(${fi})">Ver todo ›</button></div>
         <div class="desc-scroll" id="desc-f-${fi}">${Array(5).fill('<div class="desc-card"><div class="desc-poster skeleton"></div></div>').join('')}</div></section>`).join('');
       if(!hero.innerHTML) hero.innerHTML = '<div class="desc-hero skeleton"></div>';
@@ -8282,7 +8290,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(!especial || especial.dinamico) return; // los generados no tienen lista fija de la que sacar la imagen
         const ruta = await _resolverImagenHeroEspecial(especial);
         if(ruta && document.body.contains(tileEl)){
-          tileEl.style.backgroundImage = tileEl.closest('#desc-especiales') ? `url(https://image.tmdb.org/t/p/w780${ruta})` : `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
+          tileEl.style.backgroundImage = tileEl.closest('.esp-bonita') ? `url(https://image.tmdb.org/t/p/w780${ruta})` : `linear-gradient(160deg, rgba(10,10,10,0.62), rgba(10,10,10,0.93)), url(https://image.tmdb.org/t/p/w500${ruta})`;
           tileEl.style.backgroundSize = 'cover';
           tileEl.style.backgroundPosition = 'center';
         }
@@ -9250,7 +9258,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       ocultasDesdeCuenta();
       notasTempDesdeCuenta(); motivosDesdeCuenta();
       rankingDesdeCuenta();
-      Promise.all([refrescarIdsVistos(), refrescarVistosNormalizados()]).then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); _enCursoPintarBoton(); });
+      Promise.all([refrescarIdsVistos(), refrescarVistosNormalizados()]).then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); _enCursoPintarBoton(); cargarMaratonInicio(); });
       colSync().then(()=>{ renderEspecialesTiles(); colActualizarBotonFicha(); });
       cargarParaTi();
       cargarContinuarViendo();
@@ -9382,7 +9390,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if('visto' in patch && window._sagaFicha && window._sagaFicha.p===p){ if(patch.visto) (window.idsVistosSet = window.idsVistosSet || new Set()).add(`${p.id}-movie`); else window.idsVistosSet?.delete(`${p.id}-movie`); _pintarSiguienteSaga(); }
       await cargarEstadoBiblioteca();
       refrescarIdsVistos();
-      refrescarVistosNormalizados().then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); });
+      refrescarVistosNormalizados().then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); cargarMaratonInicio(); });
       if('visto' in patch || 'puntuacion' in patch) cargarParaTi();
       if('visto' in patch || 'episodios_vistos' in patch) cargarContinuarViendo();
       if(patch.visto===true || 'puntuacion' in patch) _comprobarLogrosNuevos(p);
@@ -11362,19 +11370,33 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(x.r) abrirDetalle({id:x.r.id, _tipo:x.r.tipo, title:x.it.t, release_date:x.it.f || (x.it.y ? x.it.y+'-01-01' : '')});
       else abrirEspecial(x.e.id);
     }
-    function _descPintarEspeciales(){
-      const box = document.getElementById('desc-especiales'); if(!box) return;
-      try{ renderEspecialesTiles(); }catch(e){} // calcula «En curso» con lo que has visto
+    // Marvel y tus colecciones, en una fila arriba de Mi lista
+    function _pintarEspecialesMiLista(){
+      const box = document.getElementById('ml-especiales'); if(!box) return;
+      if(!sesionActual){ box.innerHTML = ''; return; }
       const cont = window._espContarVistos || (()=>0);
-      const enCurso = calcularEnCurso(cont), maraton = enCurso[0];
       const cols = (window.misColecciones||[]).map(col=>_espDesdeColeccion('col-'+col.id)).filter(Boolean);
-      const destacados = [...new Set([...enCurso.slice(1), ...ESPECIALES.filter(_espVisible), ...cols])].filter(e=>e!==maraton).slice(0, 12);
-      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji||'📋'}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : _escHtml(e.sub)}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
-      box.innerHTML = `<div class="esp-sec-cab"><h3>🎬 Especiales</h3><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todos ›</button></div>
-        ${maraton ? '<div id="esp-maraton-desc"></div>' : ''}
-        <div class="especiales-scroll" style="margin-top:12px">${destacados.map(tile).join('')}</div>`;
-      if(maraton) _espPintarMaraton(maraton, document.getElementById('esp-maraton-desc'));
+      const lista = [...ESPECIALES.filter(_espVisible), ...cols];
+      const tile = e => { const v = cont(e), n = e.items.length; return `<div class="especial-tile" data-esp-id="${e.id}" onclick="abrirEspecial('${e.id}')" style="--esp-c:${e.color||'var(--acento)'};--esp-bg:${e.colorBg||'#1b1d1c'}"><span class="especial-tile-emoji">${e.emoji||'📋'}</span><div class="especial-tile-titulo">${_escHtml(e.titulo)}</div><div class="especial-tile-sub">${v ? `${v} de ${n} vistas` : `${n} títulos`}</div>${v ? `<div class="especial-progreso-bar"><div class="especial-progreso-fill" style="width:${Math.round(v/n*100)}%;background:${e.color||'#b52c29'}"></div></div>` : ''}</div>`; };
+      box.innerHTML = `<div class="esp-sec-cab" style="margin:6px 0 8px"><div class="section-label" style="margin:0">Maratones y colecciones</div><button type="button" class="d-saga-link" onclick="irA('p-especiales-hub'); renderEspecialesTiles();">Ver todo ›</button></div>
+        <div class="especiales-scroll">${lista.map(tile).join('')}<div class="especial-tile col-nueva-tile" onclick="abrirColOverlay('crear')"><span class="especial-tile-emoji">＋</span><div class="especial-tile-titulo">Nueva colección</div><div class="especial-tile-sub">Tu propia lista</div></div></div>`;
       _resolverImagenesHeroEspeciales();
+    }
+    // Inicio: tu maratón en pequeño, para seguir por donde ibas
+    function cargarMaratonInicio(){
+      const box = document.getElementById('inicio-maraton'); if(!box) return;
+      if(!sesionActual){ box.innerHTML = ''; return; }
+      const e = calcularEnCurso(window._espContarVistos || (()=>0))[0];
+      if(!e){ box.innerHTML = ''; return; }
+      const items = _espItemsRuta(e), vistas = items.filter(_espItemVisto).length, sig = _espSiguiente(e);
+      if(!sig){ box.innerHTML = ''; return; }
+      const it = sig.it, r = it.tmdb_id ? {id:it.tmdb_id, tipo:it.tipo} : (window.especialIdsResueltos||{})[_claveIdResuelto(it)];
+      window._espMaraton = {e, it, r};
+      box.innerHTML = `<div class="maraton-mini" style="--esp-c:${e.color||'var(--acento)'}" onclick="abrirEspecial('${e.id}')">
+          <span class="maraton-mini-ic">${e.emoji}</span>
+          <div class="maraton-mini-t"><span>Tu maratón · ${_escHtml(e.titulo.replace(/\s*\(.*?\)\s*/g,' ').replace(/^Universo\s+/i,'').trim())} · ${vistas} de ${items.length}</span><b>Te toca: ${_escHtml(it.t)}</b><i style="--p:${Math.round(vistas/items.length*100)}%"></i></div>
+          <button type="button" class="maraton-mini-play" onclick="event.stopPropagation();espVerSiguiente()" aria-label="Ver la siguiente">▶</button>
+        </div>`;
     }
     // ══ ESCÁNER «¿CUÁL DE ESTAS?»: lee los títulos de una captura (en el propio móvil) y los ordena por tu nota prevista ══
     function abrirEscaner(){
@@ -13735,6 +13757,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       });
     }
     async function _miListaCargar(soloFiltro){
+      if(!soloFiltro) _pintarEspecialesMiLista();
       const turno=++_mlTurno, cont=document.getElementById('biblioteca-lista'), estado=document.getElementById('ml-estado'), btn=document.getElementById('btn-elige-por-mi');
       _mlPrepararSelects();
       const pendiente=bibliotecaTabActual==='pendiente', uid=sesionActual?.user.id;
