@@ -564,6 +564,12 @@
     .desc-card:hover .desc-poster img { transform: scale(1.04); }
     .desc-marca { position: absolute; top: 6px; right: 6px; min-width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; padding: 0 4px; }
     .desc-marca.visto { background: rgba(61,102,81,0.95); }
+    .prev-badge { position: absolute; right: 6px; bottom: 6px; padding: 3px 7px; border-radius: 9px; background: rgba(15,15,15,0.8); color: #fff; font: 800 11px 'Satoshi', -apple-system, sans-serif; backdrop-filter: blur(4px); pointer-events: none; }
+    .prev-badge.alta { background: var(--acento); }
+    .desc-rk .prev-badge { z-index: 2; right: 10px; bottom: 10px; font-size: 12.5px; }
+    .prev-txt { color: var(--acento); font-weight: 800; }
+    .desc-orden { margin-left: auto; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; border-radius: 999px; padding: 7px 12px; font: 700 12.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; white-space: nowrap; }
+    .desc-orden.activo { background: var(--acento); border-color: var(--acento); color: #fff; }
     .desc-marca.pend { background: rgba(27,29,28,0.75); }
     .desc-t { font-size: 12.5px; font-weight: 700; line-height: 1.25; margin-top: 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .desc-m { font-size: 11px; color: var(--k-767973); margin-top: 2px; }
@@ -588,6 +594,62 @@
     .inicio-trailers-t b { font-size: 15px; color: #fff; }
     .inicio-trailers-f { font-size: 24px; color: rgba(245,243,239,0.6); }
     .sin-logros .solo-logros, .sin-logros #logro-destacado { display: none !important; }
+    /* ── Inicio ordenado ── */
+    .inicio-sec { margin-top: 26px; }
+    .inicio-sec-t { font: 800 19px 'Cabinet Grotesk', -apple-system, sans-serif; margin-bottom: 12px; }
+    #inicio-animo .section-label { margin-top: 4px; }
+    .inicio-mas-filtros-btn { display: block; width: 100%; margin: 4px 0 14px; padding: 11px 14px; border-radius: 10px; border: 1px dashed var(--line); background: none; color: var(--k-61635e); font: 700 13px 'Satoshi', -apple-system, sans-serif; text-align: left; cursor: pointer; }
+    .inicio-atajos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .inicio-atajo { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 13px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; text-align: left; cursor: pointer; }
+    .inicio-atajo span { font-size: 22px; margin-bottom: 4px; }
+    .inicio-atajo b { font-size: 14.5px; }
+    .inicio-atajo small { font-size: 11.5px; color: var(--k-767973); line-height: 1.3; }
+    #continuar-viendo-wrap { margin-top: 6px !important; margin-bottom: 18px; }
+    #continuar-viendo-wrap .section-label { opacity: 1 !important; }
+    /* ── Tu ADN de cine ── */
+    .adn-hero { border-radius: 18px; padding: 20px 18px; background: linear-gradient(135deg, #1b1d1c, color-mix(in srgb, var(--acento) 55%, #1b1d1c)); color: #fff; margin: 4px 0 18px; }
+    .adn-hero .k { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.75); }
+    .adn-hero .n { font: 800 54px/1 'Cabinet Grotesk', -apple-system, sans-serif; margin: 8px 0 4px; }
+    .adn-hero .t { font: 800 18px 'Cabinet Grotesk', -apple-system, sans-serif; }
+    .adn-hero .m { font-size: 12.5px; color: rgba(255,255,255,0.78); margin-top: 6px; line-height: 1.45; }
+    .adn-caja { padding: 14px 15px; border-radius: 14px; background: var(--k-fffefb); border: 1px solid var(--line); margin-bottom: 14px; }
+    .adn-caja h3 { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 0 0 4px; }
+    .adn-caja p { font-size: 13px; color: var(--k-61635e); margin: 0 0 10px; line-height: 1.45; }
+    .adn-fila { display: grid; grid-template-columns: 1fr 90px 44px; align-items: center; gap: 10px; padding: 6px 0; font-size: 13.5px; }
+    .adn-fila small { display: block; font-size: 11px; color: var(--k-767973); }
+    .adn-barra { height: 8px; border-radius: 4px; background: var(--k-e9e7e0); overflow: hidden; }
+    .adn-barra i { display: block; height: 100%; border-radius: 4px; background: var(--k-3d6651); }
+    .adn-barra.menos i { background: var(--k-9c2723); }
+    .adn-v { text-align: right; font-weight: 800; }
+    .adn-v.mas { color: var(--k-3d6651); } .adn-v.menos { color: var(--k-9c2723); }
+    .adn-dato { display: flex; gap: 12px; align-items: flex-start; padding: 6px 0; font-size: 13.5px; line-height: 1.45; }
+    .adn-dato span { font-size: 20px; }
+    /* ── Esta noche ── */
+    .noche-hero { position: relative; border-radius: 18px; overflow: hidden; min-height: 300px; margin: 4px 0 18px; background: #1b1d1c center/cover no-repeat; color: #fff; display: flex; flex-direction: column; justify-content: flex-end; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+    .noche-hero::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(10,10,10,0.15) 0%, rgba(10,10,10,0.35) 40%, rgba(10,10,10,0.92) 100%); }
+    .noche-hero > * { position: relative; }
+    .noche-in { padding: 18px 18px 16px; }
+    .noche-k { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.8); }
+    .noche-t { font: 800 27px/1.05 'Cabinet Grotesk', -apple-system, sans-serif; margin: 6px 0 8px; }
+    .noche-nota { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 11px; border-radius: 999px; background: var(--acento); font-weight: 700; font-size: 13px; }
+    .noche-nota b { font: 800 18px 'Cabinet Grotesk', -apple-system, sans-serif; }
+    .noche-m { margin-top: 9px; font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.45; }
+    .noche-m img { width: 20px; height: 20px; border-radius: 5px; vertical-align: -5px; margin-right: 4px; }
+    .noche-porque { margin-top: 6px; font-size: 12.5px; color: rgba(255,255,255,0.72); }
+    .noche-b { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .noche-btn { border: 0; border-radius: 999px; padding: 10px 16px; font: 800 13.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; background: rgba(255,255,255,0.16); color: #fff; backdrop-filter: blur(6px); }
+    .noche-btn.principal { background: #fff; color: #111; }
+    .noche-vacia { padding: 18px; border-radius: 16px; background: #1b1d1c; color: #f5f3ef; margin: 4px 0 18px; }
+    .noche-vacia b { display: block; font: 800 18px 'Cabinet Grotesk', -apple-system, sans-serif; margin-bottom: 4px; }
+    .noche-vacia span { font-size: 13px; color: rgba(245,243,239,0.75); }
+    .noche-hero.skeleton { min-height: 300px; }
+    .noche-opts .section-label { margin: 14px 0 8px; }
+    .noche-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .noche-chip { border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; border-radius: 999px; padding: 8px 13px; font: 700 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
+    .noche-chip.activo { background: var(--ink, #1b1d1c); border-color: var(--ink, #1b1d1c); color: var(--bg, #fff); }
+    #noche-mesa { margin-top: 18px; }
+    .noche-cont { text-align: center; font-size: 12px; color: var(--k-767973); margin: -8px 0 10px; }
+
     .cm-deshacer { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 84px); transform: translate(-50%, 30px); opacity: 0; visibility: hidden; pointer-events: none; z-index: 3000; display: flex; align-items: center; gap: 14px; background: #1b1d1c; color: #f5f3ef; border-radius: 10px; padding: 11px 14px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: calc(100vw - 32px); width: max-content; transition: transform 0.25s ease, opacity 0.2s ease, visibility 0s 0.25s; }
     .cm-deshacer.on { transform: translate(-50%, 0); opacity: 1; visibility: visible; pointer-events: auto; transition: transform 0.25s ease, opacity 0.2s ease, visibility 0s; }
     .cm-deshacer span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
@@ -1577,24 +1639,20 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="inicio-mis-acciones" style="display:flex;gap:8px">
           <button class="mi-lista-mobile" type="button" onclick="abrirBiblioteca()">Mi lista</button>
           <button class="cuenta-btn-mobile btn-tema" type="button" onclick="alternarTema()" aria-label="Cambiar entre modo claro y oscuro">🌙</button>
-          <div class="cuenta-btn-mobile" onclick="location.reload()" title="Empezar de cero">🔄</div>
           <div class="cuenta-btn-mobile" id="cuenta-btn-mobile" onclick="mostrarCuenta()">👤</div>
         </div>
       </div>
-      <div id="tu-semana" style="display:none"></div>
-      <div id="hoy-cine" style="display:none"></div>
-      <button type="button" class="inicio-trailers" onclick="abrirFeedTrailers()">
-        <span class="inicio-trailers-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></span>
-        <span class="inicio-trailers-t"><b>Tráilers para ti</b><span>Lo que se estrena y lo que encaja con tu gusto, uno tras otro</span></span>
-        <span class="inicio-trailers-f">›</span>
-      </button>
-      <button type="button" class="inicio-trailers qv-entrada" onclick="abrirQueVemos()">
-        <span class="inicio-trailers-ic">🃏</span>
-        <span class="inicio-trailers-t"><b>¿Qué vemos?</b><span>Recomendaciones para ti, una a una: desliza para decidir</span></span>
-        <span class="inicio-trailers-f">›</span>
-      </button>
-      <div id="logro-destacado" style="display:none"></div>
+      <div id="inicio-noche"></div>
       <div id="avisos-series" style="display:none"></div>
+      <div id="continuar-viendo-wrap" style="display:none;margin-top:28px">
+        <div class="section-label cv-cab" style="font-size:11px;opacity:0.75">Continuar viendo <button type="button" class="d-saga-link" onclick="abrirMisSeries()">Mis series ›</button></div>
+        <div class="scroll-wrap">
+          <div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('continuar-viendo-scroll',-1)">‹</div>
+          <div class="similares-scroll" id="continuar-viendo-scroll"></div>
+          <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('continuar-viendo-scroll',1)">›</div>
+        </div>
+      </div>
+      <div id="tu-semana" style="display:none"></div>
       <div id="para-ti-wrap" style="display:none">
         <div id="para-ti-pelis-wrap" style="display:none">
           <div class="result-header" style="margin-bottom:10px">
@@ -1618,13 +1676,11 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
             <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('para-ti-series-scroll',1)">›</div>
           </div>
         </div>
-        <hr class="section-divider">
+        
       </div>
-      <div class="busqueda-rapida">
-        <input type="text" id="busqueda-rapida-input" placeholder="Buscar película o serie..." onkeydown="if(event.key==='Enter') buscarPorTituloRapido()">
-        <button onclick="buscarPorTituloRapido()">Buscar</button>
-      </div>
-      <div class="section-label">¿Qué quieres ver?</div>
+      <div class="inicio-sec" id="inicio-animo">
+        <div class="inicio-sec-t">🎭 Busca según cómo estás</div>
+        <div class="section-label">¿Qué quieres ver?</div>
       <div class="tipo-row">
         <div class="tipo-btn active" data-tipo="ambos" onclick="selectTipo(this)"><span class="tipo-emoji">🎭</span><span class="tipo-text">Me da igual</span></div>
         <div class="tipo-btn" data-tipo="pelicula" onclick="selectTipo(this)"><span class="tipo-emoji">🎬</span><span class="tipo-text">Película</span></div>
@@ -1639,6 +1695,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="mood-btn" data-mood="romantico" onclick="selectMood(this)"><span class="mood-emoji">🥰</span><span class="mood-text">Romántico</span></div>
         <div class="mood-btn" data-mood="pensativo" onclick="selectMood(this)"><span class="mood-emoji">🤔</span><span class="mood-text">Pensativo</span></div>
       </div>
+      <button type="button" class="inicio-mas-filtros-btn" id="inicio-mas-filtros-btn" onclick="alternarMasFiltros()" aria-expanded="false">Más filtros: tono, género, nota, año ▾</button>
+      <div class="inicio-mas-filtros" id="inicio-mas-filtros" hidden>
       <div class="section-label">Quiero algo...</div>
       <div class="tone-row" id="tones">
         <div class="tone-pill" onclick="selectTono(this)">divertido</div>
@@ -1648,7 +1706,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="tone-pill" onclick="selectTono(this)">que me haga pensar</div>
         <div class="tone-pill" onclick="selectTono(this)">romántico</div>
       </div>
-      <hr class="section-divider">
+      
       <div class="section-label">Género</div>
       <div class="genre-grid" id="genre-grid"></div>
       <div class="section-label">Puntuación mínima <span style="color:var(--k-767973);font-size:10px;font-weight:400">(opcional)</span></div>
@@ -1673,6 +1731,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="platform-chip" data-id="76" onclick="togglePlataforma(this)">SkyShowtime</div>
         <div class="platform-chip" data-id="63" onclick="togglePlataforma(this)">Filmin</div>
       </div>
+      </div>
       <div class="filtros-header">
         <div class="filtros-count" id="filtros-count"></div>
         <button class="btn-limpiar" onclick="limpiarTodo()">Limpiar todo</button>
@@ -1682,17 +1741,52 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="cta-btn" id="btnBuscar" onclick="buscar(true)">Buscar →</div>
       </div>
       <div id="resultados"></div>
-      <div id="continuar-viendo-wrap" style="display:none;margin-top:28px">
-        <div class="section-label cv-cab" style="font-size:11px;opacity:0.75">Continuar viendo <button type="button" class="d-saga-link" onclick="abrirMisSeries()">Mis series ›</button></div>
-        <div class="scroll-wrap">
-          <div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('continuar-viendo-scroll',-1)">‹</div>
-          <div class="similares-scroll" id="continuar-viendo-scroll"></div>
-          <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('continuar-viendo-scroll',1)">›</div>
+      </div>
+      <div class="inicio-sec">
+        <div class="inicio-sec-t">Más formas de elegir</div>
+        <div class="inicio-atajos">
+          <button type="button" class="inicio-atajo" onclick="abrirEstaNoche()"><span>🌙</span><b>Esta noche</b><small>Lo mejor para ti en tus plataformas</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirQueVemos()"><span>🃏</span><b>¿Qué vemos?</b><small>Desliza para decidir</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirFeedTrailers()"><span>▶️</span><b>Tráilers</b><small>Uno tras otro</small></button>
+          <button type="button" class="inicio-atajo" onclick="irA('p-comparador')"><span>⚖️</span><b>¿Cuál veo?</b><small>Compara dos o tres</small></button>
+          <button type="button" class="inicio-atajo" onclick="irA('p-especiales-hub')"><span>🎬</span><b>Especiales</b><small>Listas temáticas</small></button>
+          <button type="button" class="inicio-atajo" onclick="sorprendeme()"><span>🎲</span><b>Sorpréndeme</b><small>Una al azar para ti</small></button>
         </div>
       </div>
-      <hr class="section-divider" style="margin-top:24px">
-      <div class="cta-btn cta-sec" onclick="irA('p-especiales-hub')">🎬 Especiales</div>
-      <div class="cta-btn cta-sec" style="margin-top:10px" onclick="irA('p-comparador')">⚖️ ¿Cuál veo?</div>
+      <div id="hoy-cine" style="display:none"></div>
+      <div id="logro-destacado" style="display:none"></div>
+
+      
+      
+      
+      
+      
+      
+      
+      
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-adn">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-cuenta', true)">‹ Atrás</span>
+        <h2>Tu ADN de cine</h2>
+        <span></span>
+      </div>
+      <div id="adn-cont"></div>
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-noche">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-inicio', true)">‹ Atrás</span>
+        <h2 id="noche-titulo">Esta noche</h2>
+        <span></span>
+      </div>
+      <div class="noche-opts" id="noche-opts"></div>
+      <div id="noche-mesa"></div>
     </div>
   </div>
 
@@ -1756,7 +1850,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
   <div class="pantalla" id="p-descubre">
     <div class="wrap">
-      <div class="desc-cab"><h2>Descubre</h2></div>
+      <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
       <button type="button" class="inicio-trailers qv-entrada" onclick="abrirQueVemos()">
@@ -2052,6 +2146,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <button type="button" class="tu-btn" onclick="abrirRanking()"><span>🏆</span>Mi ranking</button>
           <button type="button" class="tu-btn" onclick="abrirPuntuar()"><span>⭐</span>Puntuar rápido</button>
           <button type="button" class="tu-btn" onclick="abrirLaHasVisto()"><span>👀</span>¿La has visto?</button>
+          <button type="button" class="tu-btn" onclick="abrirADN()"><span>🧬</span>Tu ADN de cine</button>
           <button type="button" class="tu-btn" onclick="abrirEstadisticas()"><span>📊</span>Tus estadísticas</button>
           <button type="button" class="tu-btn" onclick="abrirWrapped()"><span>🎬</span>Tu año en cine</button>
           <button type="button" class="tu-btn" onclick="abrirActividad()"><span>🔥</span>Actividad y evolución</button>
@@ -2983,6 +3078,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         {k:'emision', t:'📺 Series en emisión', tipo:'tv', r:pg=>`/tv/on_the_air&language=es-ES&page=${pg}`},
         {k:'top-m', t:'⭐ Las mejor valoradas · Películas', tipo:'movie', r:pg=>`/movie/top_rated&language=es-ES&page=${pg}`},
         {k:'top-s', t:'⭐ Las mejor valoradas · Series', tipo:'tv', r:pg=>`/tv/top_rated&language=es-ES&page=${pg}`},
+        ..._descEncantariaFilas(''),
         ..._descJoyas(''),
       ];
       const n = (DESC_PLATAFORMAS.find(([id])=>id===prov)||[])[1] || 'la plataforma';
@@ -2996,10 +3092,16 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         {k:`p${prov}-new-s`, t:`🆕 Estrenos recientes en ${n} · Series`, tipo:'tv', r:pg=>`${base('tv')}&sort_by=${fecha('tv')}.desc&${fecha('tv')}.lte=${hoy}&vote_count.gte=10&page=${pg}`},
         {k:`p${prov}-top-m`, t:`⭐ Las mejor valoradas en ${n} · Películas`, tipo:'movie', r:pg=>`${base('movie')}&sort_by=vote_average.desc&vote_count.gte=500&page=${pg}`},
         {k:`p${prov}-top-s`, t:`⭐ Las mejor valoradas en ${n} · Series`, tipo:'tv', r:pg=>`${base('tv')}&sort_by=vote_average.desc&vote_count.gte=300&page=${pg}`},
+        ..._descEncantariaFilas(prov),
         ..._descJoyas(prov),
       ];
     }
     // Joyas ocultas: nota muy alta pero pocos votos (lo que no sale en ninguna lista de populares)
+    function _descEncantariaFilas(prov){
+      if(!sesionActual) return [];
+      const n = prov ? (DESC_PLATAFORMAS.find(([id])=>id===prov)||[])[1] : '';
+      return [['movie','Películas'],['tv','Series']].map(([t,l])=>({k:`encanta-${t}-${prov}`, t:`🔮 Te encantaría y casi nadie la ha visto${n ? ' · '+n : ''} · ${l}`, tipo:t, custom:pg=>_descEncantaria(prov, t, pg)}));
+    }
     function _descJoyas(prov){
       const hoy = new Date().toISOString().slice(0,10), n = prov ? (DESC_PLATAFORMAS.find(([id])=>id===prov)||[])[1] : '';
       const pq = prov ? `&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate` : '';
@@ -3368,7 +3470,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function _descTarjeta(p, arr, i){
       return `<div class="desc-card" data-k="${p.id}-${p._tipo}" onclick="abrirDetalle(${arr}[${i}])" ${_lp({id:p.id,tipo:p._tipo,t:p.title,poster:p.poster_path,f:p.release_date})}>
-        <div class="desc-poster"><img loading="lazy" src="https://image.tmdb.org/t/p/w342${p.poster_path}" alt="">${_descBadgeFecha(p)}${_descMarca(p)}</div>
+        <div class="desc-poster"><img loading="lazy" src="https://image.tmdb.org/t/p/w342${p.poster_path}" alt="">${_descBadgeFecha(p)}${_descMarca(p)}${_prevBadge(p)}</div>
         <div class="desc-t">${_escHtml(p.title)}</div>
         <div class="desc-m">${_descFecha(p)}${p._g!==undefined && p._tipo==='tv' ? ' · Serie' : ''}${p.vote_average ? ` · ★ ${p.vote_average.toFixed(1)}` : ''}</div></div>`;
     }
@@ -3381,6 +3483,31 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.getElementById('desc-plataformas').innerHTML = DESC_PLATAFORMAS.map(([id,n])=>`<button type="button" class="desc-plat${id===prov?' activo':''}" onclick="descElegirPlataforma('${id}')">${n}</button>`).join('');
       await _descPintar(prov);
     }
+    const _descOrdenParaMi = () => { try{ return !!sesionActual && localStorage.getItem('cm:descOrden')==='parami'; }catch(e){ return false; } };
+    function _descPintarOrden(){
+      const b = document.getElementById('desc-orden'); if(!b) return;
+      b.style.display = sesionActual ? '' : 'none';
+      const on = _descOrdenParaMi(); b.classList.toggle('activo', on); b.setAttribute('aria-pressed', String(on));
+      b.textContent = on ? '🔮 Ordenado para ti' : '🔮 Ordenar para mí';
+    }
+    async function descAlternarOrden(){
+      try{ localStorage.setItem('cm:descOrden', _descOrdenParaMi() ? '' : 'parami'); }catch(e){}
+      _descPintarOrden(); window._descPintado = null;
+      await _descPintar(_descPlataforma());
+    }
+    // «Te encantaría y casi nadie la ha visto»: títulos con pocos votos que tu nota prevista pone muy arriba
+    async function _descEncantaria(prov, tipo, pg){
+      const m = await _modeloNotaObtener().catch(()=>null); if(!m || !m.fit) return {lista:[], paginas:1};
+      const hoy = new Date().toISOString().slice(0,10), pq = prov ? `&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate` : '';
+      const fecha = tipo==='movie' ? 'primary_release_date' : 'first_air_date', sin = tipo==='movie' ? '99,10770' : '10763,10764,10767,99';
+      const q = n => `/discover/${tipo}&language=es-ES${pq}&sort_by=vote_average.desc&vote_average.gte=6.6&vote_count.gte=${prov?30:60}&vote_count.lte=2500&${fecha}.lte=${hoy}&without_genres=${sin}&page=${n}`;
+      const paginas = await Promise.all([1,2,3,4].map(n=>_tmdbJson(q((pg-1)*4+n)).catch(()=>({}))));
+      const vistos = window.idsVistosSet || new Set();
+      const lista = paginas.flatMap(d=>d.results||[]).filter(x=>x.poster_path && !vistos.has(`${x.id}-${tipo}`) && !esOculta(x.id, tipo))
+        .map(x=>({...x, _tipo:tipo, title:x.title||x.name, release_date:x.release_date||x.first_air_date}))
+        .map(x=>({x, v:_notaRapida(x)})).filter(o=>o.v!=null && o.v>=m.fit.media+0.6).sort((a,b)=>b.v-a.v).map(o=>o.x);
+      return {lista, paginas: Math.max(1, Math.min(5, Math.ceil((paginas[0].total_pages||1)/4)))};
+    }
     function descElegirPlataforma(id){
       try{ localStorage.setItem('cm:descPlataforma', id); }catch(e){}
       document.querySelectorAll('#desc-plataformas .desc-plat').forEach((b,i)=>b.classList.toggle('activo', DESC_PLATAFORMAS[i][0]===id));
@@ -3390,6 +3517,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const turno = (window._descTurno = (window._descTurno||0)+1);
       window._descPintado = {prov, t:Date.now()};
       document.getElementById('desc-hero').innerHTML = '';
+      _descPintarOrden();
+      const ordenMi = _descOrdenParaMi();
+      if(sesionActual) await _modeloNotaObtener().catch(()=>null); // así los pósters salen ya con tu nota
+      if(turno!==window._descTurno) return;
       const filas = _descFilas(prov), cont = document.getElementById('desc-filas'), hero = document.getElementById('desc-hero');
       window._descFilasAct = filas; window._descListas = {};
       _descPintarGeneros(prov);
@@ -3404,6 +3535,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         let lista = [];
         try{ lista = (await _descDatos(f,1)).lista.slice(0,20); }catch(e){}
         if(turno!==window._descTurno) return;
+        if(ordenMi && !f.calendario) lista = lista.map((x,i)=>({x, i, v:_notaRapida(x)})).sort((a,b)=>((b.v??-1)-(a.v??-1)) || a.i-b.i).map(o=>o.x);
         window._descListas[fi] = lista;
         const el = document.getElementById(`desc-f-${fi}`); if(!el) return;
         if(!lista.length){ el.closest('.desc-fila').remove(); return; }
@@ -3510,7 +3642,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="desc-rk-img${p.backdrop_path?'':' sin'}" style="background-image:url('${img}')"></div>
         <div class="desc-rk-velo"></div>
         ${sinNumero ? '' : `<span class="desc-rk-n"${i>=99 ? ' style="font-size:28px"' : i>=9 ? ' style="font-size:42px"' : ''}>${i+1}</span>`}
-        ${_descMarca(p)}
+        ${_descMarca(p)}${_prevBadge(p)}
         <div class="desc-rk-info">
           <div class="desc-rk-t">${_escHtml(p.title)}</div>
           <div class="desc-rk-m">${_descFecha(p, true)} · ${p._tipo==='tv' ? 'Serie' : 'Película'}${p.vote_average ? ` · <b>★ ${p.vote_average.toFixed(1)}</b>` : ''}</div>
@@ -4482,7 +4614,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
     function mostrarSimilares(items,div){
       div.innerHTML=items.length
-        ?items.map((s,i)=>`<div class="similar-card" onclick="abrirDetalle(similaresActuales[${i}])" ${_lp({id:s.id,tipo:s._tipo,t:s.title,poster:s.poster_path,f:s.release_date})}><img loading="lazy" src="https://image.tmdb.org/t/p/w200${s.poster_path}" alt="${_escHtml(s.title)}"><div class="similar-titulo">${_escHtml(s.title)}</div><div class="similar-meta">${s.release_date?s.release_date.substring(0,4):''} · ★${s.vote_average?s.vote_average.toFixed(1):'-'}</div></div>`).join('')
+        ?items.map((s,i)=>`<div class="similar-card" onclick="abrirDetalle(similaresActuales[${i}])" ${_lp({id:s.id,tipo:s._tipo,t:s.title,poster:s.poster_path,f:s.release_date})}><img loading="lazy" src="https://image.tmdb.org/t/p/w200${s.poster_path}" alt="${_escHtml(s.title)}"><div class="similar-titulo">${_escHtml(s.title)}</div><div class="similar-meta">${s.release_date?s.release_date.substring(0,4):''} · ★${s.vote_average?s.vote_average.toFixed(1):'-'}${(()=>{ const v = sesionActual && !(window.idsVistosSet||new Set()).has(`${s.id}-${s._tipo}`) ? _notaRapida(s) : null; return v==null ? '' : ` · <b class="prev-txt">🔮 ${_notaFmt(v)}</b>`; })()}</div></div>`).join('')
         :'<span style="color:var(--k-767973);font-size:13px">No encontramos títulos similares.</span>';
     }
 
@@ -8842,7 +8974,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       cargarContinuarViendo();
       cargarHoyEnCine();
       cargarLogroDestacado();
-      cargarAvisosSeries(); cargarTuSemana();
+      cargarAvisosSeries(); cargarTuSemana(); cargarNocheInicio();
     }
 
     async function sorprendemeEnEspecial(){
@@ -8942,7 +9074,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       cargarContinuarViendo();
       cargarHoyEnCine();
       cargarLogroDestacado();
-      cargarAvisosSeries(); cargarTuSemana();
+      cargarAvisosSeries(); cargarTuSemana(); cargarNocheInicio();
     }
     function mostrarCuenta(){
       irA('p-cuenta');
@@ -10993,6 +11125,224 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){ return null; }
     }
 
+    // ══ TU ADN DE CINE: lo que ha aprendido «Le pondrías un…» de tus notas, en claro ══
+    async function abrirADN(){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      irA('p-adn');
+      const cont = document.getElementById('adn-cont');
+      cont.innerHTML = '<p class="rk-ayuda">Analizando tus notas…</p>';
+      try{
+        const m = await _modeloNotaObtener();
+        if(!m || !m.fit){ cont.innerHTML = `<div class="noche-vacia" onclick="abrirPuntuar()" role="button"><b>🧬 Aún no tengo bastante</b><span>Puntúa al menos 8 títulos que hayas visto (llevas ${m ? m.muestras.length : 0}) y aquí verás tu ADN de cine. Toca para puntuar rápido ›</span></div>`; return; }
+        await new Promise(r=>setTimeout(r, 30)); // deja pintar el «Analizando…» antes del cálculo de puntería
+        const d = window._adn = await _adnCalcular(m);
+        const fila = (x, max) => `<div class="adn-fila"><div>${_escHtml(x.nombre)}<small>${x.n} ${x.n===1?'título':'títulos'} con tu nota</small></div><div class="adn-barra${x.a<0?' menos':''}"><i style="width:${Math.round(Math.abs(x.a)/max*100)}%"></i></div><div class="adn-v ${x.a<0?'menos':'mas'}">${x.a>0?'+':'−'}${_notaFmt(Math.abs(x.a))}</div></div>`;
+        const max = Math.max(0.5, ...[...d.mas, ...d.menos, ...d.deberias].map(x=>Math.abs(x.a)));
+        cont.innerHTML = `
+          <div class="adn-hero"><div class="k">🧬 Tu ADN de cine · ${m.fit.n} notas</div>
+            ${d.pct!=null ? `<div class="n">${d.pct} %</div><div class="t">${_escHtml(d.tituloPred)}</div><div class="m">Es lo que acierto tu nota con ±1 punto antes de que veas algo. ${_escHtml(d.textoPred)}</div>` : `<div class="t" style="margin-top:8px">Tu nota media: ${_notaFmt(m.fit.media)}</div><div class="m">Con 12 notas o más te diré lo predecible que eres.</div>`}
+          </div>
+          <div class="adn-caja"><h3>Tú y el público</h3>
+            <div class="adn-dato"><span>${d.sesgo>0.4?'🎁':d.sesgo<-0.4?'🧐':'⚖️'}</span><div>${_escHtml(d.textoSesgo)}</div></div>
+            <div class="adn-dato"><span>${m.fit.s<0.45?'🧭':m.fit.s<0.85?'🤝':'👥'}</span><div>${_escHtml(d.textoPublico)}</div></div>
+            <div class="adn-dato"><span>⭐</span><div>Tu nota media es un <b>${_notaFmt(m.fit.media)}</b>.</div></div>
+          </div>
+          ${d.mas.length ? `<div class="adn-caja"><h3>Lo que más te tira</h3><p>Cuánto sube tu nota, de media, cuando una película o serie tiene esto.</p>${d.mas.map(x=>fila(x,max)).join('')}</div>` : ''}
+          ${d.menos.length ? `<div class="adn-caja"><h3>Lo que no va contigo</h3><p>Aquí sueles poner menos nota de lo que esperarías.</p>${d.menos.map(x=>fila(x,max)).join('')}</div>` : ''}
+          ${d.deberias.length ? `<div class="adn-caja"><h3>Deberías ver más…</h3><p>Has visto poco de esto, pero lo que has visto te ha gustado mucho.</p>${d.deberias.map(x=>fila(x,max)).join('')}</div>` : ''}
+          ${d.decada ? `<div class="adn-caja"><h3>Tu época</h3><div class="adn-dato"><span>📼</span><div>Donde mejor te va es con <b>${_escHtml(d.decada.nombre)}</b> (${d.decada.a>0?'+':'−'}${_notaFmt(Math.abs(d.decada.a))} de media).</div></div></div>` : ''}
+          <button type="button" class="cta-btn" id="adn-compartir" onclick="compartirADN(this)">📤 Compartir mi ADN</button>
+          <p class="rk-ayuda" style="margin-top:12px">Se calcula en este dispositivo con tus notas y los datos públicos de TMDB, y cambia cada vez que puntúas. Es lo mismo que usa «Le pondrías un…».</p>`;
+      }catch(e){ cont.innerHTML = '<p class="rk-ayuda">No se pudo calcular. Comprueba tu conexión e inténtalo de nuevo.</p>'; }
+    }
+    async function _adnCalcular(m){
+      const f = m.fit, pt = _notaPunteria(m), dirs = {};
+      m.muestras.forEach(x=>{ if(x.info?.d?.id) dirs[x.info.d.id] = x.info.d.n; });
+      let todos = Object.entries(f.ef).map(([k,v])=>({k, a:v*_NOTA_W[k[0]], n:f.cuenta[k]||0})).filter(x=>x.n>=2);
+      await Promise.all(todos.map(async x=>{ x.nombre = await _notaNombreRasgo(x.k, dirs); x.nombre = x.nombre.charAt(0).toUpperCase()+x.nombre.slice(1); }));
+      const deberias = todos.filter(x=>x.a>=0.35 && x.n<=4 && x.k[0]!=='t').sort((a,b)=>b.a-a.a).slice(0,3);
+      const ya = new Set(deberias.map(x=>x.k));
+      const mas = todos.filter(x=>x.a>=0.2 && !ya.has(x.k)).sort((a,b)=>b.a-a.a).slice(0,6);
+      const menos = todos.filter(x=>x.a<=-0.2).sort((a,b)=>a.a-b.a).slice(0,5);
+      const decada = todos.filter(x=>x.k[0]==='e' && x.n>=3).sort((a,b)=>b.a-a.a)[0] || null;
+      const cv = m.muestras.filter(x=>_notaConPublico(x.info));
+      const sesgo = cv.length ? cv.reduce((t,x)=>t+Number(x.puntuacion)-x.info.va,0)/cv.length : 0;
+      const pct = pt ? Math.round(pt.cerca*100) : null;
+      return {pct, mas, menos, deberias, decada, sesgo,
+        tituloPred: pct==null ? '' : pct>=80 ? 'Eres muy predecible' : pct>=60 ? 'Eres bastante predecible' : 'Eres difícil de encasillar',
+        textoPred: pct==null ? '' : pct>=80 ? 'Sé muy bien lo que te va a gustar.' : pct>=60 ? 'Casi siempre sé por dónde vas, pero a veces me sorprendes.' : 'Tu gusto se sale de los patrones: te sorprende lo que no esperas.',
+        textoSesgo: sesgo>0.4 ? `Eres generoso: pones de media ${_notaFmt(sesgo)} puntos más que el público.` : sesgo<-0.4 ? `Eres exigente: pones de media ${_notaFmt(-sesgo)} puntos menos que el público.` : 'Puntúas, de media, casi igual que el público.',
+        textoPublico: f.s<0.45 ? 'Vas a tu aire: que algo le guste a todo el mundo apenas dice si te gustará a ti.' : f.s<0.85 ? 'Escuchas al público, pero con criterio propio.' : 'Sueles coincidir con el público: si gusta a la mayoría, te gustará.'};
+    }
+    async function compartirADN(btn){
+      const d = window._adn, m = window._modeloNota; if(!d || !m || !m.fit) return;
+      const original = btn.textContent; btn.textContent = 'Preparando la imagen…';
+      try{
+        const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        const ctx = cv.getContext('2d'), ac = getComputedStyle(document.documentElement).getPropertyValue('--acento').trim() || '#b52c29';
+        const g = ctx.createLinearGradient(0,0,W,H); g.addColorStop(0,'#141615'); g.addColorStop(1,'#26201f'); ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+        ctx.fillStyle = ac; ctx.fillRect(80, 92, 90, 10);
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.font = '800 76px sans-serif'; ctx.fillText('Mi ADN de cine', 80, 200);
+        let y = 300;
+        if(d.pct!=null){ ctx.font = '800 150px sans-serif'; ctx.fillStyle = ac; ctx.fillText(d.pct+' %', 80, y+110); ctx.fillStyle = '#fff'; ctx.font = '700 40px sans-serif'; ctx.fillText(d.pct>=80 ? 'Soy muy predecible' : d.pct>=60 ? 'Soy bastante predecible' : 'Soy difícil de encasillar', 80, y+170); y += 250; }
+        const bloque = (titulo, xs, color) => {
+          if(!xs.length) return; ctx.fillStyle = '#9a9e98'; ctx.font = '800 30px sans-serif'; ctx.fillText(titulo.toUpperCase(), 80, y); y += 52;
+          xs.slice(0,4).forEach(x=>{ ctx.fillStyle = '#fff'; ctx.font = '600 38px sans-serif'; ctx.fillText(x.nombre.length>34 ? x.nombre.slice(0,33)+'…' : x.nombre, 80, y); ctx.fillStyle = color; ctx.textAlign = 'right'; ctx.fillText((x.a>0?'+':'−')+_notaFmt(Math.abs(x.a)), W-80, y); ctx.textAlign = 'left'; y += 54; });
+          y += 34;
+        };
+        bloque('Lo que más me tira', d.mas, '#8fd3a6');
+        bloque('Lo que no va conmigo', d.menos.slice(0,3), '#f0978f');
+        if(y < H-220) bloque('Debería ver más', d.deberias.slice(0,2), '#8fd3a6');
+        ctx.fillStyle = '#c6c8c1'; ctx.font = '500 32px sans-serif'; ctx.fillText((d.sesgo>0.4 ? 'Generoso con las notas' : d.sesgo<-0.4 ? 'Exigente con las notas' : 'Puntúo como el público') + ` · nota media ${_notaFmt(m.fit.media)}`, 80, H-120);
+        ctx.fillStyle = '#6b6e68'; ctx.font = '400 26px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('CineMood · ferrerasdorado.github.io/cinemood', W/2, H-46);
+        const blob = await new Promise(res=>cv.toBlob(res, 'image/png'));
+        const archivo = new File([blob], 'mi-adn-de-cine.png', {type:'image/png'});
+        if(navigator.canShare && navigator.canShare({files:[archivo]})){ try{ await navigator.share({files:[archivo], title:'Mi ADN de cine · CineMood'}); }catch(e){} }
+        else { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = archivo.name; a.click(); setTimeout(()=>URL.revokeObjectURL(u), 3000); }
+      }catch(e){ alert('No se pudo generar la imagen. Inténtalo de nuevo.'); }
+      finally{ btn.textContent = original; }
+    }
+    // ══ ESTA NOCHE: lo que más te va a gustar de lo que tienes en tus plataformas, a la medida de tu tiempo ══
+    function _nocheOpts(){
+      let o = null; try{ o = JSON.parse(localStorage.getItem('cm:noche')||'null'); }catch(e){}
+      o = o || {}; const prov = _descPlataforma();
+      return {min: [0,90,120,150].includes(o.min) ? o.min : 0, tipo: ['movie','tv','todo'].includes(o.tipo) ? o.tipo : 'todo', plats: Array.isArray(o.plats) ? o.plats : (prov ? [prov] : [])};
+    }
+    function _nocheMomento(){ const h = new Date().getHours(); return h<6 ? 'Esta noche' : h<14 ? 'Hoy' : h<20 ? 'Esta tarde' : 'Esta noche'; }
+    const _nocheHora = min => { const d = new Date(Date.now()+min*60e3); return d.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}); };
+    async function _nocheMazo(forzar){
+      const o = _nocheOpts(), uid = sesionActual?.user.id; if(!uid) return null;
+      const clave = `cm:nocheMazo:${uid}:${JSON.stringify(o)}`;
+      if(!forzar){
+        if(window._noche && window._noche.clave===clave && Date.now()-window._noche.t < 30*60e3) return window._noche;
+        try{ const c = JSON.parse(sessionStorage.getItem(clave)||'null'); if(c && Date.now()-c.t < 30*60e3){ window._noche = c; return c; } }catch(e){}
+      }
+      const m = await _modeloNotaObtener().catch(()=>null);
+      if(!m || !m.fit) return {clave, t:Date.now(), mazo:[], sinModelo:true, notas: m ? m.muestras.length : 0};
+      const plats = o.plats.length ? o.plats : DESC_PLATAFORMAS.map(x=>x[0]).filter(Boolean);
+      const pq = `&watch_region=ES&with_watch_providers=${plats.join('|')}&with_watch_monetization_types=flatrate`;
+      const tipos = o.tipo==='todo' ? ['movie','tv'] : [o.tipo], rutas = [];
+      tipos.forEach(t=>{
+        const rt = t==='movie' ? `&with_runtime.gte=65${o.min ? `&with_runtime.lte=${o.min}` : ''}` : '';
+        const sin = t==='movie' ? '99,10770' : '10763,10764,10767,99';
+        [1,2,3].forEach(pg=>rutas.push([t, `/discover/${t}&language=es-ES${pq}${rt}&without_genres=${sin}&sort_by=popularity.desc&vote_count.gte=${t==='movie'?150:80}&page=${pg}`]));
+        [1,2].forEach(pg=>rutas.push([t, `/discover/${t}&language=es-ES${pq}${rt}&without_genres=${sin}&sort_by=vote_average.desc&vote_count.gte=${t==='movie'?600:250}&page=${pg}`]));
+      });
+      const listas = await Promise.all(rutas.map(([t,r])=>_tmdbJson(r).then(d=>(d.results||[]).map(x=>({...x, _tipo:t, title:x.title||x.name, release_date:x.release_date||x.first_air_date}))).catch(()=>[])));
+      let pend = [];
+      try{ const r = await sb.from('mi_biblioteca').select('tmdb_id,tipo,titulo,poster_path,anio,visto,pendiente').eq('user_id', uid).eq('pendiente', true); pend = (r.data||[]).filter(x=>!x.visto && tipos.includes(x.tipo)); }catch(e){}
+      const vistos = window.idsVistosSet || new Set(), ya = new Set(), cands = [];
+      const meter = x => { const k = `${x.id}-${x._tipo}`; if(ya.has(k) || vistos.has(k) || esOculta(x.id, x._tipo) || (x._tipo==='tv' && esAbandonada(x.id))) return; ya.add(k); cands.push(x); };
+      pend.forEach(x=>meter({id:x.tmdb_id, _tipo:x.tipo, title:x.titulo, poster_path:x.poster_path, release_date:x.anio ? x.anio+'-01-01' : '', _pend:true}));
+      listas.flat().filter(x=>x.backdrop_path || x.poster_path).forEach(meter);
+      const rapida = x => { const v = _notaRapida(x); return (v==null ? m.fit.media : v) + (x._pend ? 0.35 : 0); };
+      const top = cands.map(x=>({x, v:rapida(x)})).sort((a,b)=>b.v-a.v).slice(0,16).map(o=>o.x);
+      const nombresPlat = {}; DESC_PLATAFORMAS.forEach(([id,n])=>{ if(id) nombresPlat[id] = n; });
+      const mazo = (await _fetchEnLotes(top, async x=>{
+        try{
+          const [pak, prov] = await Promise.all([_fetchDetalleYCreditos(x._tipo, x.id), _tmdbJson(`/${x._tipo}/${x.id}/watch/providers`).catch(()=>({}))]);
+          const d = pak && pak.detalle; if(!d || !d.id) return null;
+          const enES = ((prov.results||{}).ES||{}).flatrate || [];
+          const donde = enES.filter(pv=>plats.includes(String(pv.provider_id)));
+          if(!donde.length) return null;
+          const dur = x._tipo==='movie' ? (d.runtime||0) : ((d.episode_run_time||[])[0] || d.last_episode_to_air?.runtime || 0);
+          if(x._tipo==='movie' && o.min && dur > o.min) return null;
+          const info = _guardarInfoLogro(x._tipo, x.id, pak), pr = _notaPredecir(m.fit, x._tipo, info); if(!pr) return null;
+          window._prevCache.set(`${x.id}-${x._tipo}`, {t:m.t, v:pr.nota});
+          const fuertes = pr.partes.filter(q=>q.a>=0.15).sort((a,b)=>b.a-a.a).slice(0,2);
+          const dirs = {}; if(info.d?.id) dirs[info.d.id] = info.d.n;
+          const porque = await Promise.all(fuertes.map(q=>_notaNombreRasgo(q.k, dirs)));
+          return {id:x.id, _tipo:x._tipo, title:d.title||d.name||x.title, poster_path:d.poster_path||x.poster_path, backdrop_path:d.backdrop_path||x.backdrop_path, release_date:d.release_date||d.first_air_date||'',
+            vote_average:d.vote_average, nota:pr.nota, score:pr.nota+(x._pend?0.35:0), pend:!!x._pend, dur, temps:d.number_of_seasons||0,
+            generos:(d.genres||[]).slice(0,2).map(g=>g.name), donde: donde.slice(0,2).map(pv=>({n: nombresPlat[String(pv.provider_id)] || pv.provider_name, logo: pv.logo_path})), porque};
+        }catch(e){ return null; }
+      }, 5)).filter(Boolean).sort((a,b)=>b.score-a.score);
+      const res = {clave, t:Date.now(), mazo, i:0};
+      window._noche = res; try{ sessionStorage.setItem(clave, JSON.stringify(res)); }catch(e){}
+      return res;
+    }
+    function _nocheTarjeta(x, enInicio){
+      const fin = x._tipo==='movie' && x.dur ? `Dura ${formatDuracion(x.dur)} · si empiezas ya, acabas a las ${_nocheHora(x.dur)}` : x._tipo==='tv' ? `Serie${x.temps ? ` de ${x.temps} ${x.temps===1?'temporada':'temporadas'}` : ''}${x.dur ? ` · episodios de ${x.dur} min` : ''}` : '';
+      const donde = x.donde.map(d=>`${d.logo ? `<img src="https://image.tmdb.org/t/p/w92${d.logo}" alt="">` : ''}${_escHtml(d.n)}`).join(' · ');
+      const img = x.backdrop_path ? `https://image.tmdb.org/t/p/w1280${x.backdrop_path}` : `https://image.tmdb.org/t/p/w780${x.poster_path}`;
+      const porque = x.porque.length ? `Porque te suele gustar ${x.porque.map(_escHtml).join(' y ')}` : '';
+      return `<div class="noche-hero" style="background-image:url('${img}')" onclick="nocheFicha()">
+        <div class="noche-in">
+          <div class="noche-k">🌙 ${_nocheMomento()}${enInicio ? ', te propongo' : ''}${x.pend ? ' · 🔖 de tu lista' : ''}</div>
+          <div class="noche-t">${_escHtml(x.title)}</div>
+          <span class="noche-nota">🔮 Le pondrías un <b>${_notaFmt(x.nota)}</b></span>
+          <div class="noche-m">${donde ? `En ${donde}` : ''}${fin ? `<br>${_escHtml(fin)}` : ''}${x.generos.length ? `<br>${_escHtml([(x.release_date||'').slice(0,4), ...x.generos].filter(Boolean).join(' · '))}` : ''}</div>
+          ${porque ? `<div class="noche-porque">${porque}</div>` : ''}
+          <div class="noche-b">
+            <button type="button" class="noche-btn principal" onclick="event.stopPropagation();nocheFicha()">▶ ¡Esta!</button>
+            <button type="button" class="noche-btn" onclick="event.stopPropagation();${enInicio ? 'abrirEstaNoche()' : 'nocheOtra()'}">${enInicio ? 'Más ideas ›' : 'Otra ›'}</button>
+            ${enInicio ? '' : `<button type="button" class="noche-btn" onclick="event.stopPropagation();nocheNoMeInteresa()">🙅 No me interesa</button>`}
+          </div>
+        </div></div>`;
+    }
+    function _nocheVacia(r){
+      if(r && r.sinModelo) return `<div class="noche-vacia" onclick="abrirPuntuar()" role="button"><b>🌙 ${_nocheMomento()}, ¿qué ves?</b><span>Puntúa al menos 8 títulos que hayas visto (llevas ${r.notas||0}) y aquí te diré qué te va a gustar más de tus plataformas. Toca para puntuar rápido ›</span></div>`;
+      return `<div class="noche-vacia"><b>No he encontrado nada que encaje</b><span>Prueba con más tiempo, otro tipo o más plataformas.</span></div>`;
+    }
+    async function cargarNocheInicio(){
+      const box = document.getElementById('inicio-noche'); if(!box) return;
+      if(!sesionActual){ box.innerHTML = ''; return; }
+      if(!box.innerHTML) box.innerHTML = '<div class="noche-hero skeleton"></div>';
+      try{
+        const r = await _nocheMazo(false);
+        if(!r) { box.innerHTML = ''; return; }
+        window._nocheActual = r.mazo[0] || null;
+        box.innerHTML = r.mazo.length ? _nocheTarjeta(r.mazo[0], true) : _nocheVacia(r);
+      }catch(e){ box.innerHTML = ''; }
+    }
+    function _nochePintarOpts(){
+      const o = _nocheOpts();
+      const chip = (act, txt, fn) => `<button type="button" class="noche-chip${act?' activo':''}" onclick="${fn}" aria-pressed="${act}">${txt}</button>`;
+      document.getElementById('noche-titulo').textContent = _nocheMomento();
+      document.getElementById('noche-opts').innerHTML = `
+        <div class="section-label">¿Cuánto tiempo tienes?</div><div class="noche-chips">${[[90,'1 h 30'],[120,'2 h'],[150,'2 h 30'],[0,'Sin prisa']].map(([v,t])=>chip(o.min===v, t, `nocheOpt('min',${v})`)).join('')}</div>
+        <div class="section-label">¿Qué te apetece?</div><div class="noche-chips">${[['movie','Película'],['tv','Serie'],['todo','Lo que sea']].map(([v,t])=>chip(o.tipo===v, t, `nocheOpt('tipo','${v}')`)).join('')}</div>
+        <div class="section-label">¿Dónde? <span style="text-transform:none;letter-spacing:0;font-weight:500">(sin marcar: en cualquiera)</span></div><div class="noche-chips">${DESC_PLATAFORMAS.filter(([id])=>id).map(([id,n])=>chip(o.plats.includes(id), _escHtml(n), `nocheOpt('plat','${id}')`)).join('')}</div>`;
+    }
+    function nocheOpt(k, v){
+      const o = _nocheOpts();
+      if(k==='plat') o.plats = o.plats.includes(v) ? o.plats.filter(x=>x!==v) : [...o.plats, v]; else o[k] = v;
+      try{ localStorage.setItem('cm:noche', JSON.stringify(o)); }catch(e){}
+      _nochePintarOpts(); _nocheCargarMesa(false);
+      document.getElementById('inicio-noche') && (document.getElementById('inicio-noche').innerHTML = '');
+    }
+    async function abrirEstaNoche(){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      irA('p-noche'); _nochePintarOpts();
+      await _nocheCargarMesa(false);
+    }
+    async function _nocheCargarMesa(forzar){
+      const mesa = document.getElementById('noche-mesa'), turno = (window._nocheTurno = (window._nocheTurno||0)+1);
+      mesa.innerHTML = '<div class="noche-hero skeleton"></div><p class="rk-ayuda" style="text-align:center">Mirando qué hay en tus plataformas y qué te va a gustar más…</p>';
+      const r = await _nocheMazo(forzar).catch(()=>null);
+      if(turno!==window._nocheTurno) return;
+      if(!r || !r.mazo.length){ mesa.innerHTML = _nocheVacia(r); window._nocheActual = null; return; }
+      r.i = r.i || 0; _nochePintarMesa();
+    }
+    function _nochePintarMesa(){
+      const r = window._noche, mesa = document.getElementById('noche-mesa'); if(!r || !mesa) return;
+      if(r.i >= r.mazo.length){ mesa.innerHTML = `<div class="noche-vacia"><b>Ya no me quedan ideas buenas</b><span>Prueba con más tiempo u otras plataformas, o <a href="#" style="color:inherit" onclick="event.preventDefault();window._noche.i=0;_nochePintarMesa()">vuelve a empezar</a>.</span></div>`; return; }
+      const x = window._nocheActual = r.mazo[r.i];
+      mesa.innerHTML = `<div class="noche-cont">${r.i+1} de ${r.mazo.length} · ordenadas por la nota que le pondrías</div>` + _nocheTarjeta(x, false);
+    }
+    function nocheOtra(){ const r = window._noche; if(!r) return; r.i++; _nochePintarMesa(); }
+    function nocheFicha(){ const x = window._nocheActual; if(x) abrirDetalle({id:x.id, _tipo:x._tipo, title:x.title, poster_path:x.poster_path, release_date:x.release_date, vote_average:x.vote_average}); }
+    function nocheNoMeInteresa(){
+      const x = window._nocheActual, r = window._noche; if(!x || !r) return;
+      ocultarTitulo({id:x.id, tipo:x._tipo, t:x.title, poster:x.poster_path, f:x.release_date});
+      r.mazo.splice(r.i, 1); try{ sessionStorage.setItem(r.clave, JSON.stringify(r)); }catch(e){}
+      _nochePintarMesa();
+    }
+    function alternarMasFiltros(){
+      const box = document.getElementById('inicio-mas-filtros'), b = document.getElementById('inicio-mas-filtros-btn');
+      box.hidden = !box.hidden; b.setAttribute('aria-expanded', String(!box.hidden));
+      b.textContent = box.hidden ? 'Más filtros: tono, género, nota, año ▾' : 'Menos filtros ▴';
+    }
     // ══ «LE PONDRÍAS UN…»: predicción de tu nota a partir de las que ya has dado ══
     // Punto de partida: tu media, corregida por la nota del público (cuánto te dejas llevar por ella).
     // Encima, lo que te desvías de eso según géneros, director o creador, época, idioma, país, tipo y duración,
@@ -11080,6 +11430,42 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       return window._modeloNotaCargando;
     }
     const _notaFmt = v => v.toFixed(1).replace('.', ',');
+    window._prevCache = window._prevCache || new Map(); window._prevItems = window._prevItems || new Map();
+    function _prevInfo(p){
+      const local = _leerInfoLogro(p._tipo, p.id); if(local) return local;
+      const f = p.release_date || p.first_air_date || '';
+      return {y: f ? Number(f.slice(0,4)) : null, l: p.original_language || null, p: (p.origin_country||[]).slice(0,2),
+        g: p.genre_ids || (p.genres||[]).map(g=>g.id), va: p.vote_average || 0, vc: p.vote_count || 0, r: p.runtime || 0, d: null};
+    }
+    function _notaRapida(p){
+      const m = window._modeloNota; if(!p || !p.id || !p._tipo || !m || !m.fit || m.uid!==sesionActual?.user.id) return null;
+      const k = `${p.id}-${p._tipo}`, c = window._prevCache.get(k);
+      if(c && c.t===m.t) return c.v;
+      const pr = _notaPredecir(m.fit, p._tipo, _prevInfo(p)); const v = pr ? pr.nota : null;
+      window._prevCache.set(k, {t:m.t, v}); return v;
+    }
+    function _prevPrecargar(){
+      if(!sesionActual || window._modeloNotaCargando || (window._modeloNota && window._modeloNota.uid===sesionActual.user.id)) return;
+      _modeloNotaObtener().then(()=>_prevRefrescar()).catch(()=>{});
+    }
+    function _prevBadge(p){
+      if(!sesionActual || !p || !p.id) return '';
+      const k = `${p.id}-${p._tipo}`;
+      if((window.idsVistosSet||new Set()).has(k)) return '';
+      window._prevItems.set(k, p);
+      const v = _notaRapida(p);
+      if(v==null){ _prevPrecargar(); return ''; }
+      const m = window._modeloNota, alta = v >= Math.max(8, m.fit.media+1.2);
+      return `<span class="prev-badge${alta?' alta':''}" title="Le pondrías un ${_notaFmt(v)}">🔮 ${_notaFmt(v)}</span>`;
+    }
+    // cuando llega el modelo, se añade la nota a los pósters que ya estaban pintados
+    function _prevRefrescar(){
+      document.querySelectorAll('.desc-card[data-k], .desc-rk[data-k]').forEach(c=>{
+        const p = window._prevItems.get(c.dataset.k), pos = c.classList.contains('desc-rk') ? c : c.querySelector('.desc-poster');
+        if(!p || !pos || pos.querySelector('.prev-badge')) return;
+        const b = _prevBadge(p); if(b) pos.insertAdjacentHTML('beforeend', b);
+      });
+    }
     const _NOTA_GEN = {28:'acción',12:'aventura',16:'animación',35:'comedia',80:'crimen',99:'documental',18:'drama',10751:'familiar',14:'fantasía',36:'historia',27:'terror',10402:'música',9648:'misterio',10749:'romance',878:'ciencia ficción',10770:'película de TV',53:'thriller',10752:'bélico',37:'western',10759:'acción y aventura',10762:'infantil',10763:'noticias',10764:'reality',10765:'ciencia ficción y fantasía',10766:'telenovela',10767:'entrevistas',10768:'guerra y política'};
     async function _notaNombreRasgo(k, nombres){
       const t = k[0], v = k.slice(1);
@@ -11106,6 +11492,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         // fuera el propio título si ya estaba entre tus notas (p. ej. tras quitarle la nota)
         const pr = _notaPredecir(m.fit, p._tipo, info); if(!pr) return;
         window._previstaFicha = {k:`${p._tipo}:${p.id}`, nota:pr.nota};
+        window._prevCache.set(`${p.id}-${p._tipo}`, {t:m.t, v:pr.nota});
         chip.innerHTML = `🔮 Le pondrías un <b>${_notaFmt(pr.nota)}</b>`;
         chip.style.display = '';
         const fuertes = pr.partes.filter(x=>Math.abs(x.a)>=0.12).sort((a,b)=>Math.abs(b.a)-Math.abs(a.a)).slice(0,5);
