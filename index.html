@@ -607,6 +607,48 @@
     .inicio-atajo small { font-size: 11.5px; color: var(--k-767973); line-height: 1.3; }
     #continuar-viendo-wrap { margin-top: 6px !important; margin-bottom: 18px; }
     #continuar-viendo-wrap .section-label { opacity: 1 !important; }
+
+    /* ── Escáner ── */
+    .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
+    .esc-subir { display: block; text-align: center; cursor: pointer; }
+    #esc-estado { margin: 14px 0; font-size: 13px; color: var(--k-767973); }
+    .esc-barra { height: 6px; border-radius: 3px; background: var(--k-e9e7e0); overflow: hidden; margin-top: 8px; }
+    .esc-barra i { display: block; height: 100%; background: var(--acento); transition: width .3s; }
+    .esc-img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 12px; background: var(--k-e9e7e0); margin-bottom: 10px; }
+    .esc-gana { display: flex; gap: 14px; padding: 14px; border-radius: 16px; background: #1b1d1c; color: #fff; margin: 6px 0 14px; cursor: pointer; }
+    .esc-gana img { width: 84px; height: 126px; object-fit: cover; border-radius: 8px; flex: none; background: #333; }
+    .esc-gana .k { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.7); }
+    .esc-gana .t { font: 800 21px/1.1 'Cabinet Grotesk', -apple-system, sans-serif; margin: 6px 0 8px; }
+    .esc-fila { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .esc-fila img { width: 44px; height: 66px; object-fit: cover; border-radius: 6px; flex: none; background: var(--k-e9e7e0); }
+    .esc-fila .i { flex: 1; min-width: 0; }
+    .esc-fila .i b { display: block; font-size: 14.5px; }
+    .esc-fila .i small { color: var(--k-767973); font-size: 12px; }
+    .esc-nota { font: 800 17px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--acento); white-space: nowrap; }
+    .esc-nota.baja { color: var(--k-767973); }
+    .esc-pie { font-size: 12px; color: var(--k-767973); margin-top: 14px; line-height: 1.5; }
+    /* ── Mundial ── */
+    .mun-ronda { text-align: center; margin: 6px 0 14px; }
+    .mun-ronda b { display: block; font: 800 22px 'Cabinet Grotesk', -apple-system, sans-serif; }
+    .mun-ronda span { font-size: 12.5px; color: var(--k-767973); }
+    .mun-duelo { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+    .mun-vs { font: 800 16px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--k-767973); }
+    .mun-op { border: 2px solid transparent; border-radius: 16px; background: var(--k-fffefb); padding: 0 0 10px; overflow: hidden; color: inherit; text-align: left; cursor: pointer; transition: transform .15s, border-color .15s; }
+    .mun-op:active { transform: scale(.97); border-color: var(--acento); }
+    .mun-op img { display: block; width: 100%; aspect-ratio: 2/3; object-fit: cover; background: var(--k-e9e7e0); }
+    .mun-op b { display: block; font-size: 14px; line-height: 1.2; margin: 8px 10px 3px; }
+    .mun-op small { display: block; margin: 0 10px; font-size: 12px; color: var(--k-767973); }
+    .mun-op .prev-txt { margin: 4px 10px 0; display: block; }
+    .mun-acc { display: flex; justify-content: space-between; margin-top: 14px; }
+    .mun-acc button { background: none; border: 0; color: var(--acento); font: 700 13px 'Satoshi', -apple-system, sans-serif; cursor: pointer; padding: 6px 0; }
+    .mun-campeona { text-align: center; padding: 10px 0; }
+    .mun-campeona .copa { font-size: 54px; }
+    .mun-campeona img { width: 150px; aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; margin: 10px auto; display: block; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+    .mun-campeona h3 { font: 800 25px/1.1 'Cabinet Grotesk', -apple-system, sans-serif; margin: 6px 0; }
+    .mun-podio { text-align: left; margin-top: 18px; }
+    .mun-podio div { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; cursor: pointer; }
+    .mun-podio span { width: 28px; text-align: center; }
+    .mun-elegir { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 14px 0; }
     /* ── Avisos ── */
     .avisos-caja { margin-bottom: 18px; font-size: 13.5px; line-height: 1.5; }
     .avisos-caja p { margin: 0 0 10px; color: var(--k-61635e); }
@@ -1758,6 +1800,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <button type="button" class="inicio-atajo" onclick="irA('p-comparador')"><span>⚖️</span><b>¿Cuál veo?</b><small>Compara dos o tres</small></button>
           <button type="button" class="inicio-atajo" onclick="irA('p-especiales-hub')"><span>🎬</span><b>Especiales</b><small>Listas temáticas</small></button>
           <button type="button" class="inicio-atajo" onclick="sorprendeme()"><span>🎲</span><b>Sorpréndeme</b><small>Una al azar para ti</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirEscaner()"><span>📸</span><b>¿Cuál de estas?</b><small>Desde una captura o foto</small></button>
+          <button type="button" class="inicio-atajo" onclick="abrirMundial()"><span>🏆</span><b>Mundial de tu lista</b><small>Eliminatorias de tus pendientes</small></button>
         </div>
       </div>
       <div id="hoy-cine" style="display:none"></div>
@@ -1782,6 +1826,31 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <span></span>
       </div>
       <div id="adn-cont"></div>
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-escaner">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-inicio', true)">‹ Atrás</span>
+        <h2>¿Cuál de estas?</h2>
+        <span></span>
+      </div>
+      <p class="esc-intro">Haz una captura de lo que te ofrece Netflix, de una cartelera o de la lista que te ha mandado alguien, y te digo cuál te va a gustar más.</p>
+      <label class="cta-btn esc-subir"><input type="file" accept="image/*" id="esc-archivo" onchange="escanearImagen(this.files[0])" hidden>📸 Elegir captura o foto</label>
+      <div id="esc-estado"></div>
+      <div id="esc-res"></div>
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-mundial">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-biblioteca', true)">‹ Atrás</span>
+        <h2>El Mundial de tu lista</h2>
+        <span></span>
+      </div>
+      <div id="mun-cont"></div>
     </div>
   </div>
 
@@ -2377,6 +2446,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <span id="ml-vista-btns"></span>
       </div>
       <button type="button" class="cta-btn" id="btn-elige-por-mi" style="margin:14px 0;display:none" onclick="elegirPorMi()">Elige una por mí</button>
+      <button type="button" class="ml-secundario mun-entrada" id="btn-mundial" style="display:none;margin:-4px 0 14px;width:100%" onclick="abrirMundial()">🏆 Mundial de tu lista: elimina hasta quedarte con una</button>
       <button type="button" class="ml-lhv" onclick="abrirLaHasVisto()">👀 ¿Te faltan títulos? Añade rápido lo que ya has visto</button>
       <p id="ml-estado" class="ml-ayuda" role="status" aria-live="polite"></p>
       <div id="biblioteca-lista" aria-busy="false"></div>
@@ -11140,6 +11210,199 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){ return null; }
     }
 
+    // ══ ESCÁNER «¿CUÁL DE ESTAS?»: lee los títulos de una captura (en el propio móvil) y los ordena por tu nota prevista ══
+    function abrirEscaner(){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      irA('p-escaner');
+      if(!document.getElementById('esc-res').innerHTML) document.getElementById('esc-estado').innerHTML = '';
+    }
+    const _escNorm = t => String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/&/g,' y ').replace(/[^a-z0-9ñ]+/g,' ').trim();
+    function _escLev(a, b){
+      if(a===b) return 0; const m = a.length, n = b.length; if(!m || !n) return Math.max(m,n);
+      let prev = Array.from({length:n+1}, (_,j)=>j);
+      for(let i=1;i<=m;i++){ const cur=[i]; for(let j=1;j<=n;j++) cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1)); prev=cur; }
+      return prev[n];
+    }
+    function _escParecido(cand, titulo){
+      const c = _escNorm(cand), t = _escNorm(titulo); if(!c || !t) return 0;
+      if(c===t) return 1;
+      const sim = 1 - _escLev(c,t)/Math.max(c.length,t.length);
+      const contiene = (t.length>=5 && c.includes(t) && t.length/c.length>=0.55) || (c.length>=5 && t.includes(c) && c.length/t.length>=0.7);
+      return Math.max(sim, contiene ? 0.86 : 0);
+    }
+    const _ESC_RUIDO = new Set(['netflix','prime video','disney','max','hbo','filmin','movistar','apple tv','inicio','series','peliculas','películas','mi lista','novedades','top 10','ver ahora','reproducir','mas informacion','más información','temporada','temporadas','episodio','episodios','nuevo','nuevos','categorias','categorías','buscar','descargas','mi netflix','juegos','para ti','tendencias','populares','en cartelera','comprar entradas','entradas','horarios','hoy','mañana','manana','trailer','tráiler','ver todo','continuar viendo','recomendado','reciente','cines','cine','sesiones','version original','vose','3d']);
+    function _escCandidatos(texto){
+      const out = [], ya = new Set();
+      texto.split(/\n+/).forEach(linea=>{
+        // una línea puede llevar varios títulos separados por mucho espacio, barras o puntos
+        linea.split(/\s{3,}|\s[|·•]\s|\t/).forEach(tr=>{
+          let t = tr.replace(/^[\s\d.\-–—•*#)(:]+/, '').replace(/[\s|•·*]+$/,'').replace(/\s+\(?\d{4}\)?$/,'').trim();
+          const n = _escNorm(t);
+          if(n.length<2 || n.length>60 || !/[a-zñ]{2}/.test(n) || _ESC_RUIDO.has(n) || /^\d+\s*(min|h|%|€|eur)/.test(n) || /^(t|s)\d+|^\d+ (temporadas?|episodios?)|^(temporada|episodio|capitulo|season|episode)s? ?\d*$/.test(n)) return;
+          if((t.match(/[A-Za-zÀ-ÿ]/g)||[]).length < t.replace(/\s/g,'').length*0.6) return; // demasiados símbolos: ruido del OCR
+          if(!ya.has(n)){ ya.add(n); out.push(t); }
+        });
+      });
+      return out.slice(0, 30);
+    }
+    // preparar la imagen: más grande, en grises, con más contraste y en negativo si el fondo es oscuro (Netflix, cines…)
+    async function _escPreparar(archivo){
+      const img = await new Promise((res, rej)=>{ const u = URL.createObjectURL(archivo), im = new Image(); im.onload = ()=>res(im); im.onerror = rej; im.src = u; });
+      const esc = Math.min(2.2, 2000/Math.max(img.width, img.height)) || 1, W = Math.round(img.width*esc), H = Math.round(img.height*esc);
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, W, H);
+      const d = ctx.getImageData(0,0,W,H), px = d.data; let suma = 0;
+      for(let i=0;i<px.length;i+=4){ const g = 0.299*px[i]+0.587*px[i+1]+0.114*px[i+2]; px[i]=px[i+1]=px[i+2]=g; suma += g; }
+      const oscuro = suma/(px.length/4) < 110;
+      for(let i=0;i<px.length;i+=4){ let g = px[i]; if(oscuro) g = 255-g; g = Math.max(0, Math.min(255, (g-128)*1.5+128)); px[i]=px[i+1]=px[i+2]=g; }
+      ctx.putImageData(d,0,0);
+      return {cv, url: img.src};
+    }
+    async function escanearImagen(archivo){
+      if(!archivo) return;
+      const est = document.getElementById('esc-estado'), res = document.getElementById('esc-res'), turno = (window._escTurno = (window._escTurno||0)+1);
+      res.innerHTML = '';
+      const paso = (t, pct) => { if(turno===window._escTurno) est.innerHTML = `${_escHtml(t)}${pct!=null ? `<div class="esc-barra"><i style="width:${Math.round(pct*100)}%"></i></div>` : ''}`; };
+      try{
+        paso('Preparando la imagen…', 0.03);
+        const {cv, url} = await _escPreparar(archivo);
+        res.innerHTML = `<img class="esc-img" src="${url}" alt="">`;
+        paso('Cargando el lector de texto (la primera vez tarda un poco)…', 0.06);
+        await _cargarScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+        if(!window._escWorker) window._escWorker = await Tesseract.createWorker(['spa','eng'], 1, {logger: m=>{ if(m.status==='recognizing text') paso('Leyendo los títulos…', 0.1 + m.progress*0.5); }});
+        paso('Leyendo los títulos…', 0.1);
+        const {data} = await window._escWorker.recognize(cv);
+        if(turno!==window._escTurno) return;
+        const cands = _escCandidatos(data.text||'');
+        if(!cands.length){ paso('No he podido leer títulos en esta imagen. Prueba con una captura más nítida o con la lista en texto.'); return; }
+        paso(`He leído ${cands.length} posibles títulos. Buscándolos…`, 0.62);
+        let hechos = 0; const encontrados = new Map(), sin = [];
+        await _fetchEnLotes(cands, async c=>{
+          try{
+            const r = (await _tmdbJson(`/search/multi&language=es-ES&include_adult=false&query=${encodeURIComponent(c)}`)).results || [];
+            const ops = r.filter(x=>(x.media_type==='movie'||x.media_type==='tv') && x.poster_path)
+              .map(x=>({x, s:Math.max(_escParecido(c, x.title||x.name), _escParecido(c, x.original_title||x.original_name))}))
+              .filter(o=>o.s>=0.8).sort((a,b)=>(b.s-a.s) || ((b.x.vote_count||0)-(a.x.vote_count||0)));
+            const m = ops[0];
+            if(m){ const k = `${m.x.id}-${m.x.media_type}`; if(!encontrados.has(k)) encontrados.set(k, {...m.x, _tipo:m.x.media_type, title:m.x.title||m.x.name, release_date:m.x.release_date||m.x.first_air_date, _leido:c}); }
+            else sin.push(c);
+          }catch(e){ sin.push(c); }
+          paso(`Buscando los títulos… ${++hechos} de ${cands.length}`, 0.62 + 0.2*hechos/cands.length);
+        }, 4);
+        if(turno!==window._escTurno) return;
+        const lista = [...encontrados.values()].slice(0, 20);
+        if(!lista.length){ paso('He leído texto, pero no he encontrado películas ni series con esos nombres. Prueba con otra captura.'); return; }
+        const m = await _modeloNotaObtener().catch(()=>null);
+        hechos = 0;
+        await _fetchEnLotes(lista, async x=>{
+          if(!_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} }
+          paso(`Calculando tu nota… ${++hechos} de ${lista.length}`, 0.82 + 0.18*hechos/lista.length);
+        }, 5);
+        if(turno!==window._escTurno) return;
+        const vistos = window.idsVistosSet || new Set();
+        lista.forEach(x=>{ x._nota = _notaExacta(x); x._visto = vistos.has(`${x.id}-${x._tipo}`); });
+        lista.sort((a,b)=>(a._visto-b._visto) || ((b._nota??-1)-(a._nota??-1)));
+        window._escLista = lista;
+        est.innerHTML = '';
+        _escPintar(lista, sin, !!(m && m.fit));
+      }catch(e){ paso('No se ha podido leer la imagen. Comprueba tu conexión e inténtalo de nuevo.'); }
+    }
+    function _escPintar(lista, sin, conModelo){
+      const res = document.getElementById('esc-res'), img = res.querySelector('.esc-img')?.outerHTML || '';
+      const g = lista.find(x=>!x._visto && x._nota!=null), mala = [...lista].reverse().find(x=>!x._visto && x._nota!=null && x._nota < (window._modeloNota?.fit?.media ?? 6) - 0.5);
+      const fila = (x,i) => `<div class="esc-fila" onclick="abrirDetalle(_escLista[${i}])"><img loading="lazy" src="https://image.tmdb.org/t/p/w154${x.poster_path}" alt=""><div class="i"><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x._tipo==='tv'?'Serie':'Película', x._visto?'✓ Ya la viste':''].filter(Boolean).join(' · ')}</small></div>${x._nota!=null && !x._visto ? `<span class="esc-nota${x._nota < (window._modeloNota?.fit?.media ?? 6) ? ' baja' : ''}">🔮 ${_notaFmt(x._nota)}</span>` : ''}</div>`;
+      res.innerHTML = img + (g ? `<div class="esc-gana" onclick="abrirDetalle(_escLista[${lista.indexOf(g)}])"><img src="https://image.tmdb.org/t/p/w185${g.poster_path}" alt=""><div><div class="k">De estas ${lista.length}, la que más te va a gustar</div><div class="t">${_escHtml(g.title)}</div><span class="noche-nota">🔮 Le pondrías un <b>${_notaFmt(g._nota)}</b></span></div></div>` : '')
+        + (mala && mala!==g ? `<p class="esc-pie" style="margin:0 0 10px">👎 La que menos: <b>${_escHtml(mala.title)}</b> (${_notaFmt(mala._nota)}).</p>` : '')
+        + lista.map(fila).join('')
+        + `<p class="esc-pie">${conModelo ? '' : 'Puntúa al menos 8 títulos para ver tu nota en cada uno. '}${sin.length ? `No he reconocido: ${sin.slice(0,8).map(_escHtml).join(' · ')}${sin.length>8?'…':''}. ` : ''}La lectura se hace en tu móvil; si falta alguna, búscala en Buscar.</p>`;
+    }
+
+    // ══ EL MUNDIAL DE TU LISTA: eliminatorias entre tus pendientes hasta quedarte con una ══
+    async function abrirMundial(){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      irA('p-mundial');
+      const cont = document.getElementById('mun-cont');
+      if(window._mun && window._mun.uid===sesionActual.user.id && !window._mun.fin){ _munPintar(); return; }
+      cont.innerHTML = '<p class="rk-ayuda">Mirando tu lista…</p>';
+      try{
+        const {data} = await sb.from('mi_biblioteca').select('tmdb_id,tipo,titulo,poster_path,anio,visto,pendiente').eq('user_id', sesionActual.user.id).eq('pendiente', true);
+        const pend = (data||[]).filter(x=>!x.visto && x.poster_path);
+        window._munPend = pend;
+        let ultima = null; try{ ultima = JSON.parse(localStorage.getItem('cm:mundial')||'null'); }catch(e){}
+        if(pend.length<4){ cont.innerHTML = `<div class="noche-vacia"><b>🏆 Hacen falta al menos 4 pendientes</b><span>Tienes ${pend.length} en «Para ver». Añade alguno más y vuelve.</span></div>`; return; }
+        const tam = [32,16,8,4].filter(n=>n<=pend.length);
+        const pel = pend.filter(x=>x.tipo==='movie').length, ser = pend.length-pel;
+        cont.innerHTML = `<div class="mun-campeona"><div class="copa">🏆</div><h3>El Mundial de tu lista</h3><p class="esc-intro" style="text-align:center">Tienes ${pend.length} pendientes. Se enfrentan de dos en dos y tú eliges cuál te apetece más, hasta que quede una campeona.</p></div>
+          <div class="section-label">¿Qué entra?</div>
+          <div class="mun-elegir" style="justify-content:flex-start">${[['todo','Todo'],['movie',`Películas (${pel})`],['tv',`Series (${ser})`]].map(([k,t],i)=>`<button type="button" class="noche-chip${i===0?' activo':''}" data-tipo="${k}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('activo', b===this))">${t}</button>`).join('')}</div>
+          <div class="section-label">¿Cuántas compiten?</div>
+          <div class="mun-elegir" style="justify-content:flex-start">${tam.map((n,i)=>`<button type="button" class="noche-chip${i===Math.min(1,tam.length-1)?' activo':''}" data-n="${n}" onclick="this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('activo', b===this))">${n}</button>`).join('')}</div>
+          <button type="button" class="cta-btn" style="margin-top:16px" onclick="empezarMundial()">¡Que empiece el Mundial!</button>
+          ${ultima ? `<p class="esc-pie" style="text-align:center">Última campeona: <b>${_escHtml(ultima.t)}</b> (${new Date(ultima.f).toLocaleDateString('es-ES',{day:'numeric',month:'long'})})</p>` : ''}`;
+      }catch(e){ cont.innerHTML = '<p class="rk-ayuda">No se pudo cargar tu lista. Inténtalo de nuevo.</p>'; }
+    }
+    async function empezarMundial(){
+      const cont = document.getElementById('mun-cont');
+      const tipo = cont.querySelector('[data-tipo].activo')?.dataset.tipo || 'todo';
+      let n = Number(cont.querySelector('[data-n].activo')?.dataset.n) || 8;
+      const pool = (window._munPend||[]).filter(x=>tipo==='todo' || x.tipo===tipo).map(x=>({id:x.tmdb_id, _tipo:x.tipo, title:x.titulo, poster_path:x.poster_path, release_date:x.anio ? x.anio+'-01-01' : ''}));
+      if(pool.length<4){ alert('Con ese filtro hay menos de 4 pendientes.'); return; }
+      while(n>pool.length) n/=2;
+      cont.innerHTML = '<p class="rk-ayuda">Haciendo el sorteo…</p>';
+      await _modeloNotaObtener().catch(()=>null);
+      // cabezas de serie: las que más te van a gustar; el resto entra al azar
+      await _fetchEnLotes(pool, async x=>{ if(!_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} } }, 5);
+      pool.forEach(x=>{ x._nota = _notaExacta(x); x._r = Math.random(); });
+      const cabezas = pool.filter(x=>x._nota!=null).sort((a,b)=>b._nota-a._nota).slice(0, n/2);
+      const resto = pool.filter(x=>!cabezas.includes(x)).sort((a,b)=>a._r-b._r);
+      const elegidas = [...cabezas, ...resto].slice(0, n);
+      const fuertes = elegidas.slice(0, n/2), debiles = elegidas.slice(n/2).sort(()=>Math.random()-0.5);
+      const ronda = []; fuertes.forEach((x,i)=>ronda.push(x, debiles[i]));
+      window._mun = {uid: sesionActual.user.id, rondas: [ronda], gan: [], hist: [], fin: false, n};
+      _munPintar();
+    }
+    const _munNombreRonda = n => ({2:'La final', 4:'Semifinales', 8:'Cuartos de final', 16:'Octavos de final', 32:'Dieciseisavos'})[n] || `Ronda de ${n}`;
+    function _munPintar(){
+      const M = window._mun, cont = document.getElementById('mun-cont'); if(!M) return;
+      if(M.fin) return _munFinal();
+      const ronda = M.rondas[M.rondas.length-1], i = M.gan.length, a = ronda[2*i], b = ronda[2*i+1];
+      const op = (x, lado) => `<button type="button" class="mun-op" onclick="munElegir(${lado})"><img src="https://image.tmdb.org/t/p/w342${x.poster_path}" alt=""><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x._tipo==='tv'?'Serie':'Película'].filter(Boolean).join(' · ')}</small>${x._nota!=null ? `<b class="prev-txt">🔮 ${_notaFmt(x._nota)}</b>` : ''}</button>`;
+      cont.innerHTML = `<div class="mun-ronda"><b>${_munNombreRonda(ronda.length)}</b><span>${ronda.length>2 ? `Partido ${i+1} de ${ronda.length/2} · ` : ''}¿Cuál te apetece más ver?</span></div>
+        <div class="mun-duelo">${op(a,0)}<span class="mun-vs">VS</span>${op(b,1)}</div>
+        <div class="mun-acc"><button type="button" onclick="munDeshacer()" ${M.hist.length?'':'disabled style="opacity:.35"'}>‹ Deshacer</button><button type="button" onclick="munFicha()">Ver las fichas ›</button></div>`;
+    }
+    function munElegir(lado){
+      const M = window._mun; if(!M || M.fin) return;
+      const ronda = M.rondas[M.rondas.length-1], i = M.gan.length;
+      M.hist.push({rondas: M.rondas.length, gan: [...M.gan]});
+      M.gan.push(ronda[2*i+lado]);
+      if(M.gan.length === ronda.length/2){
+        if(M.gan.length===1){ M.fin = true; M.campeona = M.gan[0]; }
+        else { M.rondas.push(M.gan); M.gan = []; }
+      }
+      _munPintar();
+    }
+    function munDeshacer(){
+      const M = window._mun, h = M && M.hist.pop(); if(!h) return;
+      M.rondas = M.rondas.slice(0, h.rondas); M.gan = h.gan; M.fin = false; _munPintar();
+    }
+    function munFicha(){
+      const M = window._mun, ronda = M.rondas[M.rondas.length-1], i = M.gan.length;
+      window._munDuelo = [ronda[2*i], ronda[2*i+1]];
+      const cont = document.getElementById('mun-cont');
+      cont.querySelector('.mun-acc').insertAdjacentHTML('afterend', `<div class="mun-elegir"><button type="button" class="noche-chip" onclick="abrirDetalle(_munDuelo[0])">${_escHtml(window._munDuelo[0].title)}</button><button type="button" class="noche-chip" onclick="abrirDetalle(_munDuelo[1])">${_escHtml(window._munDuelo[1].title)}</button></div>`);
+      cont.querySelector('.mun-acc button:last-child').remove();
+    }
+    function _munFinal(){
+      const M = window._mun, c = M.campeona, cont = document.getElementById('mun-cont');
+      const fin = M.rondas[M.rondas.length-1], semis = M.rondas.length>1 ? M.rondas[M.rondas.length-2].filter(x=>!fin.includes(x)) : [];
+      const finalista = fin.find(x=>x!==c);
+      try{ localStorage.setItem('cm:mundial', JSON.stringify({t:c.title, id:c.id, tipo:c._tipo, f:Date.now()})); }catch(e){}
+      window._munPodio = [c, finalista, ...semis].filter(Boolean);
+      cont.innerHTML = `<div class="mun-campeona"><div class="copa">🏆</div><div class="noche-k" style="color:var(--k-767973)">Tu campeona</div>
+        <img src="https://image.tmdb.org/t/p/w342${c.poster_path}" alt=""><h3>${_escHtml(c.title)}</h3>${c._nota!=null ? `<span class="noche-nota" style="color:#fff">🔮 Le pondrías un <b>${_notaFmt(c._nota)}</b></span>` : ''}
+        <div class="mun-elegir"><button type="button" class="cta-btn" style="width:auto;padding:12px 22px" onclick="abrirDetalle(_munPodio[0])">▶ ¡A por ella!</button><button type="button" class="ml-secundario" onclick="window._mun=null;abrirMundial()">Otro Mundial</button></div></div>
+        <div class="mun-podio">${window._munPodio.map((x,i)=>`<div onclick="abrirDetalle(_munPodio[${i}])"><span>${i===0?'🥇':i===1?'🥈':'🥉'}</span>${_escHtml(x.title)}${i>1?' <small style="color:var(--k-767973)">· semifinal</small>':''}</div>`).join('')}</div>`;
+    }
     // ══ AVISOS EN EL MÓVIL (Web Push): episodios de hoy, novedades que te van a encantar y el estreno del finde ══
     const VAPID_PUBLICO = 'BInIGCCADygEMmBV-jFsbqkZV4vjoBmt2Yg6aacYn5Ts6d_MsKhWZLQk7j2uAA2c7XYWgphnU5wx1ZT3GGx7Css';
     const _AVISOS_FN = TMDB_PROXY.replace('tmdb-proxy', 'cinemood-avisos');
@@ -13132,6 +13395,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       _mlPrepararSelects();
       const pendiente=bibliotecaTabActual==='pendiente', uid=sesionActual?.user.id;
       btn.style.display=pendiente?'block':'none'; btn.disabled=true;
+      const bm=document.getElementById('btn-mundial'); if(bm) bm.style.display=pendiente?'block':'none';
       const opcionNota=document.querySelector('#ml-orden option[value="nota"]');
       opcionNota.disabled=pendiente;
       if(pendiente&&document.getElementById('ml-orden').value==='nota') document.getElementById('ml-orden').value='reciente';
