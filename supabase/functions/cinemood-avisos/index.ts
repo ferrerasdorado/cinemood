@@ -71,7 +71,8 @@ async function avisosDe(sb: any, uid: string, perfil: any) {
       const pags = await Promise.all(Array.from({ length: n }, (_, i) => i + 1).map((pg) => tmdb(`/discover/${t}&language=es-ES&watch_region=ES&with_watch_providers=${grupo.join("|")}&with_watch_monetization_types=flatrate&without_genres=${sin}&sort_by=popularity.desc&vote_count.gte=${t === "movie" ? 80 : 40}&page=${pg}`)));
       const lista = pags.flatMap((d: any) => d.results || []), clave = `${grupo.join("|")}:${t}`, antes = estado.catalogo?.[clave];
       nuevoEstado[clave] = lista.map((x: any) => x.id);
-      if (!antes) continue; // primera vez: solo se guarda lo que hay
+      if (!lista.length) { nuevoEstado[clave] = antes || []; continue; } // TMDB no respondió: se deja como estaba
+      if (!antes || !antes.length) continue; // primera vez: solo se guarda lo que hay
       const ya = new Set(antes);
       const mejor = lista.filter((x: any) => !ya.has(x.id) && !vistos.has(`${x.id}-${t}`)).map((x: any) => ({ x, v: predecir(m, t, x) })).sort((a: any, b: any) => b.v - a.v)[0];
       if (!mejor || mejor.v < umbral) continue;
