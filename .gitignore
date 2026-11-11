@@ -7,3 +7,4 @@ supabase/privado/
 android-tv/build/
 android-tv/firma/
 android-tv/*.apk
+android-tv/*.idsig
