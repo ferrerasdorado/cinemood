@@ -771,6 +771,14 @@
     .modo-tv .tab.tv-foco { transform: none; }
     .modo-tv .buscar-camara, .modo-tv .ml-gesto-ayuda, .modo-tv #avisos-caja, .modo-tv .avisos-caja, .modo-tv .esc-subir, .modo-tv #esc-btn-camara { display: none !important; }
     .modo-tv .scroll-arrow { display: none !important; }
+    /* barra de arriba: que quepa entera en la tele */
+    .modo-tv .pc-nav { padding: 12px 28px; gap: 14px; }
+    .modo-tv .pc-nav-busqueda { max-width: 340px; margin: 0; }
+    .modo-tv .pc-nav-actions { gap: 6px; margin-left: auto; }
+    .modo-tv .pc-nav-btn[title="Empezar de cero"] { display: none; }
+    /* filas que se desplazan: margen para que el resaltado no se corte por los lados */
+    .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv #continuar-viendo-scroll { padding: 14px 14px 18px !important; margin: -14px -14px -18px !important; scroll-padding-inline: 28px; }
+    .modo-tv .scroll-wrap { overflow: visible; }
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila { scroll-behavior: smooth; }
     /* ── Avisos ── */
     .avisos-caja { margin-bottom: 18px; font-size: 13.5px; line-height: 1.5; }
@@ -12218,7 +12226,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         try{ const c = JSON.parse(sessionStorage.getItem(clave)||'null'); if(c && Date.now()-c.t < 30*60e3){ window._noche = c; return c; } }catch(e){}
       }
       const m = await _modeloNotaObtener().catch(()=>null);
-      if(!m || !m.fit) return {clave, t:Date.now(), mazo:[], sinModelo:true, notas: m ? m.muestras.length : 0};
+      if(!m || !m.fit) return {clave, t:Date.now(), mazo:[], sinModelo:true, notas: m ? m.muestras.length : 0}; // (con menos de 8 notas)
       const plats = o.plats.length ? o.plats : DESC_PLATAFORMAS.map(x=>x[0]).filter(Boolean);
       const pq = `&watch_region=ES&with_watch_providers=${plats.join('|')}&with_watch_monetization_types=flatrate`;
       const tipos = o.tipo==='todo' ? ['movie','tv'] : [o.tipo], rutas = [];
@@ -12288,7 +12296,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     async function cargarNocheInicio(){
       const box = document.getElementById('inicio-noche'); if(!box) return;
       if(!sesionActual){ box.innerHTML = ''; return; }
-      if(!box.innerHTML) box.innerHTML = '<div class="noche-hero skeleton"></div>';
+      if(!box.innerHTML) box.innerHTML = '<div class="noche-hero skeleton" style="align-items:center;justify-content:center"><span style="color:rgba(255,255,255,.75);font-size:14px">Preparando tus recomendaciones…</span></div>';
       try{
         const r = await _nocheMazo(false);
         if(!r) { box.innerHTML = ''; return; }
@@ -12417,8 +12425,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(m && m.uid===uid && Date.now()-m.t < 15*60e3) return m;
       if(window._modeloNotaCargando) return window._modeloNotaCargando;
       window._modeloNotaCargando = (async()=>{
-        const vistos = await _vistosConInfo(false);
-        const muestras = vistos.filter(v=>v.puntuacion!=null && v.info);
+        let vistos = await _vistosConInfo(false);
+        let muestras = vistos.filter(v=>v.puntuacion!=null && v.info);
+        const puntuados = vistos.filter(v=>v.puntuacion!=null).length;
+        if(puntuados >= 8 && muestras.length < Math.max(8, puntuados*0.6)){ vistos = await _vistosConInfo(true); muestras = vistos.filter(v=>v.puntuacion!=null && v.info); }
         const nuevo = {uid, t:Date.now(), muestras, fit:_notaEntrenar(muestras)};
         if(sesionActual?.user.id===uid){ window._modeloNota = nuevo; setTimeout(_avisosQuizaSubirModelo, 0); }
         // los títulos puntuados sin datos guardados en este dispositivo se completan una vez, en segundo plano
