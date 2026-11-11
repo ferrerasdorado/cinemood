@@ -13,6 +13,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
   <meta name="theme-color" content="#f5f3ef">
+  <script>(function(){try{var tv=/CineMoodTV/.test(navigator.userAgent)||/[?&]tv=1/.test(location.search);if(tv){document.documentElement.classList.add('modo-tv');try{localStorage.setItem('cm:tv','1')}catch(e){}}else if(localStorage.getItem('cm:tv')==='1'&&/Android/.test(navigator.userAgent)&&!/Mobile/.test(navigator.userAgent)){document.documentElement.classList.add('modo-tv')}}catch(e){}})();</script>
   <script>(function(){var t;try{t=localStorage.getItem('cm:tema')}catch(e){}if(t!=='claro'&&t!=='oscuro')t=matchMedia('(prefers-color-scheme: dark)').matches?'oscuro':'claro';document.documentElement.dataset.theme=t==='oscuro'?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m&&t==='oscuro')m.setAttribute('content','#121413');try{var a=JSON.parse(localStorage.getItem('cm:acento')||'null'),r=document.documentElement;if(a&&a.c){r.style.setProperty('--acento',a.c);r.style.setProperty('--acento-rgb',a.rgb);r.style.setProperty('--acento-osc',a.o);r.style.setProperty('--acento-claro',a.l);r.dataset.acento=a.k;}if(localStorage.getItem('cm:oled')==='1'){r.dataset.oled='1';if(m&&t==='oscuro')m.setAttribute('content','#000000');}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -760,6 +761,17 @@
     .mun-podio div { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; cursor: pointer; }
     .mun-podio span { width: 28px; text-align: center; }
     .mun-elegir { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 14px 0; }
+
+    /* ══ MODO TV (Android TV): se maneja con el mando, todo más grande, sin cosas de móvil ══ */
+    .modo-tv body { font-size: 18px; }
+    .modo-tv .wrap { max-width: 1180px; }
+    .modo-tv :focus { outline: none; }
+    .modo-tv .tv-foco { outline: 4px solid var(--acento) !important; outline-offset: 3px; border-radius: 12px; box-shadow: 0 0 0 8px rgba(var(--acento-rgb), 0.25) !important; position: relative; z-index: 5; transform: scale(1.04); transition: transform .12s, box-shadow .12s; }
+    .modo-tv .desc-card.tv-foco, .modo-tv .similar-card.tv-foco, .modo-tv .especial-tile.tv-foco { transform: scale(1.07); }
+    .modo-tv .tab.tv-foco { transform: none; }
+    .modo-tv .buscar-camara, .modo-tv .ml-gesto-ayuda, .modo-tv #avisos-caja, .modo-tv .avisos-caja, .modo-tv .esc-subir, .modo-tv #esc-btn-camara { display: none !important; }
+    .modo-tv .scroll-arrow { display: none !important; }
+    .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila { scroll-behavior: smooth; }
     /* ── Avisos ── */
     .avisos-caja { margin-bottom: 18px; font-size: 13.5px; line-height: 1.5; }
     .avisos-caja p { margin: 0 0 10px; color: var(--k-61635e); }
@@ -13630,9 +13642,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       return /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
         (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
     }
+    // En Android (también la app de la tele) el vídeo se pasa a VLC con un «intent»
+    function _vlcIntentAndroid(u){ try{ const x = new URL(u); return `intent://${x.host}${x.pathname}${x.search}#Intent;scheme=${x.protocol.replace(':','')};action=android.intent.action.VIEW;type=video/*;package=org.videolan.vlc;end`; }catch(e){ return null; } }
     function _vlcHref(enlace, accion='stream'){
       const u = _urlSegura(enlace);
       if(accion!=='stream' && accion!=='download') return null;
+      if(u && /Android/i.test(navigator.userAgent) && accion==='stream') return _vlcIntentAndroid(u);
       return u ? 'vlc-x-callback://x-callback-url/'+accion+'?url='+encodeURIComponent(u) : null;
     }
     function _guardarListaVLC(enlace, titulo, estado){
@@ -13650,6 +13665,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(estado) estado.textContent='Se ha generado una lista .m3u. En Descargas: clic derecho → Abrir con → VLC. Es solo un acceso al vídeo, no una copia offline. No compartas la lista.';
     }
     function _abrirVLCVisor(ev){
+      if(/Android/i.test(navigator.userAgent)){
+        ev.preventDefault(); const v = document.getElementById('visor-video'), u = _urlSegura(v.currentSrc||v.src), it = u && _vlcIntentAndroid(u);
+        if(it){ _pausarParaVLC(); location.href = it; } return;
+      }
       if(!_esVLCiOS()){
         ev.preventDefault();
         const v=document.getElementById('visor-video');
@@ -14222,6 +14241,64 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }catch(e){estado.textContent='No se pudo generar una copia completa. No se han modificado tus datos.';}
       finally{btn.disabled=false;}
     }
+  </script>
+  <script>
+  // ══ MODO TV: navegación con las flechas del mando (OK = pulsar, Atrás = volver) ══
+  (function(){
+    if(!document.documentElement.classList.contains('modo-tv')) return;
+    const SEL = 'a[href], button, input, select, textarea, [onclick], [role="button"], .desc-card, .similar-card, .especial-tile, .tab';
+    const visible = el => { if(el.disabled || el.closest('[hidden]')) return false; const r = el.getBoundingClientRect(); if(!r.width || !r.height) return false; const cs = getComputedStyle(el); return cs.visibility!=='hidden' && cs.display!=='none'; };
+    // lo que se puede elegir: lo de la pantalla activa, las ventanas que estén encima y la barra de abajo
+    function candidatos(){
+      const zonas = [...document.querySelectorAll('.pantalla.activa, #tabbar, .pc-nav, [role="dialog"], .lp-menu, .galeria-visor, #col-overlay, .aviso-version')].filter(visible);
+      const capa = zonas.filter(z=>z.matches('[role="dialog"], .lp-menu, .galeria-visor, #col-overlay')).pop();
+      const base = capa ? [capa] : zonas;
+      const out = []; base.forEach(z=>z.querySelectorAll(SEL).forEach(el=>{ if(visible(el) && !el.parentElement.closest('.desc-card, .similar-card, .especial-tile, [onclick]:not(body)') || (visible(el) && el.matches('button, input, select, textarea, a[href]'))) out.push(el); }));
+      return [...new Set(out)].filter(visible);
+    }
+    let actual = null;
+    function enfocar(el){
+      if(!el) return;
+      if(actual) actual.classList.remove('tv-foco');
+      actual = el; el.classList.add('tv-foco');
+      if(!el.hasAttribute('tabindex') && !el.matches('a[href], button, input, select, textarea')) el.setAttribute('tabindex','-1');
+      if(el.matches('input:not([type=button]):not([type=checkbox]):not([type=radio]), textarea')){ if(document.activeElement && document.activeElement!==el) document.activeElement.blur(); }
+      else el.focus({preventScroll:true});
+      el.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
+      const r = el.getBoundingClientRect(); // que no quede pegado al borde de arriba ni debajo de la barra
+      if(r.top < 90) window.scrollBy({top: r.top-110, behavior:'smooth'}); else if(r.bottom > innerHeight-110) window.scrollBy({top: r.bottom-innerHeight+140, behavior:'smooth'});
+    }
+    function mover(dir){
+      const cs = candidatos(); if(!cs.length) return;
+      if(!actual || !document.contains(actual) || !visible(actual) || !cs.includes(actual)){ const enPant = cs.filter(el=>el.closest('.pantalla.activa, [role="dialog"]')), lista = enPant.length ? enPant : cs; enfocar(lista.find(el=>{ const r = el.getBoundingClientRect(); return r.top>=0 && r.top<innerHeight; }) || lista[0]); return; }
+      const a = actual.getBoundingClientRect(), ax = a.left+a.width/2, ay = a.top+a.height/2;
+      let mejor = null, md = Infinity;
+      cs.forEach(el=>{
+        if(el===actual || actual.contains(el) || el.contains(actual)) return;
+        const r = el.getBoundingClientRect(), x = r.left+r.width/2, y = r.top+r.height/2, dx = x-ax, dy = y-ay;
+        let ok, d;
+        if(dir==='derecha'){ ok = r.left >= a.right-4 || (dx>8 && Math.abs(dy)<a.height/2); d = Math.abs(dx) + Math.abs(dy)*3; }
+        if(dir==='izquierda'){ ok = r.right <= a.left+4 || (dx<-8 && Math.abs(dy)<a.height/2); d = Math.abs(dx) + Math.abs(dy)*3; }
+        // si se solapan en horizontal (p. ej. un botón ancho justo debajo), cuenta como «en línea»
+        const solapaX = r.left < a.right && r.right > a.left;
+        if(dir==='abajo'){ ok = r.top >= a.bottom-4; d = (r.top - a.bottom) + (solapaX ? 0 : Math.abs(dx)*0.6); }
+        if(dir==='arriba'){ ok = r.bottom <= a.top+4; d = (a.top - r.bottom) + (solapaX ? 0 : Math.abs(dx)*0.6); }
+        if(ok && d < md){ md = d; mejor = el; }
+      });
+      if(mejor) enfocar(mejor);
+    }
+    document.addEventListener('keydown', e=>{
+      const k = e.key, enTexto = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !/^(button|checkbox|radio|range)$/.test(document.activeElement.type||'');
+      const dirs = {ArrowRight:'derecha', ArrowLeft:'izquierda', ArrowDown:'abajo', ArrowUp:'arriba'};
+      if(dirs[k]){ if(enTexto && (k==='ArrowLeft' || k==='ArrowRight')) return; if(enTexto) document.activeElement.blur(); e.preventDefault(); mover(dirs[k]); return; }
+      if(k==='Enter' && actual && !enTexto && actual.matches('input, textarea')){ e.preventDefault(); actual.focus(); return; }
+      if((k==='Enter' || k===' ') && actual && !enTexto && !actual.matches('a[href], button, select')){ e.preventDefault(); actual.click(); return; }
+      if(k==='Escape' || k==='GoBack' || k==='BrowserBack'){ e.preventDefault(); history.back(); }
+    }, true);
+    // al cambiar de pantalla, el foco va a lo primero que se ve
+    new MutationObserver(()=>{ if(actual && (!document.contains(actual) || !visible(actual))){ actual.classList.remove('tv-foco'); actual = null; setTimeout(()=>{ if(!actual) mover('abajo'); }, 250); } }).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','style','hidden']});
+    window.addEventListener('load', ()=>setTimeout(()=>mover('abajo'), 1200));
+  })();
   </script>
   <script>
     if('serviceWorker' in navigator && window.isSecureContext){

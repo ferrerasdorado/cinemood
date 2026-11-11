@@ -4,3 +4,6 @@ index.backup-*.html
 prueba-webs.html
 subir-a-netlify/
 supabase/privado/
+android-tv/build/
+android-tv/firma/
+android-tv/*.apk
