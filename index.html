@@ -569,7 +569,8 @@
     .prev-badge.alta { background: var(--acento); }
     .desc-rk .prev-badge { z-index: 2; right: 10px; bottom: 10px; font-size: 12.5px; }
     .prev-txt { color: var(--acento); font-weight: 800; }
-    .desc-orden { margin-left: auto; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; border-radius: 999px; padding: 7px 12px; font: 700 12.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; white-space: nowrap; }
+    #desc-bueno { margin-left: auto; }
+    .desc-orden { flex: none; padding: 7px 10px !important; font-size: 12px !important; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; border-radius: 999px; padding: 7px 12px; font: 700 12.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; white-space: nowrap; }
     .desc-orden.activo { background: var(--acento); border-color: var(--acento); color: #fff; }
     .desc-marca.pend { background: rgba(27,29,28,0.75); }
     .desc-t { font-size: 12.5px; font-weight: 700; line-height: 1.25; margin-top: 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -707,6 +708,9 @@
     .saga-num { position: absolute; left: 6px; top: 6px; min-width: 22px; height: 22px; padding: 0 5px; box-sizing: border-box; border-radius: 11px; background: rgba(15,15,15,0.82); color: #fff; font: 800 11px/22px 'Satoshi', -apple-system, sans-serif; text-align: center; }
     .saga-card.aqui img { outline: 3px solid var(--acento); outline-offset: -3px; }
     .saga-aqui { position: absolute; left: 6px; right: 6px; bottom: 11px; padding: 3px 0; border-radius: 6px; background: var(--acento); color: #fff; font: 800 10.5px 'Satoshi', -apple-system, sans-serif; text-align: center; }
+    .sim-filtros { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -2px 0 12px; padding-bottom: 2px; }
+    .sim-filtros::-webkit-scrollbar { display: none; }
+    .sim-filtros .noche-chip { flex: none; font-size: 12.5px; padding: 6px 11px; }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
     .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
@@ -2074,7 +2078,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
   <div class="pantalla" id="p-descubre">
     <div class="wrap">
-      <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none">🔮 Ordenar para mí</button></div>
+      <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-bueno" onclick="descAlternarBueno()" aria-pressed="false" style="display:none">✨ Solo lo bueno</button><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none;margin-left:0">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
       <button type="button" class="inicio-trailers qv-entrada osc-entrada" onclick="abrirPremios('oscar')">
@@ -2337,7 +2341,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="detalle-box" id="d-temporadas-box" style="display:none"><div class="detalle-box-label">Temporadas</div><div class="curva" id="d-curva" style="display:none"></div><div class="mejor-ep" id="d-mejor-ep" style="display:none"></div><div id="d-temporadas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
 
       <!-- Similares -->
-      <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="sim-filtros" id="d-sim-filtros"></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
       <div class="detalle-box"><div class="detalle-box-label">Disponible en</div><div class="plataformas-row" id="d-plataformas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
       <button class="btn-mas-info" onclick="abrirTMDB()">Ver ficha completa en TMDB ↗</button>
       <div class="btn-maraton" onclick="generarSesionDoble()">🍿 Generar sesión doble</div>
@@ -3718,11 +3722,19 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       await _descPintar(prov);
     }
     const _descOrdenParaMi = () => { try{ return !!sesionActual && localStorage.getItem('cm:descOrden')==='parami'; }catch(e){ return false; } };
+    const _descSoloBueno = () => { try{ return !!sesionActual && localStorage.getItem('cm:descBueno')==='1'; }catch(e){ return false; } };
+    async function descAlternarBueno(){
+      try{ localStorage.setItem('cm:descBueno', _descSoloBueno() ? '' : '1'); }catch(e){}
+      _descPintarOrden(); window._descPintado = null;
+      await _descPintar(_descPlataforma());
+    }
     function _descPintarOrden(){
+      const bb = document.getElementById('desc-bueno');
+      if(bb){ const on = _descSoloBueno(); bb.style.display = sesionActual ? '' : 'none'; bb.classList.toggle('activo', on); bb.setAttribute('aria-pressed', String(on)); bb.textContent = on ? '✨ Lo bueno ✓' : '✨ Lo bueno'; }
       const b = document.getElementById('desc-orden'); if(!b) return;
       b.style.display = sesionActual ? '' : 'none';
       const on = _descOrdenParaMi(); b.classList.toggle('activo', on); b.setAttribute('aria-pressed', String(on));
-      b.textContent = on ? '🔮 Ordenado para ti' : '🔮 Ordenar para mí';
+      b.textContent = on ? '🔮 Para mí ✓' : '🔮 Para mí';
     }
     async function descAlternarOrden(){
       try{ localStorage.setItem('cm:descOrden', _descOrdenParaMi() ? '' : 'parami'); }catch(e){}
@@ -3752,7 +3764,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       window._descPintado = {prov, t:Date.now()};
       document.getElementById('desc-hero').innerHTML = '';
       _descPintarOrden();
-      const ordenMi = _descOrdenParaMi();
+      const ordenMi = _descOrdenParaMi(), soloBueno = _descSoloBueno();
       if(sesionActual) await _modeloNotaObtener().catch(()=>null); // así los pósters salen ya con tu nota
       if(turno!==window._descTurno) return;
       const filas = _descFilas(prov), cont = document.getElementById('desc-filas'), hero = document.getElementById('desc-hero');
@@ -3770,6 +3782,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         try{ lista = (await _descDatos(f,1)).lista.slice(0,20); }catch(e){}
         if(turno!==window._descTurno) return;
         if(ordenMi && !f.calendario) lista = lista.map((x,i)=>({x, i, v:_notaRapida(x)})).sort((a,b)=>((b.v??-1)-(a.v??-1)) || a.i-b.i).map(o=>o.x);
+        // «Solo lo bueno»: fuera lo que le pondrías menos de un 7 (lo que aún no se puede calcular, se queda)
+        if(soloBueno && !f.calendario) lista = lista.filter(x=>{ const v = _notaRapida(x); return v==null || v >= 7; });
         window._descListas[fi] = lista;
         const el = document.getElementById(`desc-f-${fi}`); if(!el) return;
         if(!lista.length){ el.closest('.desc-fila').remove(); return; }
@@ -4827,7 +4841,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(recomendados.length>=4){
           // Suficientes recomendaciones nativas — usarlas directamente
           window.similaresActuales=recomendados.map(s=>({...s,_tipo:item._tipo,title:s.title||s.name,release_date:s.release_date||s.first_air_date}));
-          mostrarSimilares(window.similaresActuales,div);
+          _simIniciar(item, window.similaresActuales, div, true);
           return;
         }
 
@@ -4853,11 +4867,64 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           res.filter(s=>s.poster_path&&!idsVistos.has(`${t}-${s.id}`)).forEach(s=>{idsVistos.add(`${t}-${s.id}`);similares.push({...s,_tipo:t,title:s.title||s.name,release_date:s.release_date||s.first_air_date});});
         });
         if(peliculaActual!==item)return;
-        window.similaresActuales=similares.sort((a,b)=>(b.vote_average||0)-(a.vote_average||0)).slice(0,20);
-        mostrarSimilares(window.similaresActuales,div);
+        window.similaresActuales=similares.sort((a,b)=>(b.vote_average||0)-(a.vote_average||0)).slice(0,60);
+        _simIniciar(item, window.similaresActuales, div, false);
       }catch(e){if(peliculaActual!==item)return;div.innerHTML='<span style="color:var(--k-767973);font-size:13px">No se pudo cargar.</span>';}
     }
 
+    // ══ SIMILARES CON FILTROS: «como esta, pero…» (más cortas, en tus plataformas, recientes, mejor valoradas, para ti) ══
+    const SIM_FILTROS = [['corta','⏱️ Menos de 1 h 45'],['plat','📺 En mis plataformas'],['reciente','🆕 Recientes'],['valorada','⭐ Mejor valoradas'],['parati','🔮 Para ti']];
+    window._simFiltros = window._simFiltros || new Set();
+    window._simProv = window._simProv || new Map();
+    async function _simIniciar(item, base, div, ampliar){
+      window._simItem = item; window._simPool = base.slice();
+      _simPintarChips(); _simAplicar();
+      if(!ampliar) return;
+      // más candidatas para que al filtrar quede donde elegir: 2.ª página de recomendaciones y las «similares» de TMDB
+      try{
+        const [r2, sim] = await Promise.all([_tmdbJson(`/${item._tipo}/${item.id}/recommendations&language=es-ES&page=2`).catch(()=>({})), _tmdbJson(`/${item._tipo}/${item.id}/similar&language=es-ES&page=1`).catch(()=>({}))]);
+        if(peliculaActual!==item) return;
+        const vistos = window.idsVistosSet || new Set(), ya = new Set(window._simPool.map(x=>`${x.id}-${x._tipo}`));
+        [...(r2.results||[]), ...(sim.results||[])].forEach(s=>{ const k = `${s.id}-${item._tipo}`; if(!s.poster_path || ya.has(k) || vistos.has(k) || esOculta(s.id, item._tipo)) return; ya.add(k); window._simPool.push({...s, _tipo:item._tipo, title:s.title||s.name, release_date:s.release_date||s.first_air_date}); });
+        if(window._simFiltros.size) _simAplicar();
+      }catch(e){}
+    }
+    function _simPintarChips(){
+      const box = document.getElementById('d-sim-filtros'); if(!box) return;
+      box.innerHTML = SIM_FILTROS.map(([k,t])=>`<button type="button" class="noche-chip${window._simFiltros.has(k)?' activo':''}" onclick="simFiltro('${k}')" aria-pressed="${window._simFiltros.has(k)}">${t}</button>`).join('');
+    }
+    function simFiltro(k){ const f = window._simFiltros; if(f.has(k)) f.delete(k); else f.add(k); _simPintarChips(); _simAplicar(); }
+    const _simMisPlats = () => { const o = _nocheOpts(); const nom = {}; DESC_PLATAFORMAS.forEach(([id,n])=>{ if(id) nom[id] = n; }); return o.plats.length ? o.plats : DESC_PLATAFORMAS.map(([id])=>id).filter(Boolean); };
+    async function _simAplicar(){
+      const item = window._simItem, div = document.getElementById('d-similares'), f = window._simFiltros, turno = (window._simTurno = (window._simTurno||0)+1);
+      if(!item || !div) return;
+      let lista = (window._simPool||[]).slice();
+      if(f.size){
+        // lo que hace falta saber de cada candidata se pide solo al activar el filtro (y se guarda)
+        const necesitaInfo = f.has('corta') || f.has('parati'), necesitaProv = f.has('plat');
+        if(necesitaInfo || necesitaProv){
+          div.innerHTML = '<span style="color:var(--k-767973);font-size:13px">Comprobando…</span>';
+          if(necesitaInfo) await _modeloNotaObtener().catch(()=>null);
+          await _fetchEnLotes(lista, async x=>{
+            if(necesitaInfo && !_infoCompleta(x._tipo, x.id)){ try{ _piGuardar(x._tipo, x.id, _infoDesdePak(x._tipo, await _fetchDetalleYCreditos(x._tipo, x.id))); }catch(e){} }
+            const kp = `${x._tipo}:${x.id}`;
+            if(necesitaProv && !window._simProv.has(kp)){ try{ const pv = await _tmdbJson(`/${x._tipo}/${x.id}/watch/providers`); window._simProv.set(kp, (((pv.results||{}).ES||{}).flatrate||[]).map(p=>String(p.provider_id))); }catch(e){ window._simProv.set(kp, []); } }
+          }, 6);
+          if(turno!==window._simTurno || peliculaActual!==item) return;
+        }
+        const anio = new Date().getFullYear(), plats = _simMisPlats();
+        if(f.has('corta')) lista = lista.filter(x=>{ const r = _infoCompleta(x._tipo, x.id)?.r; return x._tipo==='movie' && r && r < 105; });
+        if(f.has('plat')) lista = lista.filter(x=>(window._simProv.get(`${x._tipo}:${x.id}`)||[]).some(id=>plats.includes(id)));
+        if(f.has('reciente')) lista = lista.filter(x=>Number((x.release_date||'').slice(0,4)) >= anio-10);
+        if(f.has('valorada')) lista = lista.filter(x=>(x.vote_average||0) >= 7.2 && (x.vote_count||0) >= 300);
+        if(f.has('parati')) lista = lista.map((x,i)=>({x, i, v:_notaExacta(x)})).sort((a,b)=>((b.v??-1)-(a.v??-1)) || a.i-b.i).map(o=>o.x);
+        else lista.sort((a,b)=>(b.vote_average||0)-(a.vote_average||0));
+      }
+      lista = lista.slice(0, 20);
+      window.similaresActuales = lista;
+      if(!lista.length){ div.innerHTML = `<span style="color:var(--k-767973);font-size:13px">Ninguna cumple todos esos filtros. Prueba a quitar alguno.</span>`; return; }
+      mostrarSimilares(lista, div);
+    }
     function mostrarSimilares(items,div){
       div.innerHTML=items.length
         ?items.map((s,i)=>`<div class="similar-card" onclick="abrirDetalle(similaresActuales[${i}])" ${_lp({id:s.id,tipo:s._tipo,t:s.title,poster:s.poster_path,f:s.release_date})}><img loading="lazy" src="https://image.tmdb.org/t/p/w200${s.poster_path}" alt="${_escHtml(s.title)}"><div class="similar-titulo">${_escHtml(s.title)}</div><div class="similar-meta">${s.release_date?s.release_date.substring(0,4):''} · ★${s.vote_average?s.vote_average.toFixed(1):'-'}${(()=>{ const v = sesionActual && !(window.idsVistosSet||new Set()).has(`${s.id}-${s._tipo}`) ? _notaExacta(s) : null; return v==null ? '' : ` · <b class="prev-txt">🔮 ${_notaFmt(v)}</b>`; })()}</div></div>`).join('')
@@ -12500,6 +12567,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.querySelectorAll(`.desc-card[data-k="${k}"], .desc-rk[data-k="${k}"]`).forEach(c=>{
         const pos = c.classList.contains('desc-rk') ? c : c.querySelector('.desc-poster');
         if(!pos || pos.querySelector('.prev-badge')) return;
+        // «Solo lo bueno» en Descubre: si con la nota exacta baja de 7, la tarjeta se quita
+        if(c.closest('#desc-filas') && _descSoloBueno()){ const v = _notaExacta(p); if(v!=null && v < 7){ c.remove(); return; } }
         const b = _prevBadge(p); if(b) pos.insertAdjacentHTML('beforeend', b);
       });
     }
