@@ -11687,13 +11687,15 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const pagadas = o.plats.filter(x=>x!=='gratis');
       if(o.plats.includes('gratis') && !pagadas.length) p.push('watch_region=ES&with_watch_monetization_types=free|ads');
       else if(pagadas.length) p.push(`watch_region=ES&with_watch_providers=${pagadas.join('|')}&with_watch_monetization_types=${o.plats.includes('gratis') ? 'flatrate|free|ads' : 'flatrate'}`);
-      if(o.gens.length) p.push(`with_genres=${o.gens.join('|')}`);
+      // varios géneros = que tenga todos (acción Y aventura); la animación solo si la eliges
+      if(o.gens.length) p.push(`with_genres=${o.gens.join(',')}`);
+      const sinAnim = !o.gens.includes(16);
       if(o.dec){ const d = Number(o.dec); p.push(d===1950 ? `${fecha}.lte=1959-12-31` : `${fecha}.gte=${d}-01-01&${fecha}.lte=${d+9}-12-31`); }
       if(t==='movie' && o.dur){ p.push(o.dur==='90' ? 'with_runtime.lte=89' : o.dur==='120' ? 'with_runtime.gte=90&with_runtime.lte=120' : 'with_runtime.gte=121'); }
       if(o.idioma) p.push(`with_original_language=${o.idioma}`);
       if(o.nota) p.push(`vote_average.gte=${o.nota}&vote_count.gte=${t==='movie'?150:60}`);
       const orden = o.orden==='nota' ? `sort_by=vote_average.desc&vote_count.gte=${t==='movie'?300:120}` : o.orden==='nuevo' ? `sort_by=${fecha}.desc&${fecha}.lte=${hoy}&vote_count.gte=10` : 'sort_by=popularity.desc';
-      p.push(orden, t==='movie' ? 'without_genres=10770' : 'without_genres=10763,10764,10767');
+      p.push(orden, t==='movie' ? `without_genres=10770${sinAnim ? ',16' : ''}` : `without_genres=10763,10764,10767${sinAnim ? ',16' : ''}`);
       return `/discover/${t}&language=es-ES&${p.join('&')}&page=${pg}`;
     }
     async function explorar(mas){
