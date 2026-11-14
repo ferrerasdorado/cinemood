@@ -711,6 +711,23 @@
     .sim-filtros { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -2px 0 12px; padding-bottom: 2px; }
     .sim-filtros::-webkit-scrollbar { display: none; }
     .sim-filtros .noche-chip { flex: none; font-size: 12.5px; padding: 6px 11px; }
+
+    /* ── Explorador y mezclas ── */
+    .exp-entrada .inicio-trailers-ic { background: #3d6651; }
+    .exp-grupo { margin: 0 0 12px; }
+    .exp-grupo .section-label { margin-bottom: 6px; }
+    .exp-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .exp-chips::-webkit-scrollbar { display: none; }
+    .exp-chips .noche-chip { flex: none; font-size: 12.5px; padding: 6px 11px; }
+    .exp-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+    .exp-selects select { width: 100%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--k-fffefb); color: inherit; font: 600 13px 'Satoshi', -apple-system, sans-serif; }
+    .mez-par { display: flex; align-items: center; gap: 10px; margin: 4px 0 14px; }
+    .mez-par img { width: 64px; height: 96px; object-fit: cover; border-radius: 8px; background: var(--k-e9e7e0); }
+    .mez-par .mas { font: 800 22px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--acento); }
+    .mez-par b { display: block; font-size: 14px; line-height: 1.2; }
+    .mez-elegir { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 8px 0 14px; }
+    .mez-elegir button { border: 0; background: none; padding: 0; color: inherit; text-align: left; cursor: pointer; font: 600 11.5px 'Satoshi', -apple-system, sans-serif; }
+    .mez-elegir img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; display: block; margin-bottom: 4px; background: var(--k-e9e7e0); }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
     .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
@@ -2006,6 +2023,31 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     </div>
   </div>
 
+  <div class="pantalla" id="p-mezcla">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-inicio', true)">‹ Atrás</span>
+        <h2>Algo entre estas dos</h2>
+        <span></span>
+      </div>
+      <div id="mez-cont"></div>
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-explorar">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-descubre', true)">‹ Atrás</span>
+        <h2>Explorador</h2>
+        <span></span>
+      </div>
+      <div id="exp-filtros"></div>
+      <div id="exp-estado" class="rk-ayuda"></div>
+      <div class="desc-rejilla" id="exp-res"></div>
+      <button type="button" class="ml-secundario" id="exp-mas" style="display:none;width:100%;margin:14px 0" onclick="explorarMas()">Cargar más</button>
+    </div>
+  </div>
+
   <div class="pantalla" id="p-noche">
     <div class="wrap">
       <div class="pantalla-header">
@@ -2081,6 +2123,11 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-bueno" onclick="descAlternarBueno()" aria-pressed="false" style="display:none">✨ Solo lo bueno</button><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none;margin-left:0">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
+      <button type="button" class="inicio-trailers qv-entrada exp-entrada" onclick="abrirExplorador()">
+        <span class="inicio-trailers-ic">🔎</span>
+        <span class="inicio-trailers-t"><b>Explorador</b><span>Plataforma, género, época, duración, idioma… y ordenado por lo que más te gustará</span></span>
+        <span class="inicio-trailers-f">›</span>
+      </button>
       <button type="button" class="inicio-trailers qv-entrada osc-entrada" onclick="abrirPremios('oscar')">
         <span class="inicio-trailers-ic">🏆</span>
         <span class="inicio-trailers-t"><b>Premios y festivales</b><span id="osc-entrada-sub">Óscar, Goya y Cannes: cuántas has visto y tu porra</span></span>
@@ -2172,7 +2219,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       </form>
       <div class="buscar-sug" id="buscar-sug"></div>
       <div id="buscar-recientes"></div>
-      <p class="rk-ayuda" id="buscar-ayuda">Escribe un título o el nombre de alguien del reparto o de la dirección. Verás lo que coincide y otras parecidas.</p>
+      <p class="rk-ayuda" id="buscar-ayuda">Escribe un título o el nombre de alguien del reparto o de la dirección. Verás lo que coincide y otras parecidas. ¿Buscas algo por filtros? <a href="#" onclick="event.preventDefault();abrirExplorador()">Abre el Explorador ›</a></p>
       <div id="resultados-buscar"></div>
     </div>
   </div>
@@ -2345,6 +2392,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="detalle-box"><div class="detalle-box-label">Disponible en</div><div class="plataformas-row" id="d-plataformas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
       <button class="btn-mas-info" onclick="abrirTMDB()">Ver ficha completa en TMDB ↗</button>
       <div class="btn-maraton" onclick="generarSesionDoble()">🍿 Generar sesión doble</div>
+      <div class="btn-maraton" onclick="abrirMezcla(peliculaActual)">🔀 Mezclar con otra: algo entre las dos</div>
     </div>
   </div>
 
@@ -2875,7 +2923,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 
     // Recuerda la posición de scroll de cada pantalla; al volver con "Atrás" (restaurar=true) se recupera
     window.__posPantalla = {};
-    const _TAB_DE_PANTALLA = {'p-descubre':'descubre','p-descubre-todo':'descubre','p-buscar':'buscar','p-inicio':'inicio','p-comparador':'inicio','p-biblioteca':'milista','p-resumen':'cuenta','p-especiales-hub':'descubre','p-especial':'descubre','p-escaner':'buscar','p-mundial':'inicio','p-noche':'inicio',
+    const _TAB_DE_PANTALLA = {'p-descubre':'descubre','p-descubre-todo':'descubre','p-buscar':'buscar','p-inicio':'inicio','p-comparador':'inicio','p-biblioteca':'milista','p-resumen':'cuenta','p-especiales-hub':'descubre','p-explorar':'descubre','p-especial':'descubre','p-escaner':'buscar','p-mundial':'inicio','p-noche':'inicio',
       'p-cuenta':'cuenta','p-puntuar':'cuenta','p-logros':'cuenta','p-ranking':'cuenta','p-addons':'cuenta','p-estadisticas':'cuenta','p-wrapped':'cuenta','p-actividad':'cuenta','p-perfil-gusto':'cuenta','p-evolucion-gusto':'cuenta','p-mapa-cine':'cuenta','p-nueva-password':'cuenta'};
     function _tabActualizar(id){
       const t = _TAB_DE_PANTALLA[id]; if(!t) return;   // en fichas y personas se mantiene la pestaña de la que vienes
@@ -3318,7 +3366,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         {k:'top-s', t:'⭐ Las mejor valoradas · Series', tipo:'tv', r:pg=>`/tv/top_rated&language=es-ES&page=${pg}`},
         ..._descEncantariaFilas(''),
         ..._descJoyas(''),
-      ];
+      ].reduce((acc,f,i)=>{ acc.push(f); if(i===1) acc.push(..._descMezclasFilas('')); return acc; }, []);
       const n = (DESC_PLATAFORMAS.find(([id])=>id===prov)||[])[1] || 'la plataforma';
       const base = t => `/discover/${t}&language=es-ES&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate`;
       const fecha = t => t==='movie' ? 'primary_release_date' : 'first_air_date';
@@ -3332,7 +3380,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         {k:`p${prov}-top-s`, t:`⭐ Las mejor valoradas en ${n} · Series`, tipo:'tv', r:pg=>`${base('tv')}&sort_by=vote_average.desc&vote_count.gte=300&page=${pg}`},
         ..._descEncantariaFilas(prov),
         ..._descJoyas(prov),
-      ];
+      ].reduce((acc,f,i)=>{ acc.push(f); if(i===1) acc.push(..._descMezclasFilas(prov)); return acc; }, []);
     }
     // Joyas ocultas: nota muy alta pero pocos votos (lo que no sale en ninguna lista de populares)
     function _descEncantariaFilas(prov){
@@ -11525,6 +11573,153 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <button type="button" class="maraton-mini-play" onclick="event.stopPropagation();espVerSiguiente()" aria-label="Ver la siguiente">▶</button>
         </div>`;
     }
+    // ══ MEZCLAS PARA TI: filas temáticas que salen de tu ADN (lo que más te tira: género, país, época, director) ══
+    const _bandera = c => String(c||'').toUpperCase().replace(/./g, ch=>String.fromCodePoint(127397 + ch.charCodeAt(0)));
+    const _GEN_EMOJI = {28:'💥',12:'🧭',16:'🎨',35:'😂',80:'🕵️',18:'🎭',10751:'👨‍👩‍👧',14:'🧙',36:'📜',27:'👻',9648:'🔎',10749:'💕',878:'🚀',53:'😰',10752:'🪖',37:'🤠',99:'🎥'};
+    function _mezclasDefs(){
+      const m = window._modeloNota; if(!m || !m.fit) return [];
+      const f = m.fit, ef = Object.entries(f.ef).map(([k,v])=>({k, a:v*_NOTA_W[k[0]], n:f.cuenta[k]||0}));
+      const mejores = t => ef.filter(x=>x.k[0]===t && x.a>=0.2 && x.n>=(t==='d'?2:3)).sort((a,b)=>b.a-a.a);
+      const gens = mejores('g').filter(x=>_NOTA_GEN[x.k.slice(1)] && [28,12,16,35,80,18,14,36,27,9648,10749,878,53,10752,37].includes(Number(x.k.slice(1))));
+      const paises = mejores('p').filter(x=>!['pUS','pGB'].includes(x.k)), decadas = mejores('e'), dirs = mejores('d');
+      const nomDir = {}; m.muestras.forEach(x=>{ if(x.info?.d?.id) nomDir[x.info.d.id] = x.info.d.n; });
+      const out = [];
+      if(gens[0]){ const g = gens[0].k.slice(1); out.push({k:`mez-g${g}`, t:`${_GEN_EMOJI[g]||'🎬'} ${_NOTA_GEN[g].charAt(0).toUpperCase()+_NOTA_GEN[g].slice(1)}: lo que te falta`, q:`with_genres=${g}&sort_by=vote_average.desc&vote_count.gte=400`}); }
+      // país o, si pesa más, idioma original (el cine coreano puede salir por cualquiera de los dos)
+      const idiomas = mejores('l').filter(x=>x.k!=='len'), BAND_IDIOMA = {ko:'KR', ja:'JP', fr:'FR', es:'ES', it:'IT', de:'DE', da:'DK', sv:'SE', hi:'IN', pt:'PT', zh:'CN', cn:'CN', no:'NO', fa:'IR'};
+      if(paises[0] && (!idiomas[0] || paises[0].a >= idiomas[0].a)){ const c = paises[0].k.slice(1); let n = c; try{ n = new Intl.DisplayNames(['es'],{type:'region'}).of(c); }catch(e){} out.push({k:`mez-p${c}`, t:`${_bandera(c)} Cine de ${n} para ti`, q:`with_origin_country=${c}&sort_by=vote_count.desc&vote_count.gte=80`}); }
+      else if(idiomas[0]){ const l = idiomas[0].k.slice(1); out.push({k:`mez-l${l}`, t:`${BAND_IDIOMA[l] ? _bandera(BAND_IDIOMA[l]) : '🌍'} Cine en ${_idioma(l)} para ti`, q:`with_original_language=${l}&sort_by=vote_count.desc&vote_count.gte=80`}); }
+      const gd = gens[1] || gens[0];
+      if(gd && decadas[0]){ const g = gd.k.slice(1), d = Number(decadas[0].k.slice(1)); out.push({k:`mez-g${g}-e${d}`, t:`📼 ${_NOTA_GEN[g].charAt(0).toUpperCase()+_NOTA_GEN[g].slice(1)} de los ${d<2000 ? String(d).slice(2) : d}`, q:`with_genres=${g}&primary_release_date.gte=${d}-01-01&primary_release_date.lte=${d+9}-12-31&sort_by=vote_count.desc&vote_count.gte=100`}); }
+      if(dirs[0] && nomDir[dirs[0].k.slice(1)]){ const id = dirs[0].k.slice(1); out.push({k:`mez-d${id}`, t:`🎬 Más de ${nomDir[id]}`, q:`with_crew=${id}&sort_by=popularity.desc`}); }
+      return out.slice(0, 4);
+    }
+    async function _descMezcla(def, prov, pg){
+      const pq = prov ? `&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate` : '';
+      const pags = await Promise.all([1,2].map(n=>_tmdbJson(`/discover/movie&language=es-ES&${def.q}${pq}&without_genres=99,10770&page=${(pg-1)*2+n}`).catch(()=>({}))));
+      const vistos = window.idsVistosSet || new Set();
+      const lista = pags.flatMap(d=>d.results||[]).filter(x=>x.poster_path && !vistos.has(`${x.id}-movie`) && !esOculta(x.id, 'movie'))
+        .map(x=>({...x, _tipo:'movie', title:x.title, release_date:x.release_date}))
+        .map((x,i)=>({x, i, v:_notaRapida(x)})).sort((a,b)=>((b.v??-1)-(a.v??-1)) || a.i-b.i).map(o=>o.x);
+      return {lista, paginas: Math.max(1, Math.ceil(((pags[0]||{}).total_pages||1)/2))};
+    }
+    function _descMezclasFilas(prov){
+      if(!sesionActual) return [];
+      return _mezclasDefs().map(d=>({k:`${d.k}-${prov}`, t:d.t, tipo:'movie', custom:pg=>_descMezcla(d, prov, pg)}));
+    }
+
+    // ══ ALGO ENTRE ESTAS DOS: cruza las recomendaciones de dos títulos ══
+    async function abrirMezcla(a){
+      if(!sesionActual){ mostrarCuenta(); return; }
+      if(!a) return;
+      window._mezA = {id:a.id, _tipo:a._tipo, title:a.title, poster_path:a.poster_path, release_date:a.release_date};
+      irA('p-mezcla');
+      const cont = document.getElementById('mez-cont'), A = window._mezA;
+      // propuestas para la segunda: lo que mejor has puntuado
+      let favs = [];
+      try{ const m = await _modeloNotaObtener(); favs = (m?.muestras||[]).filter(x=>Number(x.puntuacion)>=8 && !(x.tmdb_id===A.id && x.tipo===A._tipo)).sort((a,b)=>Number(b.puntuacion)-Number(a.puntuacion)).slice(0,12); }catch(e){}
+      const { data } = favs.length ? await sb.from('mi_biblioteca').select('tmdb_id,tipo,titulo,poster_path,anio').eq('user_id', sesionActual.user.id).eq('visto', true).then(r=>r, ()=>({data:[]})) : {data:[]};
+      const fila = {}; (data||[]).forEach(x=>{ fila[`${x.tipo}:${x.tmdb_id}`] = x; });
+      window._mezOpciones = favs.map(x=>fila[`${x.tipo}:${x.tmdb_id}`]).filter(x=>x && x.poster_path).slice(0,8).map(x=>({id:x.tmdb_id, _tipo:x.tipo, title:x.titulo, poster_path:x.poster_path, release_date:x.anio ? x.anio+'-01-01' : ''}));
+      cont.innerHTML = `<div class="mez-par"><img src="https://image.tmdb.org/t/p/w154${A.poster_path}" alt=""><span class="mas">+</span><div style="flex:1"><b>${_escHtml(A.title)}</b><span class="rk-ayuda">¿Con cuál la mezclas?</span></div></div>
+        <form class="buscar-form" onsubmit="event.preventDefault();mezBuscar()"><input type="search" id="mez-buscar" placeholder="Busca la segunda película o serie…" autocomplete="off"><button type="submit">Buscar</button></form>
+        <div id="mez-busq"></div>
+        ${window._mezOpciones.length ? `<div class="section-label" style="margin-top:12px">O una de tus favoritas</div><div class="mez-elegir">${window._mezOpciones.map((x,i)=>`<button type="button" onclick="mezclarCon(_mezOpciones[${i}])"><img src="https://image.tmdb.org/t/p/w154${x.poster_path}" alt="">${_escHtml(x.title)}</button>`).join('')}</div>` : ''}
+        <div id="mez-res"></div>`;
+    }
+    async function mezBuscar(){
+      const q = document.getElementById('mez-buscar').value.trim(), box = document.getElementById('mez-busq'); if(!q) return;
+      box.innerHTML = '<p class="rk-ayuda">Buscando…</p>';
+      try{
+        const r = (await _tmdbJson(`/search/multi&language=es-ES&include_adult=false&query=${encodeURIComponent(q)}`)).results || [];
+        window._mezBusq = r.filter(x=>(x.media_type==='movie'||x.media_type==='tv') && x.poster_path).slice(0,8).map(x=>({id:x.id, _tipo:x.media_type, title:x.title||x.name, poster_path:x.poster_path, release_date:x.release_date||x.first_air_date||''}));
+        box.innerHTML = window._mezBusq.length ? `<div class="mez-elegir">${window._mezBusq.map((x,i)=>`<button type="button" onclick="mezclarCon(_mezBusq[${i}])"><img src="https://image.tmdb.org/t/p/w154${x.poster_path}" alt="">${_escHtml(x.title)}</button>`).join('')}</div>` : '<p class="rk-ayuda">No he encontrado nada con ese nombre.</p>';
+      }catch(e){ box.innerHTML = '<p class="rk-ayuda">No se pudo buscar.</p>'; }
+    }
+    async function mezclarCon(B){
+      const A = window._mezA, cont = document.getElementById('mez-cont'); if(!A || !B) return;
+      cont.innerHTML = `<div class="mez-par"><img src="https://image.tmdb.org/t/p/w154${A.poster_path}" alt=""><span class="mas">+</span><img src="https://image.tmdb.org/t/p/w154${B.poster_path}" alt=""><div style="flex:1"><b>${_escHtml(A.title)}</b><b style="margin-top:4px">${_escHtml(B.title)}</b><button type="button" class="d-saga-link" onclick="abrirMezcla(window._mezA)">Cambiar ›</button></div></div><div id="mez-res"><p class="rk-ayuda">Buscando lo que tienen en común…</p></div>`;
+      try{
+        const de = async x=>{ const ps = await Promise.all([`/${x._tipo}/${x.id}/recommendations&language=es-ES&page=1`, `/${x._tipo}/${x.id}/recommendations&language=es-ES&page=2`, `/${x._tipo}/${x.id}/similar&language=es-ES&page=1`].map(r=>_tmdbJson(r).catch(()=>({})))); return ps.flatMap(d=>d.results||[]).map(r=>({...r, _tipo:r.media_type || x._tipo})); };
+        const [la, lb] = await Promise.all([de(A), de(B)]);
+        const vistos = window.idsVistosSet || new Set(), fuera = new Set([`${A.id}-${A._tipo}`, `${B.id}-${B._tipo}`]);
+        const mapa = new Map();
+        const meter = (lista, lado) => lista.forEach((r, i)=>{ const k = `${r.id}-${r._tipo}`; if(!r.poster_path || fuera.has(k) || vistos.has(k) || esOculta(r.id, r._tipo)) return; const o = mapa.get(k) || {x:{...r, title:r.title||r.name, release_date:r.release_date||r.first_air_date}, a:0, b:0}; o[lado] = Math.max(o[lado], 1 - i/80); mapa.set(k, o); });
+        meter(la, 'a'); meter(lb, 'b');
+        await _modeloNotaObtener().catch(()=>null);
+        // primero las que salen en las dos; luego las que más pesan en ambas; la nota que les pondrías desempata
+        const lista = [...mapa.values()].map(o=>({...o, ambas: o.a>0 && o.b>0, s: (o.a>0 && o.b>0 ? 2 : 0) + Math.min(o.a, o.b) + (o.a+o.b)/4 + ((_notaRapida(o.x)||6)-6)/4}))
+          .sort((p,q)=>q.s-p.s).slice(0, 18);
+        window._mezLista = lista.map(o=>o.x);
+        const n = lista.filter(o=>o.ambas).length;
+        document.getElementById('mez-res').innerHTML = lista.length ? `<p class="rk-ayuda" style="margin:2px 0 10px">${n ? `${n} salen al recomendar las dos; el resto, al recomendar una u otra.` : 'No comparten recomendaciones directas: estas son las más cercanas a ambas.'}</p><div class="desc-rejilla">${window._mezLista.map((x,i)=>_descTarjeta(x, '_mezLista', i)).join('')}</div>` : '<p class="rk-ayuda">No he encontrado nada en común. Prueba con otra pareja.</p>';
+        _prevRefrescar();
+      }catch(e){ document.getElementById('mez-res').innerHTML = '<p class="rk-ayuda">No se pudo calcular. Inténtalo de nuevo.</p>'; }
+    }
+
+    // ══ EXPLORADOR: todos los filtros juntos (plataformas, género, época, duración, idioma, nota) y orden «para ti» ══
+    const EXP_GEN = {movie:[28,12,16,35,80,99,18,10751,14,36,27,10402,9648,10749,878,53,10752,37], tv:[10759,16,35,80,99,18,10751,9648,10765,10768,37]};
+    const EXP_IDIOMAS = [['','Cualquier idioma'],['es','Español'],['en','Inglés'],['ko','Coreano'],['ja','Japonés'],['fr','Francés'],['it','Italiano'],['de','Alemán'],['da','Danés'],['sv','Sueco'],['hi','Hindi'],['pt','Portugués']];
+    function _expEstado(){ let o = null; try{ o = JSON.parse(localStorage.getItem('cm:explorar')||'null'); }catch(e){} return Object.assign({tipo:'movie', plats:[], gens:[], dec:'', dur:'', idioma:'', nota:'', orden:'parati'}, o||{}); }
+    function _expGuardar(o){ try{ localStorage.setItem('cm:explorar', JSON.stringify(o)); }catch(e){} }
+    function abrirExplorador(){ irA('p-explorar'); _expPintarFiltros(); explorar(); }
+    function _expPintarFiltros(){
+      const o = _expEstado(), chip = (on, txt, fn) => `<button type="button" class="noche-chip${on?' activo':''}" onclick="${fn}" aria-pressed="${on}">${txt}</button>`;
+      const decadas = [['','Cualquier época'],['2020','Años 2020'],['2010','Años 2010'],['2000','Años 2000'],['1990','Años 90'],['1980','Años 80'],['1970','Años 70'],['1960','Años 60'],['1950','Antes de 1960']];
+      const sel = (id, ops, val, k) => `<select aria-label="${id}" onchange="expCambiar('${k}', this.value)">${ops.map(([v,t])=>`<option value="${v}"${String(val)===String(v)?' selected':''}>${t}</option>`).join('')}</select>`;
+      document.getElementById('exp-filtros').innerHTML = `
+        <div class="exp-grupo"><div class="exp-chips">${chip(o.tipo==='movie','🎬 Películas',"expCambiar('tipo','movie')")}${chip(o.tipo==='tv','📺 Series',"expCambiar('tipo','tv')")}</div></div>
+        <div class="exp-grupo"><div class="section-label">Plataformas</div><div class="exp-chips">${chip(o.plats.includes('gratis'),'🆓 Gratis',"expPlat('gratis')")}${DESC_PLATAFORMAS.filter(([id])=>id).map(([id,n])=>chip(o.plats.includes(id), _escHtml(n), `expPlat('${id}')`)).join('')}</div></div>
+        <div class="exp-grupo"><div class="section-label">Géneros</div><div class="exp-chips">${EXP_GEN[o.tipo].map(g=>chip(o.gens.includes(g), `${_GEN_EMOJI[g]||''} ${_escHtml((_NOTA_GEN[g]||'').replace(/^./,c=>c.toUpperCase()))}`, `expGen(${g})`)).join('')}</div></div>
+        <div class="exp-selects">
+          ${sel('Época', decadas, o.dec, 'dec')}
+          ${o.tipo==='movie' ? sel('Duración', [['','Cualquier duración'],['90','Menos de 1 h 30'],['120','De 1 h 30 a 2 h'],['999','Más de 2 h']], o.dur, 'dur') : sel('Duración', [['','Cualquier duración']], '', 'dur')}
+          ${sel('Idioma', EXP_IDIOMAS, o.idioma, 'idioma')}
+          ${sel('Nota', [['','Cualquier nota'],['6','Nota 6 o más'],['7','Nota 7 o más'],['8','Nota 8 o más']], o.nota, 'nota')}
+        </div>
+        <div class="exp-grupo"><div class="section-label">Ordenar por</div><div class="exp-chips">${[['parati','🔮 Lo que más te gustará'],['pop','🔥 Populares'],['nota','⭐ Mejor valoradas'],['nuevo','🆕 Más recientes']].map(([k,t])=>chip(o.orden===k, t, `expCambiar('orden','${k}')`)).join('')}</div></div>`;
+    }
+    function expCambiar(k, v){ const o = _expEstado(); o[k] = v; if(k==='tipo'){ o.gens = []; o.dur = ''; } _expGuardar(o); _expPintarFiltros(); explorar(); }
+    function expPlat(id){ const o = _expEstado(); o.plats = o.plats.includes(id) ? o.plats.filter(x=>x!==id) : [...o.plats, id]; _expGuardar(o); _expPintarFiltros(); explorar(); }
+    function expGen(g){ const o = _expEstado(); o.gens = o.gens.includes(g) ? o.gens.filter(x=>x!==g) : [...o.gens, g]; _expGuardar(o); _expPintarFiltros(); explorar(); }
+    function _expRuta(o, pg){
+      const t = o.tipo, fecha = t==='movie' ? 'primary_release_date' : 'first_air_date', hoy = new Date().toISOString().slice(0,10), p = [];
+      const pagadas = o.plats.filter(x=>x!=='gratis');
+      if(o.plats.includes('gratis') && !pagadas.length) p.push('watch_region=ES&with_watch_monetization_types=free|ads');
+      else if(pagadas.length) p.push(`watch_region=ES&with_watch_providers=${pagadas.join('|')}&with_watch_monetization_types=${o.plats.includes('gratis') ? 'flatrate|free|ads' : 'flatrate'}`);
+      if(o.gens.length) p.push(`with_genres=${o.gens.join('|')}`);
+      if(o.dec){ const d = Number(o.dec); p.push(d===1950 ? `${fecha}.lte=1959-12-31` : `${fecha}.gte=${d}-01-01&${fecha}.lte=${d+9}-12-31`); }
+      if(t==='movie' && o.dur){ p.push(o.dur==='90' ? 'with_runtime.lte=89' : o.dur==='120' ? 'with_runtime.gte=90&with_runtime.lte=120' : 'with_runtime.gte=121'); }
+      if(o.idioma) p.push(`with_original_language=${o.idioma}`);
+      if(o.nota) p.push(`vote_average.gte=${o.nota}&vote_count.gte=${t==='movie'?150:60}`);
+      const orden = o.orden==='nota' ? `sort_by=vote_average.desc&vote_count.gte=${t==='movie'?300:120}` : o.orden==='nuevo' ? `sort_by=${fecha}.desc&${fecha}.lte=${hoy}&vote_count.gte=10` : 'sort_by=popularity.desc';
+      p.push(orden, t==='movie' ? 'without_genres=10770' : 'without_genres=10763,10764,10767');
+      return `/discover/${t}&language=es-ES&${p.join('&')}&page=${pg}`;
+    }
+    async function explorar(mas){
+      const o = _expEstado(), res = document.getElementById('exp-res'), est = document.getElementById('exp-estado'), btn = document.getElementById('exp-mas');
+      const turno = mas ? window._expTurno : (window._expTurno = (window._expTurno||0)+1);
+      if(!mas){ window._expLista = []; window._expPg = 0; res.innerHTML = ''; est.textContent = 'Buscando…'; }
+      btn.style.display = 'none';
+      try{
+        if(o.orden==='parati') await _modeloNotaObtener().catch(()=>null);
+        // «para ti»: se miran 3 páginas de las más populares y se ordenan por tu nota
+        const n = o.orden==='parati' ? 3 : 1, desde = window._expPg;
+        const pags = await Promise.all(Array.from({length:n}, (_,i)=>_tmdbJson(_expRuta(o, desde+i+1)).catch(()=>({}))));
+        if(turno!==window._expTurno) return;
+        window._expPg = desde + n;
+        const vistos = window.idsVistosSet || new Set(), ya = new Set(window._expLista.map(x=>`${x.id}-${x._tipo}`));
+        let nuevos = pags.flatMap(d=>d.results||[]).filter(x=>x.poster_path && !esOculta(x.id, o.tipo) && !ya.has(`${x.id}-${o.tipo}`)).map(x=>({...x, _tipo:o.tipo, title:x.title||x.name, release_date:x.release_date||x.first_air_date}));
+        if(o.orden==='parati') nuevos = nuevos.filter(x=>!vistos.has(`${x.id}-${o.tipo}`)).map((x,i)=>({x, i, v:_notaRapida(x)})).sort((a,b)=>((b.v??-1)-(a.v??-1)) || a.i-b.i).map(q=>q.x);
+        window._expLista = window._expLista.concat(nuevos);
+        const total = (pags[0]||{}).total_results || 0;
+        est.textContent = window._expLista.length ? `${total.toLocaleString('es-ES')} títulos con estos filtros${o.orden==='parati' ? ' · los que ya has visto no salen' : ''}` : 'No hay nada con estos filtros. Prueba a quitar alguno.';
+        res.insertAdjacentHTML('beforeend', nuevos.map((x,i)=>_descTarjeta(x, '_expLista', window._expLista.length - nuevos.length + i)).join(''));
+        btn.style.display = window._expPg < ((pags[0]||{}).total_pages||0) ? '' : 'none';
+        _prevRefrescar();
+      }catch(e){ if(turno===window._expTurno) est.textContent = 'No se pudo buscar. Comprueba tu conexión.'; }
+    }
+    function explorarMas(){ explorar(true); }
     // ══ ESCÁNER «¿CUÁL DE ESTAS?»: lee los títulos de una captura (en el propio móvil) y los ordena por tu nota prevista ══
     function abrirEscaner(){
       if(!sesionActual){ mostrarCuenta(); return; }
