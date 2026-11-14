@@ -728,6 +728,24 @@
     .mez-elegir { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 8px 0 14px; }
     .mez-elegir button { border: 0; background: none; padding: 0; color: inherit; text-align: left; cursor: pointer; font: 600 11.5px 'Satoshi', -apple-system, sans-serif; }
     .mez-elegir img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; display: block; margin-bottom: 4px; background: var(--k-e9e7e0); }
+
+    /* ── Estado de serie, recap, versiones, crítica vs público ── */
+    .detalle-estado-serie { margin: 8px 0 2px; font-size: 13px; line-height: 1.4; color: #e6e5e0; }
+    .detalle-estado-serie b { font-weight: 800; }
+    .recap-btn { display: block; width: 100%; text-align: left; border: 0; background: none; color: inherit; padding: 0; font: 700 14px 'Satoshi', -apple-system, sans-serif; cursor: pointer; }
+    .recap-btn span { float: right; color: var(--acento); }
+    .recap-txt { margin-top: 10px; font-size: 13.5px; line-height: 1.55; color: var(--k-4d514a); }
+    .recap-txt h4 { font: 800 14px 'Cabinet Grotesk', -apple-system, sans-serif; margin: 12px 0 4px; color: inherit; }
+    .recap-txt p { margin: 0 0 8px; }
+    .recap-aviso { font-size: 11.5px; color: var(--k-767973); margin-top: 6px; }
+    .vers-fila { display: flex; align-items: center; gap: 11px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .vers-fila:last-child { border-bottom: 0; }
+    .vers-fila img { width: 44px; height: 66px; object-fit: cover; border-radius: 6px; flex: none; background: var(--k-e9e7e0); }
+    .vers-fila .i { flex: 1; min-width: 0; }
+    .vers-fila .k { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--acento); }
+    .vers-fila b { display: block; font-size: 14px; }
+    .vers-fila small { color: var(--k-767973); font-size: 12px; }
+    .nota-gap { flex-basis: 100%; font-size: 12.5px; line-height: 1.4; color: #d9d8d2; margin-top: 2px; }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
     .esc-subir { display: block; width: 100%; text-align: center; cursor: pointer; box-sizing: border-box; }
@@ -2335,6 +2353,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="detalle-estreno" id="d-estreno" style="display:none"></div>
           <div class="detalle-poscreditos" id="d-poscreditos" style="display:none"></div>
           <div class="detalle-basada" id="d-basada" style="display:none"></div>
+          <div class="detalle-estado-serie" id="d-estado-serie" style="display:none"></div>
           <div class="detalle-titulo-original" id="d-titulo-original" style="display:none"></div>
           <div class="detalle-tagline" id="d-tagline" style="display:none"></div>
           <div class="detalle-score-wrap">
@@ -2385,8 +2404,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="detalle-box"><div class="detalle-box-label">Reparto <button type="button" class="d-saga-link" onclick="abrirRepartoCompleto()">Reparto y equipo completos ›</button></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-reparto',-1)">‹</div><div class="reparto-scroll" id="d-reparto"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-reparto',1)">›</div></div></div>
       <!-- Temporadas — solo series -->
       <div class="detalle-box" id="d-progreso-temporadas-box" style="display:none"><div class="detalle-box-label">Tu progreso</div><div id="d-progreso-temporadas"></div></div>
+      <div class="detalle-box" id="d-recap" style="display:none"></div>
       <div class="detalle-box" id="d-temporadas-box" style="display:none"><div class="detalle-box-label">Temporadas</div><div class="curva" id="d-curva" style="display:none"></div><div class="mejor-ep" id="d-mejor-ep" style="display:none"></div><div id="d-temporadas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
 
+      <div class="detalle-box" id="d-versiones-box" style="display:none"></div>
       <!-- Similares -->
       <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="sim-filtros" id="d-sim-filtros"></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
       <div class="detalle-box"><div class="detalle-box-label">Disponible en</div><div class="plataformas-row" id="d-plataformas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
@@ -3366,6 +3387,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         {k:'top-s', t:'⭐ Las mejor valoradas · Series', tipo:'tv', r:pg=>`/tv/top_rated&language=es-ES&page=${pg}`},
         ..._descEncantariaFilas(''),
         ..._descJoyas(''),
+        {k:'publico-critica', t:'🍿 Al público le encantó y la crítica no', tipo:'movie', custom:pg=>_descPublicoVsCritica(pg)},
       ].reduce((acc,f,i)=>{ acc.push(f); if(i===1) acc.push(..._descMezclasFilas('')); return acc; }, []);
       const n = (DESC_PLATAFORMAS.find(([id])=>id===prov)||[])[1] || 'la plataforma';
       const base = t => `/discover/${t}&language=es-ES&watch_region=ES&with_watch_providers=${prov}&with_watch_monetization_types=flatrate`;
@@ -4034,6 +4056,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           else if(x.grupo==='empezar') sub = `${x.d.number_of_seasons||'?'} temp. · ${x.d.number_of_episodes||'?'} episodios`;
           else if(x.grupo==='terminadas') sub = x.d.status==='Returning Series' ? 'Vista · tendrá más temporadas' : 'Vista entera';
           else sub = `La dejaste con ${x.vistos} de ${x.emitidos} episodios`;
+          const estado = x.d.status==='Canceled' ? '❌ Cancelada' : x.d.status==='Ended' ? '🏁 Terminada' : (x.d.status==='Returning Series' && x.grupo!=='aldia' && x.grupo!=='terminadas') ? '✅ Renovada' : '';
+          if(estado && x.grupo!=='terminadas') sub += ` · ${estado}`;
           return `<div class="ms-fila" onclick="abrirDetalle({id:_misSeries[${i}].tmdb_id,_tipo:'tv',title:_misSeries[${i}].nombre,poster_path:_misSeries[${i}].poster})">
             ${x.poster ? `<img loading="lazy" src="https://image.tmdb.org/t/p/w154${x.poster}" alt="">` : '<span class="est-mejor-sin"></span>'}
             <div class="fm-info"><div class="fm-t">${_escHtml(x.nombre)}</div><div class="fm-m">${_escHtml(sub)}</div>
@@ -4318,6 +4342,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.getElementById('d-premios-box').style.display='none';
       document.getElementById('d-wiki-box').style.display='none'; document.getElementById('d-wiki').innerHTML='';
       document.getElementById('d-rodaje-box').style.display='none'; document.getElementById('d-basada').style.display='none'; window._basada=null;
+      ['d-estado-serie','d-recap','d-versiones-box'].forEach(id=>{ const e = document.getElementById(id); if(e){ e.style.display='none'; e.innerHTML=''; } });
       document.getElementById('d-galeria-box').style.display='none'; document.getElementById('d-galeria').innerHTML='';
       document.getElementById('d-videos').innerHTML='';
       document.getElementById('d-logo').style.display='none';
@@ -4524,6 +4549,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
             `linear-gradient(to bottom, rgba(27,29,28,0.62) 0%, rgba(27,29,28,0.28) 34%, color-mix(in srgb, var(--k-f5f3ef) 55%, transparent) 72%, color-mix(in srgb, var(--k-f5f3ef) 100%, transparent) 100%), url(https://image.tmdb.org/t/p/w780${d.backdrop_path})`;
         }
         _cargarColeccion(d,tipo);
+        _pintarEstadoSerie(d, tipo, p);
+        if(tipo==='movie') _pintarVersiones(p);
         _cargarLogoOficial(id,tipo);
         _pintarBSO(d);
         _pintarNotasExternas(tipo, id, p);
@@ -4604,6 +4631,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
 
     function renderProgresoTemporadas(){
+      setTimeout(_pintarRecap, 0);
       const box = document.getElementById('d-progreso-temporadas-box');
       const seasons = window.temporadasSeriesActual;
       if(!peliculaActual || peliculaActual._tipo!=='tv' || !seasons || !seasons.length){ box.style.display='none'; return; }
@@ -5238,7 +5266,14 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         const rt = fuente('Rotten Tomatoes'); if(rt) notas.push(`<span class="nota-ext"><b>Rotten</b> ${_escHtml(rt)}</span>`);
         const mc = fuente('Metacritic'); if(mc) notas.push(`<span class="nota-ext"><b>Metacritic</b> ${_escHtml(mc.replace('/100',''))}</span>`);
         if(!notas.length) return;
-        el.innerHTML = notas.join(''); el.style.display = 'flex';
+        // crítica (Metacritic o Rotten) frente a público (IMDb): si se separan mucho, se dice
+        const critica = mc ? Number(mc.replace('/100','')) : rt ? Number(rt.replace('%','')) : null, publico = d.imdbRating && d.imdbRating!=='N/A' ? Number(d.imdbRating)*10 : null;
+        if(critica!=null && publico!=null){
+          const dif = critica - publico, cn = mc ? `Metacritic ${critica}` : `Rotten ${critica}%`, pn = `IMDb ${String(d.imdbRating).replace('.',',')}`;
+          if(dif >= 15) notas.push(`<div class="nota-gap">🧐 La crítica la valoró bastante mejor que el público (${cn} · ${pn}).</div>`);
+          else if(dif <= -15) notas.push(`<div class="nota-gap">🍿 Al público le gustó mucho más que a la crítica (${pn} · ${cn}).</div>`);
+        }
+        el.innerHTML = notas.join(''); el.style.display = 'flex'; el.style.flexWrap = 'wrap';
       }catch(e){ /* sin notas externas: la ficha sigue igual */ }
     }
     function _omdbDatos(imdb){
@@ -11572,6 +11607,109 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="maraton-mini-t"><span>Tu maratón · ${_escHtml(e.titulo.replace(/\s*\(.*?\)\s*/g,' ').replace(/^Universo\s+/i,'').trim())} · ${vistas} de ${items.length}</span><b>Te toca: ${_escHtml(it.t)}</b><i style="--p:${Math.round(vistas/items.length*100)}%"></i></div>
           <button type="button" class="maraton-mini-play" onclick="event.stopPropagation();espVerSiguiente()" aria-label="Ver la siguiente">▶</button>
         </div>`;
+    }
+    // ══ ESTADO DE LA SERIE: renovada, terminada (con final) o cancelada (puede quedarse sin final) ══
+    function _pintarEstadoSerie(d, tipo, p){
+      const el = document.getElementById('d-estado-serie'); if(!el) return;
+      if(tipo!=='tv' || !d || peliculaActual!==p){ el.style.display = 'none'; return; }
+      const n = d.number_of_seasons || 0, temps = `${n} ${n===1?'temporada':'temporadas'}`, prox = d.next_episode_to_air;
+      const fecha = f => new Date(f+'T12:00:00').toLocaleDateString('es-ES', {day:'numeric', month:'long', year:'numeric'});
+      let t = '';
+      if(d.status==='Canceled') t = `❌ <b>Cancelada</b> tras ${temps}: puede quedarse sin final.`;
+      else if(d.status==='Ended') t = `🏁 <b>Terminada</b> · ${temps}, con su final.`;
+      else if(d.status==='Returning Series') t = prox ? `✅ <b>Renovada</b> · ${prox.episode_number===1 ? `la temporada ${prox.season_number} empieza` : 'próximo episodio'} el ${fecha(prox.air_date)}.` : `✅ <b>Renovada</b> · esperando fecha de la próxima temporada.`;
+      else if(d.status==='In Production') t = `🎬 <b>En producción</b>${prox ? ` · estreno el ${fecha(prox.air_date)}` : ''}.`;
+      else if(d.status==='Planned' || d.status==='Pilot') t = `📅 <b>Anunciada</b>, todavía sin estrenar.`;
+      if(!t){ el.style.display = 'none'; return; }
+      el.innerHTML = t; el.style.display = 'block';
+    }
+
+    // ══ LO QUE PASÓ HASTA AHORA: resumen hasta el último episodio que marcaste (plegado, por los spoilers) ══
+    function _pintarRecap(){
+      const box = document.getElementById('d-recap'), p = peliculaActual; if(!box) return;
+      const g = window.episodiosVistosGuardado || {};
+      const temps = Object.keys(g).map(Number).filter(t=>t>0 && (g[t]||[]).length).sort((a,b)=>a-b);
+      if(!p || p._tipo!=='tv' || !sesionActual || !temps.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+      const t = temps[temps.length-1], e = Math.max(...g[t].map(Number));
+      window._recap = {p, t, e};
+      box.innerHTML = `<button type="button" class="recap-btn" onclick="abrirRecap(this)">📖 Lo que pasó hasta ahora <small style="font-weight:600;color:var(--k-767973)">· hasta T${t}·E${e}</small><span>Ver ▾</span></button><div id="recap-txt"></div>`;
+      box.style.display = 'block';
+    }
+    async function abrirRecap(btn){
+      const r = window._recap, txt = document.getElementById('recap-txt'); if(!r || !txt) return;
+      if(txt.innerHTML){ txt.innerHTML = ''; btn.querySelector('span').textContent = 'Ver ▾'; return; }
+      btn.querySelector('span').textContent = 'Ocultar ▴';
+      txt.innerHTML = '<div class="recap-txt">Cargando…</div>';
+      const temporada = async (n, idioma) => _tmdbJson(`/tv/${r.p.id}/season/${n}&language=${idioma}`).catch(()=>({}));
+      try{
+        let [es, ant] = await Promise.all([temporada(r.t, 'es-ES'), r.t>1 ? temporada(r.t-1, 'es-ES') : Promise.resolve(null)]);
+        let eps = (es.episodes||[]).filter(x=>x.episode_number<=r.e), ingles = false;
+        // si en español faltan resúmenes de los episodios, se usan los de inglés
+        if(eps.length && eps.slice(-4).every(x=>!x.overview)){ const en = await temporada(r.t, 'en-US'); const m = {}; (en.episodes||[]).forEach(x=>{ m[x.episode_number] = x.overview; }); eps = eps.map(x=>({...x, overview: x.overview || m[x.episode_number] || ''})); ingles = true; }
+        if(peliculaActual!==r.p) return;
+        const ultimos = eps.slice(-4).filter(x=>x.overview);
+        const html = [
+          ant && ant.overview ? `<h4>Temporada ${r.t-1}</h4><p>${_escHtml(ant.overview)}</p>` : '',
+          es.overview ? `<h4>Temporada ${r.t}</h4><p>${_escHtml(es.overview)}</p>` : '',
+          ultimos.length ? `<h4>Tus últimos episodios</h4>${ultimos.map(x=>`<p><b>E${x.episode_number} · ${_escHtml(x.name||'')}</b><br>${_escHtml(x.overview)}</p>`).join('')}` : ''
+        ].join('');
+        txt.innerHTML = html ? `<div class="recap-txt">${html}<div class="recap-aviso">Solo hasta el último episodio que marcaste${ingles ? ' · algunos resúmenes, en inglés' : ''}. Resúmenes de TMDB.</div></div>` : '<div class="recap-txt">No hay resúmenes de esta temporada todavía.</div>';
+      }catch(e){ txt.innerHTML = '<div class="recap-txt">No se pudo cargar el resumen.</div>'; }
+    }
+
+    // ══ REMAKES Y VERSIONES (Wikidata): original, remakes y otras versiones de la misma historia ══
+    async function _pintarVersiones(p){
+      const box = document.getElementById('d-versiones-box'); if(!box || !p || p._tipo!=='movie') return;
+      try{
+        // cada rama ya exige que la otra película tenga id de TMDB (así Wikidata no recorre todo lo basado en un libro famoso)
+        const filas = await _wdSparql(`SELECT DISTINCT ?tmdb ?rel WHERE {
+          ?f wdt:P4947 "${Number(p.id)}".
+          { ?f wdt:P144 ?x. ?x wdt:P4947 ?tmdb. BIND("original" AS ?rel) } UNION { ?x wdt:P4969 ?f. ?x wdt:P4947 ?tmdb. BIND("original" AS ?rel) }
+          UNION { ?x wdt:P144 ?f. ?x wdt:P4947 ?tmdb. BIND("remake" AS ?rel) } UNION { ?f wdt:P4969 ?x. ?x wdt:P4947 ?tmdb. BIND("remake" AS ?rel) }
+          UNION { ?f wdt:P144 ?o. ?x wdt:P144 ?o. ?x wdt:P4947 ?tmdb. FILTER(?x != ?f) BIND("version" AS ?rel) }
+          } LIMIT 12`);
+        if(peliculaActual!==p) return;
+        const vistosIds = new Set(), lista = [];
+        filas.forEach(f=>{ const id = Number(f.tmdb.value); if(!id || id===Number(p.id) || vistosIds.has(id)) return; vistosIds.add(id); lista.push({id, rel:f.rel.value}); });
+        if(!lista.length) return;
+        await _modeloNotaObtener().catch(()=>null);
+        const datos = (await _fetchEnLotes(lista.slice(0,8), async x=>{
+          try{
+            const pak = await _fetchDetalleYCreditos('movie', x.id), d = pak && pak.detalle; if(!d || !d.id) return null;
+            if(!_infoCompleta('movie', x.id)) _piGuardar('movie', x.id, _infoDesdePak('movie', pak));
+            return {...x, title:d.title, poster_path:d.poster_path, release_date:d.release_date||'', vote_average:d.vote_average, _tipo:'movie'};
+          }catch(e){ return null; }
+        }, 4)).filter(Boolean).sort((a,b)=>({original:0, remake:2, version:1})[a.rel]-({original:0, remake:2, version:1})[b.rel] || (a.release_date||'').localeCompare(b.release_date||''));
+        if(peliculaActual!==p || !datos.length) return;
+        window._versiones = datos;
+        const etq = {original:'🎞️ Original', remake:'🔁 Remake', version:'🔀 Otra versión'}, vistos = window.idsVistosSet || new Set();
+        box.innerHTML = `<div class="detalle-box-label">Versiones de esta historia</div>${datos.map((x,i)=>{ const v = vistos.has(`${x.id}-movie`), nota = v ? null : _notaExacta(x);
+          return `<div class="vers-fila" onclick="abrirDetalle(_versiones[${i}])"><img loading="lazy" src="https://image.tmdb.org/t/p/w154${x.poster_path||''}" alt=""><div class="i"><div class="k">${etq[x.rel]}</div><b>${_escHtml(x.title)}</b><small>${[(x.release_date||'').slice(0,4), x.vote_average ? '★ '+x.vote_average.toFixed(1) : '', v ? '✓ Vista' : nota!=null ? '🔮 '+_notaFmt(nota) : ''].filter(Boolean).join(' · ')}</small></div></div>`; }).join('')}`;
+        box.style.display = 'block';
+      }catch(e){}
+    }
+
+    // ══ DESCUBRE: «Al público le encantó y la crítica no» (TMDB alta, Metacritic baja; se guarda una semana) ══
+    async function _descPublicoVsCritica(pg){
+      if(pg>1 || !OMDB_KEY) return {lista:[], paginas:1};
+      const sem = Math.floor(Date.now()/(7*864e5)), clave = `cm:publicoCritica:${sem}`;
+      let ids = null; try{ ids = JSON.parse(localStorage.getItem(clave)||'null'); }catch(e){}
+      let base = [];
+      if(!ids){
+        const pags = await Promise.all([1,2,3].map(n=>_tmdbJson(`/discover/movie&language=es-ES&sort_by=vote_average.desc&vote_count.gte=2500&vote_average.gte=7.2&without_genres=99,10770,16&page=${n}`).catch(()=>({}))));
+        base = pags.flatMap(d=>d.results||[]).filter(x=>x.poster_path);
+        const marcadas = (await _fetchEnLotes(base, async x=>{
+          try{ const imdb = await _imdbIdDe('movie', x.id); const d = window._omdbCache[imdb] || await _omdbDatos(imdb); if(d && d.Response==='True'){ window._omdbCache[imdb] = d; const ms = Number(d.Metascore); if(ms && ms <= 55) return {x, ms}; } }catch(e){}
+          return null;
+        }, 5)).filter(Boolean).sort((a,b)=>a.ms-b.ms);
+        ids = marcadas.map(o=>[o.x.id, o.ms]);
+        try{ Object.keys(localStorage).filter(k=>k.startsWith('cm:publicoCritica:')).forEach(k=>localStorage.removeItem(k)); localStorage.setItem(clave, JSON.stringify(ids)); }catch(e){}
+        window._pcBase = Object.fromEntries(base.map(x=>[x.id, x]));
+      }
+      const vistos = window.idsVistosSet || new Set();
+      const lista = (await _fetchEnLotes(ids, async ([id, ms])=>{ const x = (window._pcBase||{})[id] || await _tmdbJson(`/movie/${id}&language=es-ES`).catch(()=>null); return x && x.poster_path ? {...x, _tipo:'movie', title:x.title, release_date:x.release_date, _ms:ms} : null; }, 5))
+        .filter(x=>x && !vistos.has(`${x.id}-movie`) && !esOculta(x.id, 'movie'));
+      return {lista, paginas:1};
     }
     // ══ MEZCLAS PARA TI: filas temáticas que salen de tu ADN (lo que más te tira: género, país, época, director) ══
     const _bandera = c => String(c||'').toUpperCase().replace(/./g, ch=>String.fromCodePoint(127397 + ch.charCodeAt(0)));
