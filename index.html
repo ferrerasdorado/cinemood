@@ -745,6 +745,17 @@
     .vers-fila .k { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--acento); }
     .vers-fila b { display: block; font-size: 14px; }
     .vers-fila small { color: var(--k-767973); font-size: 12px; }
+    .mont-rec { font-size: 13.5px; line-height: 1.5; color: var(--k-4d514a); }
+    .mont-rec b { color: var(--ink); }
+    .mont-chip { display: inline-block; background: var(--acento); color: #fff; font-weight: 800; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; margin: 2px 0 8px; }
+    .mont-lista { margin-top: 10px; }
+    .mont-v { padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.45; color: var(--k-4d514a); }
+    .mont-v b { display: block; font-size: 14px; color: var(--ink); }
+    .mont-v b .mont-tag { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--acento); margin-left: 6px; }
+    .mont-v small { color: var(--k-767973); font-size: 12px; }
+    .mont-ir { margin-top: 8px; border: 1px solid var(--line); background: none; color: var(--acento); font: 700 13px 'Satoshi', -apple-system, sans-serif; padding: 7px 12px; border-radius: 10px; cursor: pointer; }
+    .mont-fuente { font-size: 11.5px; color: var(--k-767973); margin-top: 8px; }
+    .mont-fuente a { color: var(--acento); }
     .nota-gap { flex-basis: 100%; font-size: 12.5px; line-height: 1.4; color: #d9d8d2; margin-top: 2px; }
     /* ── Escáner ── */
     .esc-intro { font-size: 14px; color: var(--k-61635e); line-height: 1.5; margin: 4px 0 14px; }
@@ -2407,6 +2418,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="detalle-box" id="d-recap" style="display:none"></div>
       <div class="detalle-box" id="d-temporadas-box" style="display:none"><div class="detalle-box-label">Temporadas</div><div class="curva" id="d-curva" style="display:none"></div><div class="mejor-ep" id="d-mejor-ep" style="display:none"></div><div id="d-temporadas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
 
+      <div class="detalle-box" id="d-montajes-box" style="display:none"></div>
       <div class="detalle-box" id="d-versiones-box" style="display:none"></div>
       <!-- Similares -->
       <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="sim-filtros" id="d-sim-filtros"></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
@@ -4342,7 +4354,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.getElementById('d-premios-box').style.display='none';
       document.getElementById('d-wiki-box').style.display='none'; document.getElementById('d-wiki').innerHTML='';
       document.getElementById('d-rodaje-box').style.display='none'; document.getElementById('d-basada').style.display='none'; window._basada=null;
-      ['d-estado-serie','d-recap','d-versiones-box'].forEach(id=>{ const e = document.getElementById(id); if(e){ e.style.display='none'; e.innerHTML=''; } });
+      ['d-estado-serie','d-recap','d-montajes-box','d-versiones-box'].forEach(id=>{ const e = document.getElementById(id); if(e){ e.style.display='none'; e.innerHTML=''; } });
       document.getElementById('d-galeria-box').style.display='none'; document.getElementById('d-galeria').innerHTML='';
       document.getElementById('d-videos').innerHTML='';
       document.getElementById('d-logo').style.display='none';
@@ -4550,7 +4562,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         }
         _cargarColeccion(d,tipo);
         _pintarEstadoSerie(d, tipo, p);
-        if(tipo==='movie') _pintarVersiones(p);
+        if(tipo==='movie'){ _pintarMontajes(p); _pintarVersiones(p); }
         _cargarLogoOficial(id,tipo);
         _pintarBSO(d);
         _pintarNotasExternas(tipo, id, p);
@@ -11658,6 +11670,165 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
 
     // ══ REMAKES Y VERSIONES (Wikidata): original, remakes y otras versiones de la misma historia ══
+
+    // ══ ¿QUÉ VERSIÓN VER? Montajes del director, ediciones extendidas y cortes alternativos ══
+    // Guía propia para las conocidas; para el resto se mira si la Wikipedia tiene un apartado de versiones.
+    // v: [nombre, año, duración aprox. en min (0 = sin dato), en qué cambia]; r: índice de la recomendada; ir: otra ficha relacionada
+    const _BN = (titulo, anio, nombre) => ({r:0, por:`Primero en color, como se estrenó. La versión en blanco y negro es para una segunda vez: el propio director la considera su favorita y cambia mucho la sensación.`,
+      v:[['Estreno en color', anio, 0, 'La versión de cines.'], [nombre, anio+1, 0, 'La misma película en blanco y negro, con la imagen reajustada plano a plano.']]});
+    const _ESDLA = (a,b,extra) => ({r:1, por:'Si ya la has visto o te encanta la saga, la extendida sin dudarlo: no alarga por alargar, añade personajes y escenas que dan sentido a cosas de las siguientes. Para una primera vez con prisa, la de cines también es redonda.',
+      v:[['Versión de cines', 0, a, 'La que se estrenó.'], ['Versión extendida', 0, b, extra]]});
+    const _HOBBIT = (a,b,extra) => ({r:0, por:'La de cines, salvo que te haya encantado: la extendida añade más de lo mismo y la hace más lenta.',
+      v:[['Versión de cines', 0, a, 'La que se estrenó.'], ['Versión extendida', 0, b, extra]]});
+    const MONTAJES = {
+      78:{r:2, por:'The Final Cut: es la única que Ridley Scott supervisó entera, está restaurada y corrige errores. La del estreno tiene una voz en off y un final feliz que el director nunca quiso.',
+        v:[['Estreno', 1982, 117, 'Voz en off de Deckard explicándolo todo y final feliz con paisajes de montaña.'], ['Montaje del director', 1992, 116, 'Sin voz en off ni final feliz; añade el sueño del unicornio, que cambia cómo entiendes a Deckard.'], ['The Final Cut', 2007, 117, 'La definitiva: imagen restaurada, escenas corregidas y el unicornio.']]},
+      348:{r:0, por:'La del estreno. El montaje de 2003 se hizo para su reedición y el propio Ridley Scott dice que prefiere la original.',
+        v:[['Estreno', 1979, 117, 'La original.'], ['Montaje del director', 2003, 116, 'Algo más rápida: quita momentos y recupera la escena del nido, que explica qué hace el alien con la tripulación.']]},
+      679:{r:1, por:'La edición especial: es la que prefiere James Cameron y la escena de la hija de Ripley explica toda su relación con Newt.',
+        v:[['Estreno', 1986, 137, 'La de cines.'], ['Edición especial', 1990, 154, 'Añade la colonia antes del ataque, las torretas automáticas y que Ripley tuvo una hija.']]},
+      8077:{r:1, por:'El Assembly Cut. Fincher no reconoce ninguna de las dos, pero esta se acerca más a lo que rodó y la historia se entiende mejor.',
+        v:[['Estreno', 1992, 114, 'La que impuso el estudio.'], ['Assembly Cut', 2003, 145, 'Otro principio, más peso a los presos (sobre todo a Golic) y un final ligeramente distinto.']]},
+      120:_ESDLA(178, 208, 'Más Comarca, los regalos de Galadriel (que importan después) y un viaje más pausado.'),
+      121:_ESDLA(179, 235, 'Más Faramir y Boromir, la relación entre los dos hermanos y su padre, y más Rohan.'),
+      122:_ESDLA(201, 263, 'El final de Saruman, la Boca de Sauron y más Éowyn y Faramir.'),
+      49051:_HOBBIT(169, 182, 'Unos 13 minutos más, sobre todo en Rivendel y la Comarca.'),
+      57158:_HOBBIT(161, 186, 'Unos 25 minutos más, con más del padre de Thorin y del Bosque Negro.'),
+      122917:{r:1, por:'Aquí sí, la extendida: la batalla tiene más sentido y cierra mejor algunos personajes.',
+        v:[['Versión de cines', 0, 144, 'La que se estrenó.'], ['Versión extendida', 0, 164, 'Unos 20 minutos más de batalla y cierres de personajes secundarios. Es más violenta.']]},
+      28:{r:2, por:'Final Cut: es la que prefiere Coppola. Quita lo que sobraba de Redux y se queda con lo bueno.',
+        v:[['Estreno', 1979, 147, 'La original, la más directa.'], ['Redux', 2001, 196, 'Añade la plantación francesa y una segunda escena con las chicas del espectáculo; se hace larga.'], ['Final Cut', 2019, 183, 'El equilibrio entre las dos, restaurada.']]},
+      1495:{r:1, por:'El montaje del director, sin duda: es prácticamente otra película, mucho mejor. Se entienden los personajes y la historia de Sibila.',
+        v:[['Estreno', 2005, 144, 'Recortada por el estudio; quedan huecos en la historia.'], ['Montaje del director', 2006, 190, 'Recupera la trama del hijo de Sibila y el pasado de Balian. La que hay que ver.']]},
+      209112:{r:1, por:'Ultimate Edition: la trama de Lois tiene sentido y se entiende por qué la gente culpa a Superman.',
+        v:[['Estreno', 2016, 151, 'La de cines.'], ['Ultimate Edition', 2016, 182, 'Media hora más que explica la investigación de Lois y lo que pasa en África. Más violenta.']]},
+      141052:{r:1, ir:791373, irTxt:'Ver ficha de la de Zack Snyder', por:'La Liga de la Justicia de Zack Snyder (2021). Es la que el director tenía pensada: más larga, pero mucho más coherente. La de 2017 la terminó otro director con muchos cambios.',
+        v:[['Liga de la Justicia', 2017, 120, 'Terminada por Joss Whedon tras salir Snyder: más humor y muy recortada.'], ["Zack Snyder's Justice League", 2021, 242, 'La versión de Snyder, en 4 horas y en formato cuadrado. Cyborg y Flash tienen historia propia.']]},
+      791373:{r:0, ir:141052, irTxt:'Ver ficha de la de 2017', por:'Esta. Es la versión del director original de la película que se estrenó en 2017.',
+        v:[["Zack Snyder's Justice League", 2021, 242, 'La de Snyder, en formato cuadrado y por capítulos.'], ['Liga de la Justicia', 2017, 120, 'La de cines, terminada por Joss Whedon y muy distinta.']]},
+      141:{r:0, por:'La de cines para una primera vez: el misterio funciona mejor. El montaje del director, después, si te quedas con ganas de entenderla.',
+        v:[['Estreno', 2001, 113, 'La original, más ambigua.'], ['Montaje del director', 2004, 133, 'Añade textos que explican las reglas del viaje en el tiempo y cambia algunas canciones.']]},
+      279:{r:0, por:'Las dos son buenas. La de cines tiene mejor ritmo; la del director añade una escena importante entre Salieri y Constanze.',
+        v:[['Estreno', 1984, 160, 'La que ganó los Óscar.'], ['Montaje del director', 2002, 180, 'Veinte minutos más, con más de Constanze y la ruina de Mozart.']]},
+      11216:{r:0, por:'La de cines primero. La versión larga añade la historia de Elena adulta y cambia por completo el tono del final: para una segunda vez.',
+        v:[['Versión de cines', 1988, 124, 'La que conquistó a todo el mundo.'], ['Versión del director', 2002, 174, 'Casi una hora más: Salvatore reencuentra a Elena.']]},
+      68:{r:1, por:'El montaje de Terry Gilliam (europeo). Nunca la versión de 94 minutos con final feliz que preparó el estudio.',
+        v:[['Love Conquers All', 1985, 94, 'Montada por el estudio para la tele, con final feliz. Evitar.'], ['Montaje europeo del director', 1985, 142, 'La de Gilliam, con su final.']]},
+      2756:{r:1, por:'La edición especial: el final de la de cines queda cojo; esta lo completa y se entiende qué quieren los seres del fondo.',
+        v:[['Estreno', 1989, 140, 'La de cines.'], ['Edición especial', 1993, 171, 'Añade la ola gigante y el mensaje del final.']]},
+      280:{r:1, por:'La edición especial: añade escenas que explican cómo el Terminator aprende a ser humano y que Sarah está al límite.',
+        v:[['Estreno', 1991, 137, 'La de cines.'], ['Edición especial', 1993, 154, 'Kyle Reese en sueños, el chip de aprendizaje y más de la T-1000. Existe un final alternativo con Sarah anciana que se puede ver aparte.']]},
+      840:{r:2, por:'El montaje del director de 1998: Spielberg se quedó con lo mejor de cada una y quitó el interior de la nave, que no le gustaba.',
+        v:[['Estreno', 1977, 135, 'La original.'], ['Edición especial', 1980, 132, 'Enseña el interior de la nave, algo de lo que Spielberg se arrepintió.'], ['Montaje del director', 1998, 137, 'La definitiva.']]},
+      11:{r:0, por:'Hoy solo se distribuye la edición especial, con retoques digitales (Disney+). La original de 1977 solo existe en un DVD antiguo de imagen pobre.',
+        v:[['Original', 1977, 121, 'Tal como se estrenó. Muy difícil de encontrar.'], ['Edición especial', 1997, 125, 'Efectos digitales nuevos, Jabba en Mos Eisley y el famoso cambio de quién dispara primero entre Han y Greedo. Se ha retocado más en ediciones posteriores.']]},
+      1891:{r:0, por:'La disponible hoy (Disney+) es la edición especial; los cambios son pequeños.',
+        v:[['Original', 1980, 124, 'Tal como se estrenó.'], ['Edición especial', 1997, 127, 'Ciudad de las Nubes más amplia y retoques del Emperador.']]},
+      1892:{r:0, por:'La disponible hoy (Disney+) es la edición especial; la original solo en un DVD antiguo.',
+        v:[['Original', 1983, 131, 'Tal como se estrenó.'], ['Edición especial', 1997, 135, 'Canción nueva en el palacio de Jabba, celebraciones en otros planetas y, desde 2004, Hayden Christensen como fantasma al final.']]},
+      601:{r:0, por:'La original. En 2002 Spielberg cambió las pistolas por walkie-talkies, pero después se arrepintió y hoy se vuelve a distribuir la de siempre.',
+        v:[['Original', 1982, 115, 'La de siempre.'], ['Edición 20.º aniversario', 2002, 120, 'Pistolas cambiadas por walkie-talkies, E.T. digital y una escena de baño. Retirada.']]},
+      101:{r:0, por:'La de cines. La versión íntegra añade escenas de Mathilda acompañando a Léon en sus encargos que hacen su relación bastante más incómoda.',
+        v:[['Estreno', 1994, 110, 'La de cines.'], ['Versión íntegra', 1996, 133, 'Mathilda aprende el oficio con Léon y hay más tensión entre los dos.']]},
+      13183:{r:1, por:'El montaje del director: más escenas de los personajes sin hacerla eterna. El Ultimate Cut mete un cómic de piratas animado que corta el ritmo.',
+        v:[['Estreno', 2009, 162, 'La de cines.'], ['Montaje del director', 2009, 186, 'Más pasado de los personajes, incluida la muerte de Búho Nocturno original.'], ['Ultimate Cut', 2009, 215, 'Añade el cómic animado de piratas de la novela gráfica, intercalado.']]},
+      9480:{r:1, por:'El montaje del director: es más adulto y recupera una trama de juicio que da sentido al Matt abogado.',
+        v:[['Estreno', 2003, 103, 'La de cines.'], ['Montaje del director', 2004, 133, 'Media hora más, con un caso judicial y menos romance.']]},
+      1966:{r:3, por:'The Ultimate Cut: Oliver Stone la rehizo cuatro veces y esta es la que él considera definitiva.',
+        v:[['Estreno', 2004, 175, 'La de cines.'], ['Montaje del director', 2005, 167, 'Más corta, reordenada.'], ['Revisited', 2007, 214, 'En dos partes con intermedio.'], ['The Ultimate Cut', 2014, 206, 'La que prefiere Stone.']]},
+      311:{r:1, por:'La europea de 229 minutos. Nunca la de 139 que se estrenó en Estados Unidos, reordenada en orden cronológico y destrozada.',
+        v:[['Estreno en EE. UU.', 1984, 139, 'Recortada y en orden cronológico. Evitar.'], ['Versión europea', 1984, 229, 'La de Leone, con los saltos en el tiempo.'], ['Versión extendida', 2012, 251, 'Recupera escenas restauradas, con algunas diferencias de imagen.']]},
+      387:{r:1, por:'El montaje del director: más claustrofóbico y con más tiempo con la tripulación, sin hacerse largo.',
+        v:[['Estreno', 1981, 149, 'La de cines.'], ['Montaje del director', 1997, 208, 'Casi una hora más.'], ['Serie de televisión', 1985, 293, 'La versión más larga, en capítulos.']]},
+      8536:{r:0, por:'La de cines para seguir la saga. El montaje de Richard Donner es interesante, pero está hecho con pruebas de cámara y escenas sin terminar.',
+        v:[['Estreno (Richard Lester)', 1980, 127, 'La que se estrenó, con más humor.'], ['The Richard Donner Cut', 2006, 116, 'Lo que había rodado Donner antes de que lo despidieran. Más Marlon Brando.']]},
+      581:{r:0, por:'La de cines: tiene mejor ritmo. La extendida se hizo después para televisión y Costner no la considera la suya.',
+        v:[['Estreno', 1990, 181, 'La que ganó los Óscar.'], ['Edición extendida', 1991, 236, 'Casi una hora más, con más vida en el poblado sioux.']]},
+      9552:{r:0, por:'La original primero. La de 2000 añade la famosa escena de la niña bajando las escaleras como una araña y un final más amable.',
+        v:[['Estreno', 1973, 122, 'La original.'], ['La versión que nunca has visto', 2000, 132, 'La escena de la araña, más efectos y otro cierre.']]},
+      530385:{r:0, por:'La de cines para una primera vez. El montaje del director, si te gustó: más ritual y más pelea de pareja, explica mejor el final.',
+        v:[['Estreno', 2019, 147, 'La de cines.'], ['Montaje del director', 2019, 171, 'Un ritual nocturno más y la relación de la pareja más deteriorada.']]},
+      19995:{r:0, por:'La de cines. La extendida de coleccionista empieza en la Tierra y amplía Pandora, para fans.',
+        v:[['Estreno', 2009, 162, 'La de cines.'], ['Edición especial', 2010, 170, 'Ocho minutos más en Pandora.'], ['Edición extendida de coleccionista', 2010, 178, 'Con un principio nuevo en la Tierra.']]},
+      98:{r:0, por:'La de cines: Ridley Scott la prefiere. La extendida añade escenas que él mismo quitó porque frenaban la historia.',
+        v:[['Estreno', 2000, 155, 'La que ganó el Óscar.'], ['Versión extendida', 2005, 171, 'Más Roma y más de Cómodo.']]},
+      1480:{r:2, por:'La reconstrucción de 1998, hecha siguiendo las notas de Orson Welles: el famoso plano del principio por fin sin títulos encima.',
+        v:[['Estreno', 1958, 93, 'Recortada por el estudio.'], ['Versión preestreno', 1976, 108, 'Encontrada años después.'], ['Reconstrucción', 1998, 111, 'Siguiendo el memorando de 58 páginas que escribió Welles.']]},
+      10776:{r:1, por:'El montaje del director, si quieres el final original del musical: completamente distinto y mucho más oscuro. Si no, la de cines tiene final feliz.',
+        v:[['Estreno', 1986, 94, 'Con final feliz, cambiado tras unos pases de prueba.'], ['Montaje del director', 2012, 102, 'Recupera el final original: 20 minutos de plantas gigantes.']]},
+      841:{r:0, por:'La de cines. La versión larga de televisión la montaron sin David Lynch y él quitó su nombre.',
+        v:[['Estreno', 1984, 137, 'La de Lynch.'], ['Versión extendida de TV', 1988, 177, 'Con un prólogo de dibujos y firmada como «Alan Smithee». Lynch la repudió.']]},
+      242:{r:1, por:'Coda: es la versión que Coppola y Mario Puzo querían. Cambia el principio y el final, y mejora mucho la película.',
+        v:[['Estreno', 1990, 162, 'La de cines.'], ['Coda: la muerte de Michael Corleone', 2020, 158, 'Remontada por Coppola: otro principio, otro final y mejor ritmo.']]},
+      652:{r:1, por:'El montaje del director: más épica, más cruda y con una banda sonora distinta.',
+        v:[['Estreno', 2004, 163, 'La de cines.'], ['Montaje del director', 2007, 196, 'Media hora más, más violenta y con más de los dioses y la caída de Troya.']]},
+      11976:{r:2, por:'El montaje del director, con la música de Jerry Goldsmith y la historia más completa.',
+        v:[['Estreno en Europa', 1985, 94, 'Música de Jerry Goldsmith.'], ['Estreno en EE. UU.', 1986, 89, 'Más corta y con música de Tangerine Dream.'], ['Montaje del director', 2002, 113, 'La más completa.']]},
+      16307:{r:1, por:'The Final Cut: la que aprobó el director, entre la recortada de cines y la extendida.',
+        v:[['Estreno', 1973, 88, 'Recortada.'], ['The Final Cut', 2013, 94, 'Restaurada y aprobada por Robin Hardy.'], ['Versión extendida', 1979, 99, 'La más larga, con imagen peor.']]},
+      19:{r:1, por:'La restaurada de 2010: en 2008 apareció en Buenos Aires una copia con casi media hora que se creía perdida.',
+        v:[['Versiones antiguas', 1927, 0, 'Recortadas, con distintas músicas y duraciones.'], ['Versión restaurada completa', 2010, 148, 'Con las escenas recuperadas y la música original.']]},
+      947:{r:1, por:'La restaurada de 1989, que es la que circula hoy: recupera escenas que se habían ido cortando.',
+        v:[['Estreno', 1962, 222, 'La de cines, luego recortada en sucesivas reposiciones.'], ['Versión restaurada', 1989, 228, 'Supervisada por David Lean.']]},
+      76341:_BN('Mad Max: Furia en la carretera', 2015, 'Black & Chrome'),
+      263115:_BN('Logan', 2017, 'Logan Noir'),
+      496243:_BN('Parásitos', 2019, 'Versión en blanco y negro'),
+      940721:_BN('Godzilla Minus One', 2023, 'Minus Color'),
+    };
+    const _MONT_SECCION = /(\bmontajes?\s+(del director|alternativ|extendid|original)|\bversi[oó]n(es)?\s+(alternativ|extendid|del director|sin cortes|de cines|restaurad)|\bedici[oó]n(es)?\s+(extendid|especial|del director)|\bdirector'?s cut|\bextended (edition|cut|version)|\b(alternate|alternative) (versions?|endings?|cuts?)|^(versions|cuts)$|\btheatrical (and|vs\.?)|\bfinal cut\b|\brestorations?\b|\brestauraci[oó]n(es)?\b)/i;
+    window._montajesCache = window._montajesCache || {};
+    async function _montajesWiki(id){
+      if(id in window._montajesCache) return window._montajesCache[id];
+      let res = null;
+      try{
+        const f = await _wdSparql(`SELECT ?es ?en WHERE { ?f wdt:P4947 "${Number(id)}". OPTIONAL{ ?a schema:about ?f; schema:isPartOf <https://es.wikipedia.org/>; schema:name ?es. } OPTIONAL{ ?b schema:about ?f; schema:isPartOf <https://en.wikipedia.org/>; schema:name ?en. } } LIMIT 1`);
+        const r = f[0] || {};
+        for(const [lang, campo] of [['es','es'], ['en','en']]){
+          const titulo = r[campo] && r[campo].value; if(!titulo) continue;
+          const api = `https://${lang}.wikipedia.org/w/api.php?format=json&origin=*&action=parse&redirects=1&page=${encodeURIComponent(titulo)}`;
+          const secs = ((await (await fetch(api+'&prop=sections')).json()).parse || {}).sections || [];
+          const sec = secs.find(x=>_MONT_SECCION.test(String(x.line||'').replace(/<[^>]+>/g,'').trim()));
+          if(!sec) continue;
+          const html = ((await (await fetch(api+'&prop=text&section='+sec.index)).json()).parse || {}).text;
+          const div = document.createElement('div'); div.innerHTML = (html && html['*']) || '';
+          div.querySelectorAll('sup, style, table, .mw-editsection, .hatnote, .reference, figure, .thumb').forEach(e=>e.remove());
+          const parrafos = [...div.querySelectorAll('p, li')].map(e=>e.textContent.replace(/\[[^\]]*\]/g,'').replace(/\s+/g,' ').trim()).filter(t=>t.length>40);
+          if(!parrafos.length) continue;
+          let txt = ''; for(const p of parrafos){ if(txt.length>420) break; txt += (txt?' ':'') + p; }
+          if(txt.length>560) txt = txt.slice(0, 540).replace(/\s+\S*$/,'') + '…';
+          res = {lang, txt, titulo:String(sec.line||'').replace(/<[^>]+>/g,''), url:`https://${lang}.wikipedia.org/wiki/${encodeURIComponent(titulo.replace(/ /g,'_'))}#${encodeURIComponent(String(sec.anchor||''))}`};
+          break;
+        }
+      }catch(e){ return null; } // si falla la red no se guarda, se reintenta otro día
+      window._montajesCache[id] = res;
+      return res;
+    }
+    const _minFmt = m => m ? (m>=60 ? `${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')} min` : `${m} min`) : '';
+    async function _pintarMontajes(p){
+      const box = document.getElementById('d-montajes-box'); if(!box || !p) return;
+      const g = MONTAJES[Number(p.id)];
+      if(g){
+        const rec = g.v[g.r];
+        const filas = g.v.map((v,i)=>`<div class="mont-v"><b>${_escHtml(v[0])}${i===g.r?'<span class="mont-tag">👉 La buena</span>':''}</b><small>${[v[1]||'', _minFmt(v[2])].filter(Boolean).join(' · ')}</small><div>${_escHtml(v[3])}</div></div>`).join('');
+        box.innerHTML = `<div class="detalle-box-label">¿Qué versión ver?</div>
+          <div class="mont-chip">👉 ${_escHtml(rec[0])}${rec[2] ? ' · '+_minFmt(rec[2]) : ''}</div>
+          <div class="mont-rec">${_escHtml(g.por)}</div>
+          ${g.ir ? `<button type="button" class="mont-ir" onclick="_montIr(${g.ir})">${_escHtml(g.irTxt||'Ver ficha')} ›</button>` : ''}
+          <div class="mont-lista"><button type="button" class="recap-btn" onclick="const l=this.nextElementSibling; const ab=l.style.display!=='none'; l.style.display=ab?'none':'block'; this.querySelector('span').textContent=ab?'Ver':'Ocultar';">Las ${g.v.length} versiones <span>Ver</span></button><div style="display:none">${filas}</div></div>`;
+        box.style.display = 'block';
+        return;
+      }
+      const w = await _montajesWiki(p.id);
+      if(peliculaActual!==p || !w) return;
+      box.innerHTML = `<div class="detalle-box-label">¿Qué versión ver?</div>
+        <div class="mont-rec"><b>Esta película tiene más de una versión</b> (montaje del director, edición extendida o cortes distintos). Antes de darle al play, échale un ojo.</div>
+        <div class="mont-lista"><button type="button" class="recap-btn" onclick="const l=this.nextElementSibling; const ab=l.style.display!=='none'; l.style.display=ab?'none':'block'; this.querySelector('span').textContent=ab?'Ver':'Ocultar';">Lo que cuenta la Wikipedia${w.lang==='en' ? ' (en inglés)' : ''} <span>Ver</span></button><div style="display:none"><div class="recap-txt"><h4>${_escHtml(w.titulo)}</h4><p>${_escHtml(w.txt)}</p></div>
+        <div class="mont-fuente"><a href="${w.url}" target="_blank" rel="noopener">Leer completo en Wikipedia ›</a></div></div></div>`;
+      box.style.display = 'block';
+    }
+    async function _montIr(id){
+      try{ const pak = await _fetchDetalleYCreditos('movie', id), d = pak && pak.detalle; if(d && d.id) abrirDetalle({...d, _tipo:'movie'}); }catch(e){}
+    }
     async function _pintarVersiones(p){
       const box = document.getElementById('d-versiones-box'); if(!box || !p || p._tipo!=='movie') return;
       try{
