@@ -5,6 +5,8 @@ prueba-webs.html
 subir-a-netlify/
 supabase/privado/
 android-tv/build/
+android-tv/.gradle/
+android-tv/local.properties
 android-tv/firma/
 android-tv/*.apk
 android-tv/*.idsig

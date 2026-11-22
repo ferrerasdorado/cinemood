@@ -1,26 +1,53 @@
 #!/bin/zsh
-# Compila la APK de CineMood para Android TV sin Gradle: aapt2 → javac → d8 → zip → zipalign → apksigner
+# Compila y firma CineMood-TV.apk con Media3 (ExoPlayer) reutilizando tu clave de firma actual.
 set -e
 cd "$(dirname "$0")"
-export JAVA_HOME=/opt/homebrew/opt/openjdk@17
-export PATH="$JAVA_HOME/bin:$PATH"
-SDK=/opt/homebrew/share/android-commandlinetools
-BT=$SDK/build-tools/34.0.0
-JAR=$SDK/platforms/android-34/android.jar
-rm -rf build && mkdir -p build/res build/gen build/clases build/dex
-# clave de firma (se crea una vez y se reutiliza: sin ella no se puede actualizar la app instalada)
+
+if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
+  export JAVA_HOME="/opt/homebrew/opt/openjdk@17"
+  export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
+if [ -z "$ANDROID_HOME" ] && [ -d "/opt/homebrew/share/android-commandlinetools" ]; then
+  export ANDROID_HOME="/opt/homebrew/share/android-commandlinetools"
+fi
+export ANDROID_SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+
+# Clave de firma (se crea una vez y se reutiliza siempre para actualizar sin desinstalar)
 mkdir -p firma
 if [ ! -f firma/cinemood.keystore ]; then
   openssl rand -hex 16 > firma/clave.txt
   keytool -genkeypair -keystore firma/cinemood.keystore -alias cinemood -keyalg RSA -keysize 2048 -validity 10000 \
     -storepass "$(cat firma/clave.txt)" -keypass "$(cat firma/clave.txt)" -dname "CN=CineMood, O=Personal, C=ES" >/dev/null 2>&1
 fi
-$BT/aapt2 compile --dir res -o build/res/res.zip
-$BT/aapt2 link -o build/sin-dex.apk -I $JAR --manifest AndroidManifest.xml --java build/gen build/res/res.zip --auto-add-overlay
-javac -source 8 -target 8 -bootclasspath $JAR -classpath $JAR -d build/clases $(find src build/gen -name '*.java') 2>&1 | grep -v "warning: \[options\]" || true
-$BT/d8 --min-api 24 --lib $JAR --output build/dex $(find build/clases -name '*.class')
-cp build/sin-dex.apk build/sin-firma.apk
-(cd build/dex && zip -q -j ../sin-firma.apk classes.dex)
-$BT/zipalign -f -p 4 build/sin-firma.apk build/alineada.apk
-$BT/apksigner sign --ks firma/cinemood.keystore --ks-key-alias cinemood --ks-pass pass:"$(cat firma/clave.txt)" --key-pass pass:"$(cat firma/clave.txt)" --out CineMood-TV.apk build/alineada.apk
-$BT/apksigner verify CineMood-TV.apk && echo "✓ CineMood-TV.apk lista ($(du -h CineMood-TV.apk | cut -f1))"
+
+# Asegura Gradle 8.6 local si no está instalado globalmente
+GRADLE_VERSION="8.6"
+GRADLE_DIR="$HOME/.cache/cinemood-gradle/gradle-$GRADLE_VERSION"
+if command -v gradle >/dev/null 2>&1; then
+  GRADLE_BIN="gradle"
+else
+  if [ ! -x "$GRADLE_DIR/bin/gradle" ]; then
+    echo "Descargando Gradle $GRADLE_VERSION (solo la primera vez)…"
+    mkdir -p "$HOME/.cache/cinemood-gradle"
+    curl -fsSL "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -o "$HOME/.cache/cinemood-gradle/gradle.zip"
+    unzip -q -o "$HOME/.cache/cinemood-gradle/gradle.zip" -d "$HOME/.cache/cinemood-gradle"
+    rm -f "$HOME/.cache/cinemood-gradle/gradle.zip"
+  fi
+  GRADLE_BIN="$GRADLE_DIR/bin/gradle"
+fi
+
+"$GRADLE_BIN" --no-daemon assembleRelease
+
+APK_GENERADA=$(find build/outputs/apk/release -name "*.apk" | head -n 1)
+if [ -z "$APK_GENERADA" ]; then
+  echo "Error: no se encontró el APK generado." >&2
+  exit 1
+fi
+cp "$APK_GENERADA" CineMood-TV.apk
+
+BT="$ANDROID_SDK_ROOT/build-tools/34.0.0"
+if [ -x "$BT/apksigner" ]; then
+  "$BT/apksigner" verify CineMood-TV.apk
+fi
+echo "✓ CineMood-TV.apk lista con Media3 ExoPlayer ($(du -h CineMood-TV.apk | cut -f1))"

@@ -819,24 +819,30 @@
     .mun-podio span { width: 28px; text-align: center; }
     .mun-elegir { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 14px 0; }
 
-    /* ══ MODO TV (Android TV): se maneja con el mando, todo más grande, sin cosas de móvil ══ */
-    .modo-tv body { font-size: 18px; }
+    /* ══ MODO TV (Android TV): se maneja con el mando, todo más grande, ligero en GPU y sin cosas de móvil ══ */
+    .modo-tv body { font-size: 18px; padding-bottom: 40px !important; }
     .modo-tv .wrap { max-width: 1180px; }
     .modo-tv :focus { outline: none; }
-    .modo-tv .tv-foco { outline: 4px solid var(--acento) !important; outline-offset: 3px; border-radius: 12px; box-shadow: 0 0 0 8px rgba(var(--acento-rgb), 0.25) !important; position: relative; z-index: 5; transform: scale(1.04); transition: transform .12s, box-shadow .12s; }
-    .modo-tv .desc-card.tv-foco, .modo-tv .similar-card.tv-foco, .modo-tv .especial-tile.tv-foco { transform: scale(1.07); }
-    .modo-tv .tab.tv-foco { transform: none; }
+    /* Sin blur en tiempo real ni transiciones pesadas por fotograma: evita tirones en WebView de Android TV */
+    .modo-tv *, .modo-tv *::before, .modo-tv *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    .modo-tv .cm-logo, .modo-tv .pm-rejilla, .modo-tv .feed-fondo, .modo-tv .desc-rk-img.sin { filter: none !important; }
+    .modo-tv .pantalla-header.cab-fija { background: var(--bg) !important; box-shadow: none !important; transition: none !important; }
+    .modo-tv .pantalla.anim-adelante, .modo-tv .pantalla.anim-atras, .modo-tv .pantalla.anim-fundido { animation: none !important; }
+    .modo-tv .tv-foco { outline: 4px solid var(--acento) !important; outline-offset: 3px; border-radius: 10px; box-shadow: 0 0 0 4px rgba(var(--acento-rgb), 0.28) !important; position: relative; z-index: 5; transform: none !important; transition: none !important; }
     .modo-tv .buscar-camara, .modo-tv .ml-gesto-ayuda, .modo-tv #avisos-caja, .modo-tv .avisos-caja, .modo-tv .esc-subir, .modo-tv #esc-btn-camara { display: none !important; }
-    .modo-tv .scroll-arrow { display: none !important; }
-    /* barra de arriba: que quepa entera en la tele */
-    .modo-tv .pc-nav { padding: 12px 28px; gap: 14px; }
-    .modo-tv .pc-nav-busqueda { max-width: 340px; margin: 0; }
+    .modo-tv .scroll-arrow, .modo-tv .tabbar, .modo-tv h1.marca, .modo-tv .eyebrow-home, .modo-tv .mi-lista-mobile, .modo-tv #cuenta-btn-mobile { display: none !important; }
+    /* barra de arriba siempre visible en cualquier densidad de pantalla de TV */
+    .modo-tv .pc-nav { display: flex !important; padding: 10px 24px; gap: 10px; overflow-x: auto; scrollbar-width: none; }
+    .modo-tv .pc-nav::-webkit-scrollbar { display: none; }
+    .modo-tv .pc-nav-busqueda { max-width: 300px; margin: 0; }
     .modo-tv .pc-nav-actions { gap: 6px; margin-left: auto; }
     .modo-tv .pc-nav-btn[title="Empezar de cero"] { display: none; }
-    /* filas que se desplazan: margen para que el resaltado no se corte por los lados */
+    /* filas que se desplazan: sin scroll-snap ni smooth competidor para respuesta inmediata al mando */
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv #continuar-viendo-scroll { padding: 14px 14px 18px !important; margin: -14px -14px -18px !important; scroll-padding-inline: 28px; }
     .modo-tv .scroll-wrap { overflow: visible; }
-    .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila { scroll-behavior: smooth; }
+    .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv .galeria-tira, .modo-tv .videos-tira { scroll-behavior: auto !important; scroll-snap-type: none !important; }
+    .modo-tv .fte-modal { align-items: center; padding: 18px; }
+    .modo-tv .fte-sheet { max-width: 820px; max-height: 88vh; border-radius: 14px; }
     /* ── Avisos ── */
     .adm-form { display: grid; gap: 8px; margin: 6px 0 10px; }
     .adm-form .auth-input { margin: 0; }
@@ -2909,7 +2915,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <div class="fte-cab"><h3 id="fte-titulo"></h3><button class="fte-x" type="button" aria-label="Cerrar" onclick="cerrarFuentes()">✕</button></div>
       <div class="fte-sel" id="fte-sel"></div>
       <div id="fte-body"></div>
-      <p class="fte-nota">En iPhone/iPad, «Abrir en VLC» y «Descargar en VLC» abren la app instalada. En Mac/PC, «Abrir en VLC (.m3u)» guarda una pequeña lista: ábrela con VLC; no es el vídeo descargado ni funciona sin conexión. «Descargar archivo» abre el enlace original; según el servidor, el navegador puede descargarlo o mostrarlo. Para ver sin conexión, espera a que termine de descargarse el vídeo completo y compruébalo en modo avión. Las listas y enlaces pueden contener acceso privado: no los compartas. El progreso de VLC no se sincroniza con CineMood.</p>
+      <p class="fte-nota">«Reproducir» abre el reproductor interno de CineMood (con Media3 ExoPlayer en la app de Android TV, y soporte HLS/MPEG-TS en web). En Android e iPhone/iPad, «Abrir en VLC» abre la app instalada; en Mac/PC guarda una lista .m3u para abrirla con VLC. «Descargar» guarda o abre el archivo original cuando el servidor lo permite. Las listas y enlaces pueden contener acceso privado: no los compartas.</p>
     </div>
   </div>
   <div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Reproductor">
@@ -3127,15 +3133,25 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       n.pila.length = n.i+1; n.pila.push({p:id, f}); n.i++;
       try{ history.pushState({cm:1, p:id, f, i:n.i}, ''); }catch(e){}
     }
-    // Lo que se abre encima de la pantalla (tráilers, menús, ventanas): «atrás» lo cierra primero
+    // Lo que se abre encima de la pantalla (reproductor, fuentes, tráilers, menús, ventanas): «atrás» lo cierra primero
     function _navCapaAbierta(){
       const vis = id => { const el = document.getElementById(id); return el && el.style.display && el.style.display!=='none' ? el : null; };
+      if(document.getElementById('visor')?.classList.contains('activo')) return {el:document.getElementById('visor'), cerrar:cerrarVisor};
+      if(document.getElementById('fuentes-modal')?.classList.contains('activo')) return {el:document.getElementById('fuentes-modal'), cerrar:cerrarFuentes};
       if(document.getElementById('lp-menu')?.classList.contains('on')) return {el:document.getElementById('lp-menu'), cerrar:cerrarMenuLp};
       for(const [id,cerrar] of [['video-visor',()=>cerrarVideo()],['juntos-hoja',()=>cerrarJuntos()],['galeria-visor',()=>cerrarGaleria()],['feed-overlay',()=>cerrarFeedTrailers()],['col-overlay',()=>cerrarColOverlay()],['maraton-overlay',()=>cerrarMaraton()],['propina-overlay',()=>cerrarPropina()]]){
         const el = vis(id); if(el) return {el, cerrar};
       }
       return null;
     }
+    window._cmCerrarCapaOAtras = function(){
+      const ae = document.activeElement;
+      if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && !/^(button|checkbox|radio|range)$/.test(ae.type||'')){ ae.blur(); return true; }
+      const capa = _navCapaAbierta();
+      if(capa){ capa.cerrar(); return true; }
+      if(window._nav && window._nav.i > 0){ history.back(); return true; }
+      return false;
+    };
     // Pestañas de abajo: el historial se queda en «Inicio → pestaña», así «atrás» no recorre todo lo que has visitado
     function _navIrARaiz(id, restaurar){
       const n = _navEstado();
@@ -3994,7 +4010,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     async function _descHeroVideo(){
       clearTimeout(window._heroT); _descHeroParar();
       const p = window._descHero; if(!p || !/^https?:$/.test(location.protocol)) return;
-      if(navigator.connection?.saveData || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      if(document.documentElement.classList.contains('modo-tv') || navigator.connection?.saveData || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
       let t = null; try{ t = await _elegirTrailer(p._tipo, p.id); }catch(e){}
       if(!t || window._descHero!==p) return;
       window._heroT = setTimeout(()=>{
@@ -9518,7 +9534,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       await _cmAplicarSesion(data?.session);
       clearTimeout(espera); window._gateListo = true;
       sb.auth.onAuthStateChange((event, session)=>{
+        if(event === 'INITIAL_SESSION') return; // ya comprobada arriba con getSession()
         if(event === 'SIGNED_OUT'){ location.reload(); return; } // se limpia todo lo que hubiera en memoria
+        if(event === 'TOKEN_REFRESHED' && sesionActual && session?.user?.id === sesionActual.user?.id){
+          sesionActual = {...session, user: sesionActual.user};
+          return;
+        }
         // Fuera del callback de Auth para evitar esperas dentro de su bloqueo.
         setTimeout(async()=>{
           await _cmAplicarSesion(session);
@@ -14570,28 +14591,51 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     function _addonUrl(a, recurso, tipo, id){
       return a.url.replace(/\/manifest\.json$/,'') + '/' + recurso + '/' + encodeURIComponent(tipo) + '/' + encodeURIComponent(id) + '.json';
     }
+    function _tieneExoNativo(){
+      return !!(window.CineMoodTV && typeof window.CineMoodTV.reproducir === 'function');
+    }
+    function _urlStreamValida(raw){
+      if(!_esTxt(raw)) return null;
+      const u = _urlSegura(raw); if(u) return u;
+      if(_tieneExoNativo()){
+        try{ const x = new URL(raw); return (x.protocol==='http:' || x.protocol==='https:') && !x.username && !x.password ? x.href : null; }catch(e){}
+      }
+      return null;
+    }
+    function _extDeFuente(s, u){
+      const candidatas = [u ? (()=>{ try{ return new URL(u).pathname; }catch(e){ return ''; } })() : '', s && s.filename || '', s && s.description || '', s && s.name || ''];
+      for(const txt of candidatas){
+        const m = String(txt).match(/\.([a-z0-9]{2,5})(?:$|[?#\s"')\],])/i);
+        if(m && /^(mp4|m4v|webm|mov|m3u8|mpd|mkv|avi|wmv|flv|ts|m2ts|mpg|mpeg)$/i.test(m[1])) return m[1].toLowerCase();
+      }
+      if(u && /[?&=/](?:playlist|master|index|manifest)?[^?#]*\.m3u8\b|[?&]format=hls\b/i.test(u)) return 'm3u8';
+      return '';
+    }
     function _fuenteLimpia(s){
       if(!s || typeof s!=='object') return null;
       const bh = s.behaviorHints && typeof s.behaviorHints==='object' ? s.behaviorHints : {};
+      const rh = bh.proxyHeaders && typeof bh.proxyHeaders==='object' && bh.proxyHeaders.request && typeof bh.proxyHeaders.request==='object' ? bh.proxyHeaders.request : null;
+      const subs = Array.isArray(s.subtitles) ? s.subtitles.filter(x=>x&&_urlSegura(x.url)).slice(0,40).map(x=>({url:_urlSegura(x.url), lang:String(x.lang||x.language||'').slice(0,24), label:String(x.label||x.lang||'').slice(0,80)})) : [];
       return {url:_esTxt(s.url)?s.url.slice(0,4000):null, externalUrl:_esTxt(s.externalUrl)?s.externalUrl.slice(0,4000):null, ytId:_esTxt(s.ytId)?s.ytId:null, infoHash:_esTxt(s.infoHash)?s.infoHash:null,
-        name:String(s.name||'').slice(0,120), description:String(s.description||s.title||'').slice(0,600), notWebReady:!!bh.notWebReady, proxyHeaders:!!bh.proxyHeaders};
+        name:String(s.name||'').slice(0,120), description:String(s.description||s.title||'').slice(0,600), filename:_esTxt(bh.filename)?bh.filename.slice(0,260):'',
+        notWebReady:!!bh.notWebReady, proxyHeaders:!!bh.proxyHeaders, reqHeaders:rh, subtitles:subs};
     }
-    // Qué se puede reproducir en un navegador y qué no, con el motivo escrito
+    // Qué se puede reproducir en el reproductor interno (Media3 en Android TV / HTML5+HLS+MPEG-TS en web) y qué no
     function _clasificarFuente(s){
       const no = motivo=>({tipo:'no', motivo});
       if(s.externalUrl){ const u=_urlHttps(s.externalUrl); return u?{tipo:'externa', href:u}:no('El enlace externo no es una dirección https válida.'); }
-      if(s.infoHash) return no('Es un torrent: un navegador no puede reproducirlo. Necesita un servicio que lo convierta en un enlace directo.');
-      if(s.ytId) return no('Es un vídeo de YouTube: aún no está soportado.');
+      if(s.infoHash) return no('Es un torrent: necesita un servicio (como AllDebrid) que lo convierta en enlace directo.');
+      if(s.ytId) return no('Es un vídeo de YouTube: aún no está soportado aquí.');
       if(!s.url) return no('Tipo de fuente desconocido.');
-      const u = _urlSegura(s.url);
-      if(!u) return no(/^http:/i.test(s.url)?'La dirección usa http y la app va en https: el navegador la bloquea.':'La dirección de la fuente no es válida.');
-      if(s.proxyHeaders) return no('Necesita cabeceras especiales que un navegador no puede enviar.');
-      const ext = ((new URL(u).pathname.match(/\.([a-z0-9]{2,5})$/i))||[])[1]; const e = ext?ext.toLowerCase():'';
-      if(e==='m3u8') return document.createElement('video').canPlayType('application/vnd.apple.mpegurl') ? {tipo:'play'} : no('Es HLS y este navegador no lo reproduce de forma nativa (funciona en Safari).');
-      if(e==='mkv') return {tipo:'play'};
-      if(['avi','wmv','flv','ts','mpg','mpeg','m2ts'].includes(e)) return no('El formato .'+e+' no es compatible con el navegador.');
-      if(s.notWebReady && !['mp4','m4v','webm','mov'].includes(e)) return no('No está preparada para la web (formato o protocolo no compatible).');
-      return {tipo:'play'};
+      const u = _urlStreamValida(s.url);
+      if(!u) return no(/^http:/i.test(s.url)?'La dirección usa http sin cifrar y el navegador la bloquea.':'La dirección de la fuente no es válida.');
+      if(_tieneExoNativo()) return {tipo:'play', motor:'exo'};
+      if(s.proxyHeaders) return no('Necesita cabeceras especiales que un navegador web no puede enviar (sí funciona en la app de Android TV).');
+      const e = _extDeFuente(s, u);
+      if(e==='m3u8') return {tipo:'play', motor:'hls'};
+      if(['ts','m2ts','flv'].includes(e)) return {tipo:'play', motor:'mpegts', aviso:'Flujo .'+e+' en reproductor interno; si el servidor bloquea el acceso directo, usa «Abrir en VLC».'};
+      if(['mkv','avi','wmv','mpg','mpeg'].includes(e) || s.notWebReady) return {tipo:'play', motor:'nativo', aviso:'Si algún códec de audio o vídeo no suena en el reproductor interno, usa «Abrir en VLC».'};
+      return {tipo:'play', motor:'nativo'};
     }
 
     // ── El id de IMDb sale de TMDB (los addons usan ids de IMDb) ──
@@ -14748,19 +14792,28 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       return {texto,es,cast,lat,en,multi,idiomaConocido:es||en||multi||/french|french|fran[cç][eé]s|german|alem[aá]n|italian|italiano|portugu[eê]s|russian|ruso|japanese|japon[eé]s/i.test(audioTexto),calidad,semillas,subs:subs.length>0||subLineas.length>0,subEs,subEn};
     }
 
-    // Acciones stream y download de VLC para iOS:
+    // Acciones stream y download de VLC para iOS y Android:
     // https://wiki.videolan.org/Documentation:IOS/
     function _esVLCiOS(){
       return /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
         (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
     }
+    function _esAndroid(){
+      return /Android/i.test(navigator.userAgent) || _tieneExoNativo();
+    }
     // En Android (también la app de la tele) el vídeo se pasa a VLC con un «intent»
-    function _vlcIntentAndroid(u){ try{ const x = new URL(u); return `intent://${x.host}${x.pathname}${x.search}#Intent;scheme=${x.protocol.replace(':','')};action=android.intent.action.VIEW;type=video/*;package=org.videolan.vlc;end`; }catch(e){ return null; } }
-    function _vlcHref(enlace, accion='stream'){
-      const u = _urlSegura(enlace);
-      if(accion!=='stream' && accion!=='download') return null;
-      if(u && /Android/i.test(navigator.userAgent) && accion==='stream') return _vlcIntentAndroid(u);
-      return u ? 'vlc-x-callback://x-callback-url/'+accion+'?url='+encodeURIComponent(u) : null;
+    function _vlcIntentAndroid(u, titulo){
+      try{
+        const x = new URL(u);
+        const extra = titulo ? `S.title=${encodeURIComponent(String(titulo).slice(0,140))};` : '';
+        return `intent://${x.host}${x.pathname}${x.search}#Intent;scheme=${x.protocol.replace(':','')};action=android.intent.action.VIEW;type=video/*;package=org.videolan.vlc;${extra}end`;
+      }catch(e){ return null; }
+    }
+    function _vlcHref(enlace, accion='stream', titulo=''){
+      const u = _urlStreamValida(enlace);
+      if(!u || (accion!=='stream' && accion!=='download')) return null;
+      if(_esAndroid() && accion==='stream') return _vlcIntentAndroid(u, titulo);
+      return 'vlc-x-callback://x-callback-url/'+accion+'?url='+encodeURIComponent(u);
     }
     function _guardarListaVLC(enlace, titulo, estado){
       const u=_urlSegura(enlace); if(!u) return;
@@ -14777,14 +14830,17 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(estado) estado.textContent='Se ha generado una lista .m3u. En Descargas: clic derecho → Abrir con → VLC. Es solo un acceso al vídeo, no una copia offline. No compartas la lista.';
     }
     function _abrirVLCVisor(ev){
-      if(/Android/i.test(navigator.userAgent)){
-        ev.preventDefault(); const v = document.getElementById('visor-video'), u = _urlSegura(v.currentSrc||v.src), it = u && _vlcIntentAndroid(u);
-        if(it){ _pausarParaVLC(); location.href = it; } return;
+      const srcActual = window._visorSrcActual || document.getElementById('visor-video').currentSrc || document.getElementById('visor-video').src;
+      const tituloActual = document.getElementById('visor-titulo').textContent;
+      if(_esAndroid()){
+        ev.preventDefault();
+        const u = _urlStreamValida(srcActual), it = u && _vlcIntentAndroid(u, tituloActual);
+        if(it){ _pausarParaVLC(); location.href = it; }
+        return;
       }
       if(!_esVLCiOS()){
         ev.preventDefault();
-        const v=document.getElementById('visor-video');
-        _guardarListaVLC(v.currentSrc||v.src,document.getElementById('visor-titulo').textContent);
+        _guardarListaVLC(srcActual, tituloActual);
       }else _pausarParaVLC();
     }
     function _esArchivoDescargable(enlace){
@@ -14797,10 +14853,15 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(v && !v.paused) v.pause();
     }
     async function _copiarFuenteVLC(enlace, estado){
-      const u=_urlSegura(enlace); if(!u) return;
+      const u=_urlStreamValida(enlace); if(!u) return;
       try{
+        if(window.CineMoodTV && typeof window.CineMoodTV.copiar === 'function'){
+          window.CineMoodTV.copiar(u);
+          estado.textContent='Enlace copiado al portapapeles del dispositivo. No compartas este enlace: puede incluir acceso privado.';
+          return;
+        }
         await navigator.clipboard.writeText(u);
-        estado.textContent=_esVLCiOS() ? 'Enlace copiado. En VLC: Red → Abrir flujo de red. No compartas este enlace: puede incluir acceso privado.' : 'Enlace copiado. En VLC del Mac: Archivo → Abrir red (⌘N), pega el enlace y abre. No compartas este enlace: puede incluir acceso privado.';
+        estado.textContent=_esVLCiOS() ? 'Enlace copiado. En VLC: Red → Abrir flujo de red. No compartas este enlace: puede incluir acceso privado.' : (_esAndroid() ? 'Enlace copiado. En VLC: Más → Nuevo flujo, pega el enlace y abre. No compartas este enlace.' : 'Enlace copiado. En VLC del Mac/PC: Archivo → Abrir red, pega el enlace y abre. No compartas este enlace: puede incluir acceso privado.');
       }catch(e){
         const input=_fEl('input',{type:'text',value:u,readonly:true,'aria-label':'Enlace privado para copiar',style:'width:100%;min-width:0;padding:10px;font-size:16px;margin-top:8px'});
         estado.replaceChildren(document.createTextNode('Mantén pulsado el enlace para copiarlo. No lo compartas.'),input);
@@ -14815,67 +14876,208 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         c.tipo==='no' && _fEl('span',{class:'fte-motivo',text:c.motivo}),
         c.tipo==='play' && c.aviso && _fEl('span',{class:'fte-aviso',text:c.aviso}));
       if(c.tipo==='externa') return _fEl('a',{class:'fte-fila',href:c.href,target:'_blank',rel:'noopener noreferrer'}, cuerpo, _fEl('span',{class:'fte-ico','aria-hidden':'true',text:'↗'}), _fEl('span',{class:'sr-only',style:'position:absolute;left:-9999px',text:' (se abre en una pestaña nueva)'}));
-      const vlc = !s.proxyHeaders && s.url && _vlcHref(s.url);
+      const vlc = !s.proxyHeaders && s.url && _vlcHref(s.url, 'stream', ctx.titulo);
       if(c.tipo==='play' || vlc){
         const estado=_fEl('p',{class:'fte-vlc-ayuda',role:'status','aria-live':'polite'});
         const acciones=_fEl('div',{class:'fte-acciones'});
-        if(c.tipo==='play') acciones.append(_fEl('button',{class:'fte-accion',type:'button',onclick:()=>reproducirFuente(s,{...ctx,fuente:nombre})},'Ver en navegador'));
+        if(c.tipo==='play') acciones.append(_fEl('button',{class:'fte-accion fte-accion-play',type:'button',onclick:()=>reproducirFuente(s,{...ctx,fuente:nombre})},'Reproducir'));
         if(vlc){
-          if(_esVLCiOS()) acciones.append(
+          if(_esVLCiOS() || _esAndroid()) acciones.append(
             _fEl('a',{class:'fte-accion fte-accion-vlc',href:vlc,onclick:()=>{
               _pausarParaVLC();
-              estado.textContent='Se ha solicitado abrir VLC. Si no se abre, comprueba que esté instalado o utiliza «Copiar enlace».';
+              estado.textContent='Se ha solicitado abrir VLC. Si no se abre, comprueba que VLC esté instalado o utiliza «Copiar enlace».';
             }},'Abrir en VLC'));
           else acciones.append(_fEl('button',{class:'fte-accion fte-accion-vlc',type:'button',onclick:()=>_guardarListaVLC(s.url,ctx.titulo,estado)},'Abrir en VLC (.m3u)'));
+        }
+        if(s.url && _urlStreamValida(s.url)){
+          acciones.append(_fEl('button',{class:'fte-accion',type:'button',onclick:()=>_copiarFuenteVLC(s.url,estado)},'Copiar enlace'));
           if(_esArchivoDescargable(s.url)) acciones.append(
             _esVLCiOS() ?
             _fEl('a',{class:'fte-accion',href:_vlcHref(s.url,'download'),onclick:()=>{
               _pausarParaVLC();
-              estado.textContent='Se ha solicitado la descarga en VLC. Comprueba allí su progreso y que haya espacio suficiente. CineMood no puede confirmar que haya comenzado ni terminado.';
+              estado.textContent='Se ha solicitado la descarga en VLC. Comprueba allí su progreso y que haya espacio suficiente.';
             }},'Descargar en VLC') :
             _fEl('a',{class:'fte-accion',href:_urlSegura(s.url),download:'',target:'_blank',rel:'noopener noreferrer',referrerpolicy:'no-referrer',onclick:()=>{
-              estado.textContent='Se abrirá el archivo original. Si el navegador lo reproduce en vez de descargarlo, usa su opción de guardar o descargar. Una lista .m3u no sustituye al vídeo para verlo offline.';
-            }},'Descargar archivo'));
-          acciones.append(_fEl('button',{class:'fte-accion',type:'button',onclick:()=>_copiarFuenteVLC(s.url,estado)},'Copiar enlace'));
+              estado.textContent='Se abrirá el archivo original para guardarlo. Si el navegador lo muestra, usa su opción de descargar.';
+            }},'Descargar'));
         }
         return _fEl('div',{class:'fte-fila fte-opciones'},cuerpo,acciones,estado);
       }
       return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'No compatible'}));
     }
 
-    // ── Reproductor (controles nativos del navegador) con progreso guardado ──
+    // ── Reproductor interno: Media3 ExoPlayer en app Android TV + HTML5/hls.js/mpegts.js en web ──
     function _progKey(ctx){ return 'cm:prog:'+ctx.tipo+':'+ctx.tmdbId+(ctx.tipo==='tv'?':'+ctx.season+':'+ctx.episode:''); }
-    function reproducirFuente(s, ctx){
+    const _libsStream = {};
+    function _cargarLibStream(url, check){
+      if(check()) return Promise.resolve(true);
+      if(_libsStream[url]) return _libsStream[url];
+      return (_libsStream[url] = new Promise(res=>{
+        const sc = document.createElement('script');
+        sc.src = url; sc.async = true;
+        sc.onload = ()=>res(!!check());
+        sc.onerror = ()=>{ delete _libsStream[url]; res(false); };
+        document.head.appendChild(sc);
+      }));
+    }
+    function _limpiarMotoresVisor(){
+      if(window._visorHls){ try{ window._visorHls.destroy(); }catch(e){} window._visorHls = null; }
+      if(window._visorMpegts){ try{ window._visorMpegts.unload(); window._visorMpegts.detachMediaElement(); window._visorMpegts.destroy(); }catch(e){} window._visorMpegts = null; }
+    }
+    window._cmGuardarProgresoDesdeTV = function(key, posSeg, durSeg){
+      if(!key) return;
+      try{
+        const p = Number(posSeg)||0, d = Number(durSeg)||0;
+        if(d > 30 && p >= d * 0.92) localStorage.removeItem(key);
+        else if(p > 3) localStorage.setItem(key, String(Math.floor(p)));
+      }catch(e){}
+    };
+    async function _enviarSubtitulosAddonsATV(ctx, turnoTV){
+      if(!window.CineMoodTV || typeof window.CineMoodTV.anadirSubtitulos !== 'function') return;
+      try{
+        if(ctx.tipo !== 'movie' && ctx.tipo !== 'tv') return;
+        const imdb = await _imdbIdDe(ctx.tipo, ctx.tmdbId);
+        if(window._visorTurnoTV !== turnoTV) return;
+        const type = ctx.tipo==='tv' ? 'series' : 'movie';
+        const id = ctx.tipo==='tv' ? `${imdb}:${ctx.season}:${ctx.episode}` : imdb;
+        const addons = addonsLeer().filter(a=>_addonManeja(a,'subtitles',type,id));
+        if(!addons.length) return;
+        const acumulados = [];
+        await Promise.all(addons.map(async a=>{
+          try{
+            const d = await _fetchAddon(_addonUrl(a,'subtitles',type,id));
+            const items = (Array.isArray(d&&d.subtitles)?d.subtitles:[]).filter(x=>x&&_urlSegura(x.url)).slice(0,40);
+            items.forEach((x,i)=>acumulados.push({
+              url: _urlSegura(x.url),
+              lang: String(x.lang||x.language||'und').slice(0,24),
+              label: (String(x.label||x.lang||'Subtítulo').slice(0,70)+' · '+a.nombre+' #'+(i+1))
+            }));
+          }catch(e){}
+        }));
+        if(window._visorTurnoTV === turnoTV && acumulados.length){
+          window.CineMoodTV.anadirSubtitulos(JSON.stringify(acumulados.slice(0,80)));
+        }
+      }catch(e){}
+    }
+    async function reproducirFuente(s, ctx){
+      const src = _urlStreamValida(s.url); if(!src) return;
+      const key = _progKey(ctx);
+      const subTxt = [ctx.tipo==='tv'?`T${ctx.season} · E${ctx.episode}`:'', ctx.fuente].filter(Boolean).join(' · ');
+      if(_tieneExoNativo()){
+        const turnoTV = (window._visorTurnoTV = (window._visorTurnoTV||0) + 1);
+        const inicioSeg = Math.max(0, Math.floor(parseFloat(localStorage.getItem(key)||'0') || 0));
+        window.CineMoodTV.reproducir(JSON.stringify({
+          url: src,
+          titulo: String(ctx.titulo||'CineMood'),
+          subtitulo: subTxt,
+          progKey: key,
+          inicioSeg,
+          headers: s.reqHeaders || null,
+          subtitulos: Array.isArray(s.subtitles) ? s.subtitles : []
+        }));
+        _enviarSubtitulosAddonsATV(ctx, turnoTV);
+        return;
+      }
       const ov = document.getElementById('visor'), v = document.getElementById('visor-video'), err = document.getElementById('visor-error');
-      const src = _urlSegura(s.url); if(!src) return;
+      const miTurno = (window._visorTurno = (window._visorTurno||0) + 1);
+      _limpiarMotoresVisor();
+      window._visorSrcActual = src;
       const vlcLink=document.getElementById('visor-vlc-link');
-      vlcLink.href=_esVLCiOS()?_vlcHref(src):'#';
-      vlcLink.textContent=_esVLCiOS()?'Abrir en VLC':'Abrir en VLC (.m3u)';
+      vlcLink.href=(_esVLCiOS()||_esAndroid()) ? (_vlcHref(src,'stream',ctx.titulo)||'#') : '#';
+      vlcLink.textContent=(_esVLCiOS()||_esAndroid()) ? 'Abrir en VLC' : 'Abrir en VLC (.m3u)';
       err.hidden = true;
       document.getElementById('visor-titulo').textContent = ctx.titulo;
-      document.getElementById('visor-sub').textContent = [ctx.tipo==='tv'?`T${ctx.season} · E${ctx.episode}`:'', ctx.fuente].filter(Boolean).join(' · ');
-      const key = _progKey(ctx);
-      let ultimo = Date.now();
-      const guardar = ()=>{ if(v.currentTime>1 && isFinite(v.duration)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){} } };
-      v.onloadedmetadata = ()=>{ const t = parseFloat(localStorage.getItem(key)||'0'); if(t>5 && t<v.duration*0.9) v.currentTime = t; };
+      document.getElementById('visor-sub').textContent = subTxt;
+      let ultimo = Date.now(), retomoAplicado = false, fallbackHlsIntentado = false;
+      const retomar = ()=>{
+        if(retomoAplicado) return; retomoAplicado = true;
+        const t = parseFloat(localStorage.getItem(key)||'0');
+        if(t>5 && (!isFinite(v.duration) || t<v.duration*0.92)){ try{ v.currentTime = t; }catch(e){} }
+      };
+      const guardar = ()=>{ if(v.currentTime>1 && (!isFinite(v.duration) || v.duration>10)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){} } };
+      const mostrarError = detalle=>{
+        if(miTurno !== window._visorTurno) return;
+        err.textContent = 'No se pudo reproducir en el reproductor interno: '+detalle+' Puedes pulsar «Abrir en VLC» arriba o copiar el enlace.';
+        err.hidden = false;
+      };
+      v.onloadedmetadata = retomar;
       v.ontimeupdate = ()=>{ if(Date.now()-ultimo>10000){ ultimo = Date.now(); guardar(); } };
       v.onpause = guardar;
       v.onended = ()=>{ try{ localStorage.removeItem(key); }catch(e){} };
-      v.onerror = ()=>{
-        const msg = {1:'La carga se interrumpió.',2:'Error de red al cargar el vídeo.',3:'El vídeo está dañado o no se pudo decodificar.',4:'El navegador no admite este formato o la dirección no responde.'}[v.error&&v.error.code] || 'Error desconocido.';
-        err.textContent = 'No se pudo reproducir: '+msg+' Puedes probar «Abrir en VLC», arriba. Este mensaje no identifica por sí solo el códec ni el estado del enlace.'; err.hidden = false;
-      };
       window._visorGuardar = guardar;
-      v.src = src;
       ov.classList.add('activo');
       document.body.style.overflow = 'hidden';
-      const p = v.play(); if(p && p.catch) p.catch(()=>{}); // si el navegador bloquea el autoplay, quedan los controles
+
+      const ext = _extDeFuente(s, src);
+      const iniciarPlay = ()=>{ const p = v.play(); if(p && p.catch) p.catch(()=>{}); };
+
+      if(ext === 'm3u8'){
+        const nativoHls = !!v.canPlayType('application/vnd.apple.mpegurl');
+        if(!nativoHls){
+          const okHls = await _cargarLibStream('https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js', ()=>!!(window.Hls && window.Hls.isSupported));
+          if(miTurno !== window._visorTurno) return;
+          if(okHls && window.Hls.isSupported()){
+            const hls = new window.Hls({enableWorker:true, backBufferLength:60});
+            window._visorHls = hls;
+            hls.on(window.Hls.Events.MANIFEST_PARSED, ()=>{ retomar(); iniciarPlay(); });
+            hls.on(window.Hls.Events.ERROR, (_, data)=>{
+              if(!data || !data.fatal) return;
+              if(data.type === window.Hls.ErrorTypes.NETWORK_ERROR) mostrarError('Error de red o bloqueo CORS al cargar la lista HLS.');
+              else if(data.type === window.Hls.ErrorTypes.MEDIA_ERROR){ try{ hls.recoverMediaError(); }catch(e){ mostrarError('No se pudo decodificar el flujo HLS.'); } }
+              else mostrarError('No se pudo iniciar el flujo HLS.');
+            });
+            hls.loadSource(src);
+            hls.attachMedia(v);
+            return;
+          }
+        }
+      } else if(['ts','m2ts','flv'].includes(ext)){
+        const okTs = await _cargarLibStream('https://cdn.jsdelivr.net/npm/mpegts.js@1.8.2/dist/mpegts.js', ()=>!!(window.mpegts && window.mpegts.isSupported));
+        if(miTurno !== window._visorTurno) return;
+        if(okTs && window.mpegts.isSupported()){
+          try{
+            const tipoTs = ext==='flv' ? 'flv' : 'mpegts';
+            const mp = window.mpegts.createPlayer({type: tipoTs, isLive: false, url: src}, {enableWorker: true, lazyLoadMaxDuration: 180});
+            window._visorMpegts = mp;
+            mp.on(window.mpegts.Events.ERROR, (_, det)=>mostrarError('Flujo '+ext.toUpperCase()+' no accesible desde el navegador ('+(det||'posible bloqueo CORS')+').'));
+            mp.attachMediaElement(v);
+            mp.load();
+            iniciarPlay();
+            return;
+          }catch(e){}
+        }
+      }
+
+      v.onerror = async()=>{
+        if(miTurno !== window._visorTurno) return;
+        // Si una dirección sin extensión resulta ser HLS en un navegador sin HLS nativo, probar hls.js una vez
+        if(!fallbackHlsIntentado && !ext && !v.canPlayType('application/vnd.apple.mpegurl')){
+          fallbackHlsIntentado = true;
+          const okHls = await _cargarLibStream('https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js', ()=>!!(window.Hls && window.Hls.isSupported));
+          if(miTurno === window._visorTurno && okHls && window.Hls.isSupported()){
+            v.onerror = null;
+            const hls = new window.Hls({enableWorker:true});
+            window._visorHls = hls;
+            hls.on(window.Hls.Events.MANIFEST_PARSED, ()=>{ err.hidden = true; retomar(); iniciarPlay(); });
+            hls.on(window.Hls.Events.ERROR, (_, data)=>{ if(data && data.fatal) mostrarError('El formato o códec no es compatible con este navegador.'); });
+            hls.loadSource(src); hls.attachMedia(v);
+            return;
+          }
+        }
+        const msg = {1:'La carga se interrumpió.',2:'Error de red al cargar el vídeo.',3:'El códec de vídeo o audio no se pudo decodificar aquí.',4:'Este navegador no admite este contenedor/códec o el enlace no responde.'}[v.error&&v.error.code] || 'Formato no admitido directamente.';
+        mostrarError(msg);
+      };
+      v.src = src;
+      iniciarPlay();
     }
     function cerrarVisor(){
       const ov = document.getElementById('visor'), v = document.getElementById('visor-video');
       if(!ov.classList.contains('activo')) return;
+      window._visorTurno = (window._visorTurno||0) + 1;
+      window._visorSrcActual = '';
       if(window._visorGuardar) window._visorGuardar();
       v.onpause = v.ontimeupdate = v.onerror = v.onended = v.onloadedmetadata = null;
+      _limpiarMotoresVisor();
       v.pause(); v.removeAttribute('src'); v.load();
       document.getElementById('visor-vlc-link').removeAttribute('href');
       ov.classList.remove('activo');
@@ -14897,7 +15099,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     // La API key se guarda solo en este dispositivo.
     // ══════════════════════════════════════════════════════════════════════
     const VIDEOS_LS = 'cm:videos', ADB_LS = 'cm:adb', ADB_BASE = 'https://api.alldebrid.com/v4';
-    const _EXT_DIRECTA = /\.(mp4|m4v|webm|mov|m3u8)$/i;
+    const _EXT_DIRECTA = /\.(mp4|m4v|webm|mov|m3u8|mkv|ts|m2ts|flv|avi)$/i;
     const _MODOS = ['auto','directo','alldebrid'];
 
     function adbKey(){ try{ return localStorage.getItem(ADB_LS) || ''; }catch(e){ return ''; } }
@@ -15029,7 +15231,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         let url = v.enlace, via = 'Directo', nombre = '';
         const directo = v.modo==='directo' || (v.modo==='auto' && _EXT_DIRECTA.test(new URL(v.enlace).pathname));
         if(!directo){ const r = await adbResolver(v.enlace, t=>{ est.textContent = t; }); url = r.url; nombre = r.nombre; via = 'AllDebrid'; }
-        const s = _fuenteLimpia({url, name:v.titulo});
+        const s = _fuenteLimpia({url, name:v.titulo, behaviorHints: nombre ? {filename: nombre} : undefined});
         const c = _clasificarFuente(s);
         if(c.tipo!=='play') throw new Error('Se ha obtenido el archivo'+(nombre?' («'+nombre+'»)':'')+', pero no se puede reproducir aquí: '+(c.motivo||'formato no compatible'));
         est.textContent = '';
@@ -15355,61 +15557,215 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
   </script>
   <script>
-  // ══ MODO TV: navegación con las flechas del mando (OK = pulsar, Atrás = volver) ══
+  // ══ MODO TV: navegación espacial rápida con las flechas del mando (OK = pulsar, Atrás = volver) ══
   (function(){
     if(!document.documentElement.classList.contains('modo-tv')) return;
-    const SEL = 'a[href], button, input, select, textarea, [onclick], [role="button"], .desc-card, .similar-card, .especial-tile, .tab';
-    const visible = el => { if(el.disabled || el.closest('[hidden]')) return false; const r = el.getBoundingClientRect(); if(!r.width || !r.height) return false; const cs = getComputedStyle(el); return cs.visibility!=='hidden' && cs.display!=='none'; };
-    // lo que se puede elegir: lo de la pantalla activa, las ventanas que estén encima y la barra de abajo
-    function candidatos(){
-      const zonas = [...document.querySelectorAll('.pantalla.activa, #tabbar, .pc-nav, [role="dialog"], .lp-menu, .galeria-visor, #col-overlay, .aviso-version')].filter(visible);
-      const capa = zonas.filter(z=>z.matches('[role="dialog"], .lp-menu, .galeria-visor, #col-overlay')).pop();
-      const base = capa ? [capa] : zonas;
-      const out = []; base.forEach(z=>z.querySelectorAll(SEL).forEach(el=>{ if(visible(el) && !el.parentElement.closest('.desc-card, .similar-card, .especial-tile, [onclick]:not(body)') || (visible(el) && el.matches('button, input, select, textarea, a[href]'))) out.push(el); }));
-      return [...new Set(out)].filter(visible);
+    const SEL = 'a[href], button, input, select, textarea, [onclick], [role="button"], .desc-card, .similar-card, .especial-tile';
+    const HSCROLL_SEL = '.desc-scroll, .similares-scroll, .reparto-scroll, .especiales-scroll, .sem-fila, .hoy-cine-fila, .videos-tira, .galeria-tira, .d-puntuacion-row, .pc-nav, .exp-chips, .sim-filtros, .osc-ediciones, .desc-plataformas, .desc-gen-scroll, .fm-top, .fm-generos, .colab-fila, #continuar-viendo-scroll';
+    const VSCROLL_SEL = '.fte-sheet, #cm-subtitles, .juntos-hoja, #col-overlay, #maraton-overlay, #propina-overlay, #gate';
+
+    // Comprobación rápida sin recalcular estilos de cada nodo
+    function esVisibleRapido(el){
+      if(!el || el.disabled || el.hidden) return null;
+      if(el.offsetParent === null){
+        const pos = el.style.position || getComputedStyle(el).position;
+        if(pos !== 'fixed' && pos !== 'sticky') return null;
+      }
+      const r = el.getBoundingClientRect();
+      return (r.width > 2 && r.height > 2) ? r : null;
     }
+
+    // Capa modal superior abierta en este instante (evita buscar en diálogos cerrados)
+    function capaActiva(){
+      if(document.body.classList.contains('sin-sesion')){
+        const g = document.getElementById('gate');
+        if(g && esVisibleRapido(g)) return g;
+      }
+      const visor = document.getElementById('visor');
+      if(visor && visor.classList.contains('activo')) return visor;
+      const fte = document.getElementById('fuentes-modal');
+      if(fte && fte.classList.contains('activo')) return fte.querySelector('.fte-sheet') || fte;
+      const lp = document.getElementById('lp-menu');
+      if(lp && lp.classList.contains('on')) return lp;
+      for(const id of ['video-visor','juntos-hoja','galeria-visor','feed-overlay','col-overlay','maraton-overlay','propina-overlay']){
+        const el = document.getElementById(id);
+        if(el && el.style.display && el.style.display !== 'none' && esVisibleRapido(el)) return el;
+      }
+      return null;
+    }
+
+    // Devuelve [{el, r}] midiendo cada rectángulo una sola vez
+    function candidatosConRect(){
+      const capa = capaActiva();
+      const zonas = capa ? [capa] : [
+        document.getElementById('aviso-version'),
+        document.querySelector('.pc-nav'),
+        document.querySelector('.pantalla.activa')
+      ].filter(z=>z && esVisibleRapido(z));
+      const vistos = new Set(), out = [];
+      for(const z of zonas){
+        const nodos = z.querySelectorAll(SEL);
+        for(let i = 0; i < nodos.length; i++){
+          const el = nodos[i];
+          if(vistos.has(el)) continue;
+          const esControlDirecto = el.matches('button, input, select, textarea, a[href], summary');
+          if(!esControlDirecto && el.parentElement && el.parentElement.closest('.desc-card, .similar-card, .especial-tile, [onclick]:not(body)')) continue;
+          const r = esVisibleRapido(el);
+          if(!r) continue;
+          vistos.add(el);
+          out.push({el, r});
+        }
+      }
+      return out;
+    }
+
     let actual = null;
+    function desplazarContenedor(el){
+      const hs = el.closest(HSCROLL_SEL);
+      if(hs && hs.scrollWidth > hs.clientWidth + 4){
+        const er = el.getBoundingClientRect(), hr = hs.getBoundingClientRect(), pad = 36;
+        if(er.left < hr.left + pad) hs.scrollLeft -= (hr.left + pad - er.left);
+        else if(er.right > hr.right - pad) hs.scrollLeft += (er.right - (hr.right - pad));
+      }
+      const vs = el.closest(VSCROLL_SEL);
+      const r = el.getBoundingClientRect();
+      if(vs && vs.scrollHeight > vs.clientHeight + 4){
+        const vr = vs.getBoundingClientRect(), pad = 48;
+        if(r.top < vr.top + pad) vs.scrollTop -= (vr.top + pad - r.top);
+        else if(r.bottom > vr.bottom - pad) vs.scrollTop += (r.bottom - (vr.bottom - pad));
+      } else {
+        if(r.top < 86) window.scrollBy(0, r.top - 106);
+        else if(r.bottom > innerHeight - 64) window.scrollBy(0, r.bottom - innerHeight + 96);
+      }
+    }
+
     function enfocar(el){
       if(!el) return;
-      if(actual) actual.classList.remove('tv-foco');
+      if(actual && actual !== el) actual.classList.remove('tv-foco');
       actual = el; el.classList.add('tv-foco');
-      if(!el.hasAttribute('tabindex') && !el.matches('a[href], button, input, select, textarea')) el.setAttribute('tabindex','-1');
-      if(el.matches('input:not([type=button]):not([type=checkbox]):not([type=radio]), textarea')){ if(document.activeElement && document.activeElement!==el) document.activeElement.blur(); }
-      else el.focus({preventScroll:true});
-      el.scrollIntoView({block:'nearest', inline:'nearest', behavior:'smooth'});
-      const r = el.getBoundingClientRect(); // que no quede pegado al borde de arriba ni debajo de la barra
-      if(r.top < 90) window.scrollBy({top: r.top-110, behavior:'smooth'}); else if(r.bottom > innerHeight-110) window.scrollBy({top: r.bottom-innerHeight+140, behavior:'smooth'});
+      if(!el.hasAttribute('tabindex') && !el.matches('a[href], button, input, select, textarea, summary')) el.setAttribute('tabindex','-1');
+      if(el.matches('input:not([type=button]):not([type=checkbox]):not([type=radio]):not([type=range]), textarea')){
+        if(document.activeElement && document.activeElement !== el) document.activeElement.blur();
+      } else {
+        try{ el.focus({preventScroll:true}); }catch(e){}
+      }
+      desplazarContenedor(el);
     }
+
+    function elegirInicial(cs){
+      if(!cs.length) return null;
+      const capa = capaActiva();
+      const pref = capa ? cs : cs.filter(c=>c.el.closest('.pantalla.activa'));
+      const lista = pref.length ? pref : cs;
+      const enVista = lista.find(c=>c.r.top >= 40 && c.r.top < innerHeight - 40);
+      return (enVista || lista[0]).el;
+    }
+
     function mover(dir){
-      const cs = candidatos(); if(!cs.length) return;
-      if(!actual || !document.contains(actual) || !visible(actual) || !cs.includes(actual)){ const enPant = cs.filter(el=>el.closest('.pantalla.activa, [role="dialog"]')), lista = enPant.length ? enPant : cs; enfocar(lista.find(el=>{ const r = el.getBoundingClientRect(); return r.top>=0 && r.top<innerHeight; }) || lista[0]); return; }
-      const a = actual.getBoundingClientRect(), ax = a.left+a.width/2, ay = a.top+a.height/2;
+      const cs = candidatosConRect();
+      if(!cs.length) return;
+      const itemActual = actual && document.contains(actual) ? cs.find(c=>c.el === actual) : null;
+      if(!itemActual){ enfocar(elegirInicial(cs)); return; }
+      const a = itemActual.r, ax = a.left + a.width/2, ay = a.top + a.height/2;
+      const filaActual = actual.closest(HSCROLL_SEL);
       let mejor = null, md = Infinity;
-      cs.forEach(el=>{
-        if(el===actual || actual.contains(el) || el.contains(actual)) return;
-        const r = el.getBoundingClientRect(), x = r.left+r.width/2, y = r.top+r.height/2, dx = x-ax, dy = y-ay;
-        let ok, d;
-        if(dir==='derecha'){ ok = r.left >= a.right-4 || (dx>8 && Math.abs(dy)<a.height/2); d = Math.abs(dx) + Math.abs(dy)*3; }
-        if(dir==='izquierda'){ ok = r.right <= a.left+4 || (dx<-8 && Math.abs(dy)<a.height/2); d = Math.abs(dx) + Math.abs(dy)*3; }
-        // si se solapan en horizontal (p. ej. un botón ancho justo debajo), cuenta como «en línea»
-        const solapaX = r.left < a.right && r.right > a.left;
-        if(dir==='abajo'){ ok = r.top >= a.bottom-4; d = (r.top - a.bottom) + (solapaX ? 0 : Math.abs(dx)*0.6); }
-        if(dir==='arriba'){ ok = r.bottom <= a.top+4; d = (a.top - r.bottom) + (solapaX ? 0 : Math.abs(dx)*0.6); }
+      for(let i = 0; i < cs.length; i++){
+        const {el, r} = cs[i];
+        if(el === actual || actual.contains(el) || el.contains(actual)) continue;
+        const x = r.left + r.width/2, y = r.top + r.height/2, dx = x - ax, dy = y - ay;
+        let ok = false, d = Infinity;
+        if(dir === 'derecha'){
+          ok = r.left >= a.right - 6 || (dx > 10 && Math.abs(dy) < Math.max(a.height, r.height) * 0.65);
+          const penalFila = (filaActual && el.closest(HSCROLL_SEL) === filaActual) ? 0 : Math.abs(dy) * 1.5;
+          d = Math.abs(dx) + Math.abs(dy) * 2.8 + penalFila;
+        } else if(dir === 'izquierda'){
+          ok = r.right <= a.left + 6 || (dx < -10 && Math.abs(dy) < Math.max(a.height, r.height) * 0.65);
+          const penalFila = (filaActual && el.closest(HSCROLL_SEL) === filaActual) ? 0 : Math.abs(dy) * 1.5;
+          d = Math.abs(dx) + Math.abs(dy) * 2.8 + penalFila;
+        } else if(dir === 'abajo'){
+          const solapaX = r.left < a.right && r.right > a.left;
+          ok = r.top >= a.bottom - 6 || (dy > a.height * 0.6 && !solapaX && Math.abs(dy) > Math.abs(dx) * 0.35);
+          d = Math.max(0, r.top - a.bottom) * 1.4 + (solapaX ? Math.abs(dx) * 0.15 : Math.abs(dx) * 0.65);
+        } else if(dir === 'arriba'){
+          const solapaX = r.left < a.right && r.right > a.left;
+          ok = r.bottom <= a.top + 6 || (dy < -a.height * 0.6 && !solapaX && Math.abs(dy) > Math.abs(dx) * 0.35);
+          d = Math.max(0, a.top - r.bottom) * 1.4 + (solapaX ? Math.abs(dx) * 0.15 : Math.abs(dx) * 0.65);
+        }
         if(ok && d < md){ md = d; mejor = el; }
-      });
+      }
       if(mejor) enfocar(mejor);
     }
+
     document.addEventListener('keydown', e=>{
-      const k = e.key, enTexto = document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName) && !/^(button|checkbox|radio|range)$/.test(document.activeElement.type||'');
+      const k = e.key, kc = e.keyCode;
+      const ae = document.activeElement;
+      const enTexto = ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && !/^(button|checkbox|radio|range)$/.test(ae.type||'');
+      const enSelect = ae && ae.tagName === 'SELECT';
+      // Si el visor web HTML5 está abierto y el foco está en el <video>, dejar controles de vídeo salvo Atrás
+      if(document.getElementById('visor')?.classList.contains('activo') && ae && ae.id === 'visor-video' && k !== 'Escape' && k !== 'GoBack' && k !== 'BrowserBack'){
+        if(k === 'ArrowUp'){ e.preventDefault(); mover('arriba'); }
+        return;
+      }
       const dirs = {ArrowRight:'derecha', ArrowLeft:'izquierda', ArrowDown:'abajo', ArrowUp:'arriba'};
-      if(dirs[k]){ if(enTexto && (k==='ArrowLeft' || k==='ArrowRight')) return; if(enTexto) document.activeElement.blur(); e.preventDefault(); mover(dirs[k]); return; }
-      if(k==='Enter' && actual && !enTexto && actual.matches('input, textarea')){ e.preventDefault(); actual.focus(); return; }
-      if((k==='Enter' || k===' ') && actual && !enTexto && !actual.matches('a[href], button, select')){ e.preventDefault(); actual.click(); return; }
-      if(k==='Escape' || k==='GoBack' || k==='BrowserBack'){ e.preventDefault(); history.back(); }
+      if(dirs[k]){
+        if(enSelect && (k === 'ArrowUp' || k === 'ArrowDown')) return;
+        if(enTexto && (k === 'ArrowLeft' || k==='ArrowRight')) return;
+        if(enTexto) ae.blur();
+        e.preventDefault();
+        mover(dirs[k]);
+        return;
+      }
+      const esOk = (k === 'Enter' || k === ' ' || kc === 23 || kc === 66);
+      if(esOk && actual){
+        if(e.repeat){ e.preventDefault(); return; }
+        if(!enTexto && actual.matches('input:not([type=button]):not([type=checkbox]):not([type=radio]):not([type=range]), textarea')){
+          e.preventDefault();
+          actual.focus();
+          if(window.CineMoodTV && typeof window.CineMoodTV.mostrarTeclado === 'function') window.CineMoodTV.mostrarTeclado();
+          return;
+        }
+        if(actual.tagName === 'SELECT'){
+          if(actual.showPicker){ e.preventDefault(); try{ actual.showPicker(); }catch(err){} }
+          return;
+        }
+        if(!enTexto && !actual.matches('a[href], button, summary, input[type=checkbox], input[type=radio]')){
+          e.preventDefault();
+          actual.click();
+          return;
+        }
+      }
+      if(k === 'Escape' || k === 'GoBack' || k === 'BrowserBack' || kc === 4){
+        if(window._cmCerrarCapaOAtras && window._cmCerrarCapaOAtras()){
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
     }, true);
-    // al cambiar de pantalla, el foco va a lo primero que se ve
-    new MutationObserver(()=>{ if(actual && (!document.contains(actual) || !visible(actual))){ actual.classList.remove('tv-foco'); actual = null; setTimeout(()=>{ if(!actual) mover('abajo'); }, 250); } }).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','style','hidden']});
-    window.addEventListener('load', ()=>setTimeout(()=>mover('abajo'), 1200));
+
+    // Revalidar foco tras cambios reales en pantallas o modales (agrupado por fotograma, sin saturar CPU)
+    let rafFoco = 0, timerFoco = 0;
+    function programarRevisionFoco(){
+      if(rafFoco) return;
+      rafFoco = requestAnimationFrame(()=>{
+        rafFoco = 0;
+        const capa = capaActiva();
+        const perdido = !actual || !document.contains(actual) || !esVisibleRapido(actual) || (capa && !capa.contains(actual));
+        if(perdido){
+          if(actual) actual.classList.remove('tv-foco');
+          actual = null;
+          clearTimeout(timerFoco);
+          timerFoco = setTimeout(()=>{ if(!actual){ const cs = candidatosConRect(); if(cs.length) enfocar(elegirInicial(cs)); } }, 90);
+        }
+      });
+    }
+    new MutationObserver(muts=>{
+      for(let i = 0; i < muts.length; i++){
+        const m = muts[i];
+        if(m.type === 'childList'){ programarRevisionFoco(); return; }
+        if(m.type === 'attributes' && m.target !== actual){ programarRevisionFoco(); return; }
+      }
+    }).observe(document.body, {subtree:true, childList:true, attributes:true, attributeFilter:['class','hidden','style']});
+    window.addEventListener('load', ()=>setTimeout(()=>{ if(!actual) mover('abajo'); }, 450));
   })();
   </script>
   <script>
@@ -15431,7 +15787,7 @@ function diag(){const body=document.getElementById('fte-body');if(!body)return;l
 const oldFetch=_fetchAddon;_fetchAddon=async function(url){const a=addonsLeer().find(a=>url.startsWith(a.url.replace(/\/manifest\.json$/,'')+'/')),kind=url.includes('/subtitles/')?'subtítulos':'vídeo';if(a){states.set(a.url,'Consultando '+kind+'…');diag();}try{const d=await oldFetch(url);if(a){const list=kind==='subtítulos'?d.subtitles:d.streams;states.set(a.url,kind+': '+(Array.isArray(list)?list.length+' resultados':'respuesta sin lista válida'));diag();}return d;}catch(e){if(a){states.set(a.url,kind+': '+e.message);diag();}throw e;}};
 const oldSearch=cargarFuentes;cargarFuentes=async function(){states.clear();try{return await oldSearch();}finally{diag();}};
 function clear(){document.getElementById('visor-video').querySelectorAll('track[data-cm-sub]').forEach(t=>t.remove());if(blob){URL.revokeObjectURL(blob);blob=null;}}
-const oldPlay=reproducirFuente;reproducirFuente=function(source,context){turn++;loading++;clear();ctx={...context};oldPlay(source,context);let p=document.getElementById('cm-subtitles');if(!p){p=_fEl('div',{id:'cm-subtitles',style:'padding:12px;background:#171717;color:white;max-height:180px;overflow:auto'});document.getElementById('visor-video').after(p);}p.replaceChildren(_fEl('button',{type:'button',text:'Buscar subtítulos en mis addons',onclick:()=>subs(p)}),_fEl('p',{text:'Para el reproductor de CineMood. No se transfieren automáticamente a VLC.'}));};
+const oldPlay=reproducirFuente;reproducirFuente=function(source,context){turn++;loading++;clear();ctx={...context};const res=oldPlay(source,context);if(typeof _tieneExoNativo==='function'&&_tieneExoNativo())return res;let p=document.getElementById('cm-subtitles');if(!p){p=_fEl('div',{id:'cm-subtitles',style:'padding:12px;background:#171717;color:white;max-height:180px;overflow:auto'});document.getElementById('visor-video').after(p);}p.replaceChildren(_fEl('button',{type:'button',text:'Buscar subtítulos en mis addons',onclick:()=>subs(p)}),_fEl('p',{text:'Para el reproductor interno de CineMood. No se transfieren automáticamente a VLC.'}));return res;};
 const oldClose=cerrarVisor;cerrarVisor=function(){turn++;loading++;clear();ctx=null;oldClose();};
 async function subs(p){const context=ctx;if(!context)return;const token=++turn,active=()=>token===turn&&ctx===context,st=_fEl('p',{role:'status',text:'Buscando subtítulos…'}),list=_fEl('div',{});p.replaceChildren(_fEl('button',{type:'button',text:'Desactivar subtítulos',onclick:()=>{loading++;clear();st.textContent='Subtítulos desactivados.';}}),st,list);try{const imdb=await _imdbIdDe(context.tipo,context.tmdbId);if(!active())return;const type=context.tipo==='tv'?'series':'movie',id=context.tipo==='tv'?imdb+':'+context.season+':'+context.episode:imdb,addons=addonsLeer().filter(a=>_addonManeja(a,'subtitles',type,id));if(!addons.length){st.textContent='No hay addons de subtítulos compatibles.';return;}let count=0,pending=addons.length;await Promise.all(addons.map(async a=>{const note=_fEl('p',{text:a.nombre+': consultando…'});list.append(note);try{const d=await _fetchAddon(_addonUrl(a,'subtitles',type,id));if(!active())return;if(!Array.isArray(d.subtitles))throw Error('Respuesta sin lista de subtítulos');const items=d.subtitles.filter(x=>x&&_urlSegura(x.url)).slice(0,300);count+=items.length;note.textContent=a.nombre+': '+items.length+' resultados.';items.forEach((x,i)=>list.append(_fEl('button',{type:'button',style:'margin:4px',text:String(x.label||x.lang||'Idioma desconocido').slice(0,120)+' · '+a.nombre+' #'+(i+1),onclick:()=>load(x,st,context,token)})));}catch(e){if(active())note.textContent=a.nombre+': '+e.message;}finally{pending--;if(active())st.textContent=count+' subtítulos · '+(pending?'Buscando en '+pending+' addons…':'Búsqueda terminada.');}}));}catch(e){if(active())st.textContent=e.message;}}
 async function load(sub,st,context,token){const n=++loading,c=new AbortController(),timer=setTimeout(()=>c.abort(),20000);st.textContent='Cargando subtítulo…';try{const r=await fetch(_urlSegura(sub.url),{signal:c.signal,credentials:'omit',referrerPolicy:'no-referrer'});if(!r.ok)throw Error('HTTP '+r.status);const bytes=await r.arrayBuffer();if(bytes.byteLength>5000000)throw Error('Archivo demasiado grande');let text=new TextDecoder().decode(bytes);if(text.includes('\uFFFD'))text=new TextDecoder('windows-1252').decode(bytes);text=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').trim();if(!/^WEBVTT\b/.test(text)){if(!/\d{1,2}:\d{2}:\d{2}[,.]\d{3}\s*-->/.test(text))throw Error('Solo se admiten SRT y WebVTT');text='WEBVTT\n\n'+text.replace(/^\d+\s*\n(?=\d{1,2}:)/gm,'').replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');}if(n!==loading||token!==turn||ctx!==context)return;clear();blob=URL.createObjectURL(new Blob([text],{type:'text/vtt'}));const track=document.createElement('track');track.dataset.cmSub='1';track.kind='subtitles';track.label=String(sub.label||sub.lang||'Subtítulos');track.srclang=({spa:'es',eng:'en',fra:'fr',fre:'fr',por:'pt',ita:'it'})[sub.lang]||String(sub.lang||'und');track.src=blob;track.default=true;track.onload=()=>{track.track.mode='showing';st.textContent='Subtítulos activados. Si están desfasados, prueba otra versión.';};track.onerror=()=>{st.textContent='No se pudo interpretar la pista.';};document.getElementById('visor-video').append(track);track.track.mode='showing';}catch(e){if(n===loading&&ctx===context)st.textContent='No se pudo cargar: '+e.message+'. Puede existir un bloqueo CORS.';}finally{clearTimeout(timer);}}
