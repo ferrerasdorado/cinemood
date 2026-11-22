@@ -11743,7 +11743,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     function cargarMaratonInicio(){
       const box = document.getElementById('inicio-maraton'); if(!box) return;
       if(!sesionActual){ box.innerHTML = ''; return; }
-      const e = calcularEnCurso(window._espContarVistos || (()=>0))[0];
+      // solo un maratón que de verdad llevas empezado (con 0 vistas no es «tu» maratón)
+      const e = calcularEnCurso(window._espContarVistos || (()=>0)).find(x=>_espItemsRuta(x).some(_espItemVisto));
       if(!e){ box.innerHTML = ''; return; }
       const items = _espItemsRuta(e), vistas = items.filter(_espItemVisto).length, sig = _espSiguiente(e);
       if(!sig){ box.innerHTML = ''; return; }
