@@ -15774,6 +15774,11 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(!itemActual){ enfocar(elegirInicial(cs)); return; }
       const a = itemActual.r, ax = a.left + a.width/2, ay = a.top + a.height/2;
       const filaActual = actual.closest(HSCROLL_SEL);
+      // la barra fija de arriba: desde ella, «arriba» no tiene a dónde ir (se vuelve al principio de la página);
+      // desde el contenido, solo se llega a ella cuando no queda nada más arriba
+      const enBarra = !!actual.closest('.pc-nav');
+      if(enBarra && dir === 'arriba'){ window.scrollTo(0, 0); return; }
+      const finBarra = enBarra ? (actual.closest('.pc-nav').getBoundingClientRect().bottom - 2) : 0;
       let mejor = null, md = Infinity;
       for(let i = 0; i < cs.length; i++){
         const {el, r} = cs[i];
@@ -15799,6 +15804,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           ok = r.bottom <= a.top + 6 || (dy < -a.height * 0.6 && !solapaX && Math.abs(dy) > Math.abs(dx) * 0.35);
           d = Math.max(0, a.top - r.bottom) * 1.4 + (solapaX ? Math.abs(dx) * 0.15 : Math.abs(dx) * 0.65);
         }
+        if(ok && !enBarra && el.closest('.pc-nav')) d += 100000;
+        else if(ok && enBarra && dir === 'abajo' && r.top < finBarra) ok = false;
         if(ok && d < md){ md = d; mejor = el; }
       }
       if(mejor) enfocar(mejor);
