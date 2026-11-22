@@ -53,7 +53,8 @@ public class MainActivity extends AppCompatActivity {
 
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#121413"));
-        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        // Sin capa de hardware propia: en un WebView duplica el pintado de cada fotograma (tirones y defectos de dibujo)
+        WebView.setWebContentsDebuggingEnabled(true); // solo accesible por adb con la depuración de la tele activada
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true);
         }
@@ -70,8 +71,9 @@ public class MainActivity extends AppCompatActivity {
         s.setDatabaseEnabled(true);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         s.setMediaPlaybackRequiresUserGesture(false);
-        s.setLoadWithOverviewMode(true);
+        s.setLoadWithOverviewMode(false);
         s.setUseWideViewPort(true);
+        s.setTextZoom(100); // que el tamaño de letra del sistema de la tele no descuadre la página
         s.setSupportZoom(false);
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);

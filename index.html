@@ -13,7 +13,7 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
   <meta name="theme-color" content="#f5f3ef">
-  <script>(function(){try{var tv=/CineMoodTV/.test(navigator.userAgent)||/[?&]tv=1/.test(location.search);if(tv){document.documentElement.classList.add('modo-tv');try{localStorage.setItem('cm:tv','1')}catch(e){}}else if(localStorage.getItem('cm:tv')==='1'&&/Android/.test(navigator.userAgent)&&!/Mobile/.test(navigator.userAgent)){document.documentElement.classList.add('modo-tv')}}catch(e){}})();</script>
+  <script>(function(){try{var tv=/CineMoodTV/.test(navigator.userAgent)||/[?&]tv=1/.test(location.search);if(tv){document.documentElement.classList.add('modo-tv');try{localStorage.setItem('cm:tv','1')}catch(e){}var sw=screen.width||960,vp=document.querySelector('meta[name=viewport]');if(vp&&sw<1280){var e=(sw/1280).toFixed(3);vp.content='width=1280, initial-scale='+e+', minimum-scale='+e+', maximum-scale='+e+', user-scalable=no'}}else if(localStorage.getItem('cm:tv')==='1'&&/Android/.test(navigator.userAgent)&&!/Mobile/.test(navigator.userAgent)){document.documentElement.classList.add('modo-tv')}}catch(e){}})();</script>
   <script>(function(){var t;try{t=localStorage.getItem('cm:tema')}catch(e){}if(t!=='claro'&&t!=='oscuro')t=matchMedia('(prefers-color-scheme: dark)').matches?'oscuro':'claro';document.documentElement.dataset.theme=t==='oscuro'?'dark':'light';var m=document.querySelector('meta[name="theme-color"]');if(m&&t==='oscuro')m.setAttribute('content','#121413');try{var a=JSON.parse(localStorage.getItem('cm:acento')||'null'),r=document.documentElement;if(a&&a.c){r.style.setProperty('--acento',a.c);r.style.setProperty('--acento-rgb',a.rgb);r.style.setProperty('--acento-osc',a.o);r.style.setProperty('--acento-claro',a.l);r.dataset.acento=a.k;}if(localStorage.getItem('cm:oled')==='1'){r.dataset.oled='1';if(m&&t==='oscuro')m.setAttribute('content','#000000');}}catch(e){}})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -828,6 +828,12 @@
     .modo-tv .cm-logo, .modo-tv .pm-rejilla, .modo-tv .feed-fondo, .modo-tv .desc-rk-img.sin { filter: none !important; }
     .modo-tv .pantalla-header.cab-fija { background: var(--bg) !important; box-shadow: none !important; transition: none !important; }
     .modo-tv .pantalla.anim-adelante, .modo-tv .pantalla.anim-atras, .modo-tv .pantalla.anim-fundido { animation: none !important; }
+    /* aparatos de tele: GPU muy justa. Nada que repinte sin parar ni transiciones al mover el foco */
+    .modo-tv *, .modo-tv *::before, .modo-tv *::after { transition: none !important; scroll-behavior: auto !important; }
+    .modo-tv .detalle-hero-backdrop-img, .modo-tv .skeleton, .modo-tv .tl-next .tl-node::after, .modo-tv .sg-cargando .sg-pulso { animation: none !important; }
+    .modo-tv .detalle-hero-backdrop-img { top: 0; transform: none !important; }
+    .modo-tv .desc-card, .modo-tv .similar-card, .modo-tv .especial-tile, .modo-tv .detalle-box, .modo-tv .desc-card img, .modo-tv .similar-card img, .modo-tv .especial-tile img, .modo-tv .desc-rk img { box-shadow: none !important; }
+    .modo-tv .splash-logo, .modo-tv .splash-brazo, .modo-tv .splash-boca, .modo-tv .splash-nombre { animation: none !important; stroke-dashoffset: 0; opacity: 1; }
     .modo-tv .tv-foco { outline: 4px solid var(--acento) !important; outline-offset: 3px; border-radius: 10px; box-shadow: 0 0 0 4px rgba(var(--acento-rgb), 0.28) !important; position: relative; z-index: 5; transform: none !important; transition: none !important; }
     .modo-tv .buscar-camara, .modo-tv .ml-gesto-ayuda, .modo-tv #avisos-caja, .modo-tv .avisos-caja, .modo-tv .esc-subir, .modo-tv #esc-btn-camara { display: none !important; }
     .modo-tv .scroll-arrow, .modo-tv .tabbar, .modo-tv h1.marca, .modo-tv .eyebrow-home, .modo-tv .mi-lista-mobile, .modo-tv #cuenta-btn-mobile { display: none !important; }
@@ -840,6 +846,7 @@
     /* filas que se desplazan: sin scroll-snap ni smooth competidor para respuesta inmediata al mando */
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv #continuar-viendo-scroll { padding: 14px 14px 18px !important; margin: -14px -14px -18px !important; scroll-padding-inline: 28px; }
     .modo-tv .scroll-wrap { overflow: visible; }
+    .modo-tv .sem-fila { grid-template-columns: repeat(4, minmax(0, 200px)); gap: 18px; }
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv .galeria-tira, .modo-tv .videos-tira { scroll-behavior: auto !important; scroll-snap-type: none !important; }
     .modo-tv .fte-modal { align-items: center; padding: 18px; }
     .modo-tv .fte-sheet { max-width: 820px; max-height: 88vh; border-radius: 14px; }
@@ -14476,7 +14483,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const y = Math.min(window.scrollY, 400);
       el.style.transform = `translateY(${y*0.3}px)`;
     }
-    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('modo-tv')){
       window.addEventListener('scroll', ()=>{
         if(!_parallaxTicking){ _parallaxTicking = true; requestAnimationFrame(_actualizarParallaxHero); }
       }, { passive:true });
@@ -15795,6 +15802,16 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(mejor) enfocar(mejor);
     }
 
+    // Si la tele va justa, las pulsaciones no se encolan (antes seguía moviéndose al soltar la flecha):
+    // como mucho un movimiento por fotograma, y con la flecha mantenida uno cada 110 ms
+    let dirPend = null, rafMover = 0, ultMover = 0;
+    function pedirMover(dir, repetida){
+      if(repetida && performance.now() - ultMover < 110) return;
+      dirPend = dir;
+      if(rafMover) return;
+      rafMover = requestAnimationFrame(()=>{ rafMover = 0; const d = dirPend; dirPend = null; ultMover = performance.now(); if(d) mover(d); });
+    }
+
     document.addEventListener('keydown', e=>{
       const k = e.key, kc = e.keyCode;
       const ae = document.activeElement;
@@ -15811,7 +15828,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(enTexto && (k === 'ArrowLeft' || k==='ArrowRight')) return;
         if(enTexto) ae.blur();
         e.preventDefault();
-        mover(dirs[k]);
+        pedirMover(dirs[k], e.repeat);
         return;
       }
       const esOk = (k === 'Enter' || k === ' ' || kc === 23 || kc === 66);
@@ -15845,7 +15862,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     let rafFoco = 0, timerFoco = 0;
     function programarRevisionFoco(){
       if(rafFoco) return;
-      rafFoco = requestAnimationFrame(()=>{
+      rafFoco = setTimeout(()=>{
         rafFoco = 0;
         const capa = capaActiva();
         const perdido = !actual || !document.contains(actual) || !esVisibleRapido(actual) || (capa && !capa.contains(actual));
@@ -15855,7 +15872,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           clearTimeout(timerFoco);
           timerFoco = setTimeout(()=>{ if(!actual){ const cs = candidatosConRect(); if(cs.length) enfocar(elegirInicial(cs)); } }, 90);
         }
-      });
+      }, 250);
     }
     new MutationObserver(muts=>{
       for(let i = 0; i < muts.length; i++){
