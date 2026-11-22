@@ -831,6 +831,27 @@
     .modo-tv .scroll-wrap { overflow: visible; }
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila { scroll-behavior: smooth; }
     /* ── Avisos ── */
+    .adm-form { display: grid; gap: 8px; margin: 6px 0 10px; }
+    .adm-form .auth-input { margin: 0; }
+    .adm-clave { display: flex; gap: 8px; }
+    .adm-clave .auth-input { flex: 1; min-width: 0; }
+    .adm-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: 700 13px 'Satoshi', -apple-system, sans-serif; padding: 9px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap; }
+    .adm-btn.prim { background: var(--acento); border-color: var(--acento); color: #fff; }
+    .adm-btn.peq { padding: 6px 10px; font-size: 12px; }
+    .adm-btn.peligro { color: #c0392b; }
+    .adm-btn:disabled { opacity: .55; cursor: default; }
+    .adm-msg { font-size: 13px; line-height: 1.5; margin: 4px 0 10px; color: var(--k-61635e); }
+    .adm-msg.ok { background: color-mix(in srgb, var(--green) 12%, transparent); border-radius: 10px; padding: 10px 12px; color: var(--ink); }
+    .adm-msg.mal { color: #c0392b; }
+    .adm-usu { padding: 12px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.5; }
+    .adm-usu b { font-size: 14.5px; }
+    .adm-usu .adm-sub { color: var(--k-767973); font-size: 12.5px; word-break: break-all; }
+    .adm-usu .adm-uso { margin-top: 3px; }
+    .adm-tag { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 2px; background: var(--line); color: var(--k-61635e); }
+    .adm-tag.verde { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+    .adm-tag.rojo { background: rgba(192,57,43,.14); color: #c0392b; }
+    .adm-acc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .adm-resumen { font-size: 13px; color: var(--k-61635e); margin: 2px 0 6px; }
     .avisos-caja { margin-bottom: 18px; font-size: 13.5px; line-height: 1.5; }
     .avisos-caja p { margin: 0 0 10px; color: var(--k-61635e); }
     .avisos-caja .ml-preferencia { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
@@ -2469,6 +2490,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="section-label">Ajustes</div>
         <div class="section-label" style="margin-top:14px">Sesión iniciada como</div>
         <div style="margin-bottom:20px;font-size:14px;color:var(--k-303330)" id="cuenta-email"></div>
+        <div id="admin-caja" style="display:none"></div>
         <div class="section-label">🔔 Avisos en este móvil</div>
         <div id="avisos-caja" class="avisos-caja"></div>
         <hr class="section-divider">
@@ -9479,6 +9501,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       abandonadasDesdeCuenta();
       ocultasDesdeCuenta();
       notasTempDesdeCuenta(); motivosDesdeCuenta(); porraDesdeCuenta();
+      setTimeout(()=>{ if(typeof _accesoRegistrar==='function') _accesoRegistrar(); }, 1500);
       rankingDesdeCuenta();
       Promise.all([refrescarIdsVistos(), refrescarVistosNormalizados()]).then(()=>{ renderEspecialesTiles(); refrescarChecksEspecialAbierto(); _enCursoPintarBoton(); cargarMaratonInicio(); });
       colSync().then(()=>{ renderEspecialesTiles(); colActualizarBotonFicha(); });
@@ -9493,6 +9516,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.getElementById('ml-gusto').checked=_usarPerfilDeGusto();
       _pintarTuNivel();
       _avisosPintar();
+      _adminPintar();
     }
     // Tarjeta de nivel en «Tú» (con los datos ya guardados; si faltan, invita a abrir Logros)
     async function _pintarTuNivel(){
@@ -12343,6 +12367,148 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <img src="https://image.tmdb.org/t/p/w342${c.poster_path}" alt=""><h3>${_escHtml(c.title)}</h3>${c._nota!=null ? `<span class="noche-nota" style="color:#fff">🔮 Le pondrías un <b>${_notaFmt(c._nota)}</b></span>` : ''}
         <div class="mun-elegir"><button type="button" class="cta-btn" style="width:auto;padding:12px 22px" onclick="abrirDetalle(_munPodio[0])">▶ ¡A por ella!</button>${c._recom ? `<button type="button" class="ml-secundario" onclick="munAnadir(this)">＋ A «Para ver»</button>` : ''}<button type="button" class="ml-secundario" onclick="window._mun=null;abrirMundial()">Otro Mundial</button></div></div>
         <div class="mun-podio">${window._munPodio.map((x,i)=>`<div onclick="abrirDetalle(_munPodio[${i}])"><span>${i===0?'🥇':i===1?'🥈':'🥉'}</span>${_escHtml(x.title)}${i>1?' <small style="color:var(--k-767973)">· semifinal</small>':''}</div>`).join('')}</div>`;
+    }
+
+    // ══ USO DE LA APP: se apunta cuándo se abre (como mucho cada 30 min por aparato) para el panel de usuarios ══
+    function _dispositivo(){
+      const ua = navigator.userAgent;
+      if(/CineMoodTV/.test(ua) || document.documentElement.classList.contains('modo-tv')) return 'Tele';
+      if(/iPhone/.test(ua)) return 'iPhone'; if(/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'iPad';
+      if(/Android/.test(ua)) return /Mobile/.test(ua) ? 'Android' : 'Tablet Android';
+      if(/Macintosh/.test(ua)) return 'Mac'; if(/Windows/.test(ua)) return 'Windows'; return 'Ordenador';
+    }
+    async function _accesoRegistrar(){
+      if(!sesionActual) return;
+      const k = 'cm:accesoApuntado:' + sesionActual.user.id;
+      try{ if(Date.now() - (Number(localStorage.getItem(k))||0) < 30*60e3) return; }catch(e){}
+      try{ const {error} = await sb.rpc('cm_registrar_acceso', {disp: _dispositivo()}); if(!error) localStorage.setItem(k, String(Date.now())); }catch(e){}
+    }
+
+    // ══ PANEL DE USUARIOS (solo cuentas administradoras): crear cuentas, ver quién entra y cuándo ══
+    const _ADMIN_FN = SUPABASE_URL + '/functions/v1/cinemood-admin';
+    async function _adminApi(body){
+      const {data} = await sb.auth.getSession(); if(!data.session) throw Error('Inicia sesión en CineMood.');
+      const r = await fetch(_ADMIN_FN, {method:'POST', headers:{Authorization:'Bearer '+data.session.access_token, apikey:SUPABASE_KEY, 'Content-Type':'application/json'}, credentials:'omit', body:JSON.stringify(body)});
+      let d = null; try{ d = await r.json(); }catch(e){}
+      if(r.status===404) throw Error('Falta subir la función «cinemood-admin» a Supabase.');
+      if(!r.ok || !d) throw Error((d && d.error) || 'No se ha podido conectar (' + r.status + ').');
+      return d;
+    }
+    async function _esAdmin(){
+      if(!sesionActual) return false;
+      const k = 'cm:admin:' + sesionActual.user.id;
+      try{ const c = localStorage.getItem(k); if(c==='1') return true; }catch(e){}
+      try{ const {data, error} = await sb.from('cm_admins').select('user_id').eq('user_id', sesionActual.user.id).maybeSingle(); if(!error && data){ localStorage.setItem(k, '1'); return true; } }catch(e){}
+      return false;
+    }
+    function _admHace(f){
+      if(!f) return null;
+      const s = (Date.now() - new Date(f).getTime())/1000;
+      if(s < 90) return 'ahora mismo';
+      if(s < 3600) return `hace ${Math.round(s/60)} min`;
+      if(s < 86400) { const h = Math.round(s/3600); return `hace ${h} ${h===1?'hora':'horas'}`; }
+      const d = Math.round(s/86400);
+      if(d === 1) return 'ayer';
+      if(d < 30) return `hace ${d} días`;
+      return new Date(f).toLocaleDateString('es-ES', {day:'numeric', month:'short', year:'numeric'});
+    }
+    function _admFecha(f){ return f ? new Date(f).toLocaleString('es-ES', {day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'}) : '—'; }
+    function _admClaveNueva(){
+      const sil = ['ba','be','bi','bo','ca','ce','ci','co','da','de','di','do','fa','fe','fi','la','le','li','lo','ma','me','mi','mo','na','ne','no','pa','pe','pi','po','ra','re','ri','ro','sa','se','si','so','ta','te','ti','to','va','ve','vi','vo'];
+      const r = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+      let p = ''; for(let i=0;i<4;i++) p += sil[r(sil.length)];
+      return p.charAt(0).toUpperCase() + p.slice(1) + '-' + (10 + r(90));
+    }
+    let _admUsuarios = [];
+    async function _adminPintar(){
+      const box = document.getElementById('admin-caja'); if(!box) return;
+      if(!(await _esAdmin())){ box.style.display = 'none'; box.innerHTML = ''; return; }
+      box.style.display = 'block';
+      if(!box.dataset.listo){
+        box.dataset.listo = '1';
+        box.innerHTML = `<div class="section-label">👥 Usuarios de CineMood</div>
+          <div class="adm-resumen">Solo lo ves tú. Crea cuentas para que otros puedan entrar y mira quién la usa.</div>
+          <div class="adm-form">
+            <input class="auth-input" id="adm-email" type="email" placeholder="Email" autocomplete="off" autocapitalize="off">
+            <input class="auth-input" id="adm-nombre" type="text" placeholder="Nombre (opcional)" autocomplete="off">
+            <div class="adm-clave"><input class="auth-input" id="adm-clave" type="text" placeholder="Contraseña (mín. 8)" autocomplete="new-password" autocapitalize="off" spellcheck="false"><button type="button" class="adm-btn" onclick="document.getElementById('adm-clave').value=_admClaveNueva()">🎲 Inventar</button></div>
+            <button type="button" class="adm-btn prim" id="adm-crear" onclick="adminCrear(this)">Crear usuario</button>
+          </div>
+          <div id="adm-msg" class="adm-msg" role="status"></div>
+          <div id="adm-lista"><div class="adm-msg">Cargando usuarios…</div></div>
+          <hr class="section-divider">`;
+      }
+      adminCargar();
+    }
+    async function adminCargar(){
+      const lista = document.getElementById('adm-lista'); if(!lista) return;
+      try{
+        const d = await _adminApi({accion:'listar'});
+        _admUsuarios = d.usuarios || [];
+        const activos = _admUsuarios.filter(u=>u.ultimo_uso && Date.now()-new Date(u.ultimo_uso) < 7*864e5).length;
+        lista.innerHTML = `<div class="adm-resumen">${_admUsuarios.length} ${_admUsuarios.length===1?'cuenta':'cuentas'} · ${activos} ${activos===1?'la ha usado':'la han usado'} esta semana <button type="button" class="adm-btn peq" style="margin-left:6px" onclick="adminCargar()">↻</button></div>` +
+          _admUsuarios.map((u,i)=>{
+            const uso = u.ultimo_uso ? `🕒 Último uso: <b>${_admHace(u.ultimo_uso)}</b>${u.dispositivo ? ' · en ' + _escHtml(u.dispositivo) : ''}${u.veces ? ` · ${u.veces} ${u.veces===1?'vez':'veces'}` : ''}`
+              : u.ultimo_login ? `🕒 Último inicio de sesión: <b>${_admHace(u.ultimo_login)}</b>` : '🕒 Todavía no ha entrado';
+            const tags = (u.yo ? '<span class="adm-tag verde">Tú</span>' : '') + (u.bloqueado ? '<span class="adm-tag rojo">Bloqueado</span>' : '') + (!u.ultimo_login && !u.ultimo_uso ? '<span class="adm-tag">Nuevo</span>' : '');
+            return `<div class="adm-usu"><b>${_escHtml(u.nombre || u.email.split('@')[0])}</b>${tags}
+              <div class="adm-sub">${_escHtml(u.email)}</div>
+              <div class="adm-uso">${uso}</div>
+              <div class="adm-sub">Inició sesión por última vez: <span style="white-space:nowrap">${_admFecha(u.ultimo_login)}</span> · Cuenta creada: <span style="white-space:nowrap">${_admFecha(u.creado)}</span></div>
+              ${u.yo ? '' : `<div class="adm-acc">
+                <button type="button" class="adm-btn peq" onclick="adminClave(${i}, this)">🔑 Cambiar contraseña</button>
+                <button type="button" class="adm-btn peq" onclick="adminBloquear(${i}, this)">${u.bloqueado ? '✅ Desbloquear' : '⛔ Bloquear'}</button>
+                <button type="button" class="adm-btn peq peligro" onclick="adminBorrar(${i}, this)">🗑️ Borrar</button></div>`}
+            </div>`;
+          }).join('');
+      }catch(e){ lista.innerHTML = `<div class="adm-msg mal">${_escHtml(e.message)}</div>`; }
+    }
+    function _admMsg(html, tipo){ const m = document.getElementById('adm-msg'); if(m){ m.className = 'adm-msg' + (tipo ? ' ' + tipo : ''); m.innerHTML = html; } }
+    async function adminCrear(btn){
+      const email = document.getElementById('adm-email').value.trim(), nombre = document.getElementById('adm-nombre').value.trim(), clave = document.getElementById('adm-clave').value;
+      if(!email || !clave){ _admMsg('Pon el email y la contraseña.', 'mal'); return; }
+      if(clave.length < 8){ _admMsg('La contraseña tiene que tener al menos 8 caracteres.', 'mal'); return; }
+      btn.disabled = true; btn.textContent = 'Creando…';
+      try{
+        await _adminApi({accion:'crear', email, password:clave, nombre});
+        const texto = `Ya puedes entrar en CineMood:\n${location.origin + location.pathname}\nEmail: ${email.toLowerCase()}\nContraseña: ${clave}\n(Puedes cambiarla con «¿Olvidaste tu contraseña?»)`;
+        window._admTexto = texto;
+        _admMsg(`✅ <b>${_escHtml(nombre || email)}</b> ya puede entrar con ese email y esa contraseña. <button type="button" class="adm-btn peq" onclick="adminCopiar(this)">📋 Copiar datos para enviárselos</button>`, 'ok');
+        ['adm-email','adm-nombre','adm-clave'].forEach(id=>document.getElementById(id).value='');
+        adminCargar();
+      }catch(e){ _admMsg(_escHtml(e.message), 'mal'); }
+      btn.disabled = false; btn.textContent = 'Crear usuario';
+    }
+    async function adminCopiar(btn){
+      try{ await navigator.clipboard.writeText(window._admTexto || ''); btn.textContent = '✓ Copiado'; }
+      catch(e){ prompt('Copia estos datos:', window._admTexto || ''); }
+    }
+    async function adminClave(i, btn){
+      const u = _admUsuarios[i]; if(!u) return;
+      const nueva = prompt(`Nueva contraseña para ${u.email} (mín. 8 caracteres):`, _admClaveNueva());
+      if(nueva==null) return;
+      if(nueva.length < 8){ _admMsg('La contraseña tiene que tener al menos 8 caracteres.', 'mal'); return; }
+      btn.disabled = true;
+      try{
+        await _adminApi({accion:'clave', id:u.id, password:nueva});
+        window._admTexto = `Tu nueva contraseña de CineMood:\nEmail: ${u.email}\nContraseña: ${nueva}`;
+        _admMsg(`✅ Contraseña cambiada para <b>${_escHtml(u.email)}</b>. <button type="button" class="adm-btn peq" onclick="adminCopiar(this)">📋 Copiar para enviársela</button>`, 'ok');
+      }catch(e){ _admMsg(_escHtml(e.message), 'mal'); }
+      btn.disabled = false;
+    }
+    async function adminBloquear(i, btn){
+      const u = _admUsuarios[i]; if(!u) return;
+      if(!u.bloqueado && !confirm(`¿Bloquear a ${u.email}? No podrá volver a iniciar sesión hasta que lo desbloquees.`)) return;
+      btn.disabled = true;
+      try{ await _adminApi({accion:'bloquear', id:u.id, si:!u.bloqueado}); _admMsg(u.bloqueado ? `✅ ${_escHtml(u.email)} ya puede volver a entrar.` : `⛔ ${_escHtml(u.email)} está bloqueado.`, 'ok'); adminCargar(); }
+      catch(e){ _admMsg(_escHtml(e.message), 'mal'); btn.disabled = false; }
+    }
+    async function adminBorrar(i, btn){
+      const u = _admUsuarios[i]; if(!u) return;
+      if(!confirm(`¿Borrar la cuenta de ${u.email}? Se pierden sus listas y notas, y no se puede deshacer.`)) return;
+      btn.disabled = true;
+      try{ await _adminApi({accion:'borrar', id:u.id}); _admMsg(`🗑️ Cuenta de ${_escHtml(u.email)} borrada.`, 'ok'); adminCargar(); }
+      catch(e){ _admMsg(_escHtml(e.message), 'mal'); btn.disabled = false; }
     }
     // ══ AVISOS EN EL MÓVIL (Web Push): episodios de hoy, novedades que te van a encantar y el estreno del finde ══
     const VAPID_PUBLICO = 'BInIGCCADygEMmBV-jFsbqkZV4vjoBmt2Yg6aacYn5Ts6d_MsKhWZLQk7j2uAA2c7XYWgphnU5wx1ZT3GGx7Css';
