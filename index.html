@@ -12846,6 +12846,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
               <div class="adm-uso">${uso}</div>
               <div class="adm-sub">Inició sesión por última vez: <span style="white-space:nowrap">${_admFecha(u.ultimo_login)}</span> · Cuenta creada: <span style="white-space:nowrap">${_admFecha(u.creado)}</span></div>
               ${u.yo ? `<div class="adm-acc"><button type="button" class="adm-btn peq" onclick="adminNombre(${i}, this)">✏️ Nombre</button></div>` : `<div class="adm-acc">
+                <button type="button" class="adm-btn peq" onclick="adminCopiarDatos(${i}, this)">📋 Copiar datos</button>
                 <button type="button" class="adm-btn peq" onclick="adminNombre(${i}, this)">✏️ Nombre</button>
                 <button type="button" class="adm-btn peq" onclick="adminClave(${i}, this)">🔑 Cambiar contraseña</button>
                 <button type="button" class="adm-btn peq" onclick="adminBloquear(${i}, this)">${u.bloqueado ? '✅ Desbloquear' : '⛔ Bloquear'}</button>
@@ -12862,13 +12863,24 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       btn.disabled = true; btn.textContent = 'Creando…';
       try{
         await _adminApi({accion:'crear', email, password:clave, nombre});
-        const texto = `Ya puedes entrar en CineMood:\n${location.origin + location.pathname}\nEmail: ${email.toLowerCase()}\nContraseña: ${clave}\n(Puedes cambiarla con «¿Olvidaste tu contraseña?»)`;
+        const texto = _admTextoDatos(email.toLowerCase(), clave);
         window._admTexto = texto;
         _admMsg(`✅ <b>${_escHtml(nombre || email)}</b> ya puede entrar con ese email y esa contraseña. <button type="button" class="adm-btn peq" onclick="adminCopiar(this)">📋 Copiar datos para enviárselos</button>`, 'ok');
         ['adm-email','adm-nombre','adm-clave'].forEach(id=>document.getElementById(id).value='');
         adminCargar();
       }catch(e){ _admMsg(_escHtml(e.message), 'mal'); }
       btn.disabled = false; btn.textContent = 'Crear usuario';
+    }
+    // Texto para enviar a alguien: página, usuario, contraseña y cómo recuperarla
+    function _admTextoDatos(email, clave, cab){
+      return `${cab || 'Ya puedes entrar en CineMood:'}\n${location.origin + location.pathname}\nUsuario (email): ${email}\nContraseña: ${clave || 'la que te pasé'}\n\nSi no la recuerdas: en la pantalla de entrar escribe tu email y pulsa «¿Olvidaste tu contraseña?». Te llegará un correo para poner una nueva.`;
+    }
+    // Las contraseñas no se guardan legibles en ningún sitio: para mandar una concreta, usa «Cambiar contraseña»
+    async function adminCopiarDatos(i, btn){
+      const u = _admUsuarios[i]; if(!u) return;
+      window._admTexto = _admTextoDatos(u.email);
+      await adminCopiar(btn);
+      setTimeout(()=>{ btn.textContent = '📋 Copiar datos'; }, 2000);
     }
     async function adminCopiar(btn){
       try{ await navigator.clipboard.writeText(window._admTexto || ''); btn.textContent = '✓ Copiado'; }
@@ -12882,7 +12894,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       btn.disabled = true;
       try{
         await _adminApi({accion:'clave', id:u.id, password:nueva});
-        window._admTexto = `Tu nueva contraseña de CineMood:\nEmail: ${u.email}\nContraseña: ${nueva}`;
+        window._admTexto = _admTextoDatos(u.email, nueva, 'Tu nueva contraseña de CineMood:');
         _admMsg(`✅ Contraseña cambiada para <b>${_escHtml(u.email)}</b>. <button type="button" class="adm-btn peq" onclick="adminCopiar(this)">📋 Copiar para enviársela</button>`, 'ok');
       }catch(e){ _admMsg(_escHtml(e.message), 'mal'); }
       btn.disabled = false;
