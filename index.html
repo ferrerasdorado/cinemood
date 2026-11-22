@@ -9671,7 +9671,15 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       errEl.textContent = 'Contraseña actualizada. Redirigiendo...';
       setTimeout(()=>irA('p-cuenta'), 1500);
     }
-    async function logout(){ await sb.auth.signOut(); irA('p-inicio'); }
+    // No se depende del aviso SIGNED_OUT (si la petición al servidor falla o tarda, no llegaba y la app seguía abierta):
+    // se cierra la sesión en este dispositivo, se tapa la app al momento y se recarga limpia.
+    async function logout(){
+      sesionActual = null;
+      try{ _gateAplicar(); }catch(e){}
+      try{ await Promise.race([sb.auth.signOut({scope:'local'}), new Promise(r=>setTimeout(r, 3000))]); }catch(e){}
+      try{ Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+      location.replace(location.pathname);
+    }
 
     // ── DESHACER: aviso de unos segundos tras marcar, quitar o puntuar ──
     function _avisoDeshacer(texto, deshacer){
