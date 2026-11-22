@@ -41,6 +41,8 @@ Deno.serve(async (req) => {
           sb.from("cm_accesos").select("user_id, ultimo, veces, dispositivo"),
           sb.from("cm_admins").select("user_id"),
         ]);
+        // las cuentas ya creadas antes quedan autorizadas al abrir el panel
+        await sb.from("cm_permitidos").upsert(todos.map((u: any) => ({ user_id: u.id })), { ignoreDuplicates: true });
         const acc = new Map((accesos || []).map((a: any) => [a.user_id, a]));
         const adm = new Set((admins || []).map((a: any) => a.user_id));
         const usuarios = todos.map((u: any) => {
@@ -59,6 +61,9 @@ Deno.serve(async (req) => {
         const nombre = String(b.nombre || "").trim().slice(0, 40);
         const { data, error } = await sb.auth.admin.createUser({ email, password: clave, email_confirm: true, user_metadata: nombre ? { nombre } : {} });
         if (error) return resp({ error: /already|registered|exists/i.test(error.message) ? "Ya hay una cuenta con ese email." : error.message }, 400);
+        // sin esto la cuenta existe pero la app y el catálogo no la dejan entrar
+        const { error: e2 } = await sb.from("cm_permitidos").upsert({ user_id: data.user!.id });
+        if (e2) return resp({ error: "Cuenta creada, pero no se ha podido autorizar: " + e2.message }, 500);
         return resp({ ok: true, id: data.user?.id });
       }
       case "clave": {

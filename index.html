@@ -2949,6 +2949,17 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       'ad47446f-0c28-475f-8b74-362b908bec24',
       '9ccf2e37-6c4e-495b-a5bf-5542d95fa895'
     ]);
+    // Las cuentas creadas desde el panel de usuarios están en la tabla cm_permitidos (cada cuenta solo puede ver su propia fila)
+    const _cmPermitidoCache = new Map();
+    async function _cmPermitido(uid){
+      if(!uid) return false;
+      if(CM_USUARIOS.has(uid)) return true;
+      if(_cmPermitidoCache.has(uid)) return _cmPermitidoCache.get(uid);
+      const p = sb.from('cm_permitidos').select('user_id').eq('user_id', uid).maybeSingle()
+        .then(({data, error})=>{ if(error) throw error; return !!data; });
+      _cmPermitidoCache.set(uid, p);
+      try{ return await p; }catch(e){ _cmPermitidoCache.delete(uid); return false; }
+    }
     let _cmTurnoSesion = 0;
     const _cmFetchOriginal = window.fetch.bind(window);
     const _cmProxyURL = new URL(TMDB_PROXY);
@@ -2960,7 +2971,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }
       const { data, error } = await sb.auth.getSession();
       const session = data && data.session;
-      if(error || !session?.access_token || !CM_USUARIOS.has(session.user?.id)){
+      if(error || !session?.access_token || !(await _cmPermitido(session.user?.id))){
         throw new Error('Debes iniciar sesión con una cuenta autorizada para consultar el catálogo.');
       }
       const headers = new Headers(input instanceof Request ? input.headers : undefined);
@@ -2990,8 +3001,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       try{
         // Comprueba la identidad en Auth; no basta el objeto guardado en el navegador.
         const { data, error } = await sb.auth.getUser(session.access_token);
+        const permitido = !error && data?.user && data.user.id === session.user?.id && await _cmPermitido(data.user.id);
         if(turno !== _cmTurnoSesion) return;
-        if(error || !data?.user || !CM_USUARIOS.has(data.user.id) || data.user.id !== session.user?.id){
+        if(!permitido){
           sesionActual = null;
           _gateAplicar();
           document.getElementById('gate-error').textContent='Esta sesión no permite acceder a CineMood. Inicia sesión con una cuenta autorizada.';

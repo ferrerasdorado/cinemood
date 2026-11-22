@@ -43,3 +43,15 @@ grant execute on function public.cm_registrar_acceso(text) to authenticated;
 select u.email, 'administrador' as que from public.cm_admins a join auth.users u on u.id = a.user_id
 union all
 select email, 'Hola, ' || (raw_user_meta_data->>'nombre') from auth.users where raw_user_meta_data ? 'nombre';
+
+-- Cuentas que pueden usar la app y el catálogo (antes era una lista fija con dos cuentas).
+-- Cada cuenta solo puede ver si ella misma está; el panel de usuarios las añade al crearlas.
+create table if not exists public.cm_permitidos (
+  user_id uuid primary key references auth.users(id) on delete cascade
+);
+alter table public.cm_permitidos enable row level security;
+drop policy if exists "ver si estoy permitido" on public.cm_permitidos;
+create policy "ver si estoy permitido" on public.cm_permitidos for select using (auth.uid() = user_id);
+-- todas las cuentas que existen ahora (las has creado tú) quedan autorizadas
+insert into public.cm_permitidos (user_id) select id from auth.users on conflict do nothing;
+select u.email, 'puede entrar' as que from public.cm_permitidos p join auth.users u on u.id = p.user_id;
