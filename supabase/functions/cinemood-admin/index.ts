@@ -1,5 +1,5 @@
 // CineMood · panel de usuarios. Solo responde a cuentas que estén en la tabla cm_admins.
-// Acciones (POST con JSON): listar · crear {email, password, nombre?} · clave {id, password} · bloquear {id, si} · borrar {id}
+// Acciones (POST con JSON): listar · crear {email, password, nombre?} · nombre {id, nombre} · clave {id, password} · bloquear {id, si} · borrar {id}
 // La clave maestra (service role) solo existe aquí, en el servidor: nunca va dentro de la app.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -63,6 +63,16 @@ Deno.serve(async (req) => {
       }
       case "clave": {
         const { error } = await sb.auth.admin.updateUserById(id, { password: clave });
+        if (error) return resp({ error: error.message }, 400);
+        return resp({ ok: true });
+      }
+      case "nombre": {
+        // se mezcla con lo que ya hay en la cuenta (ahí se guardan también notas, motivos, porra…)
+        const { data: actual, error: e1 } = await sb.auth.admin.getUserById(id);
+        if (e1 || !actual?.user) return resp({ error: "No encuentro ese usuario." }, 404);
+        const nombre = String(b.nombre || "").trim().slice(0, 40);
+        const meta = { ...(actual.user.user_metadata || {}), nombre };
+        const { error } = await sb.auth.admin.updateUserById(id, { user_metadata: meta });
         if (error) return resp({ error: error.message }, 400);
         return resp({ ok: true });
       }

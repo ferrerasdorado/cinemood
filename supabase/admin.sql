@@ -13,6 +13,12 @@ insert into public.cm_admins (user_id)
   select id from auth.users where email ilike 'ferrerasdorado@%'
   on conflict do nothing;
 
+-- Nombres para el saludo «Hola, …» (se mezclan con lo que ya guarda cada cuenta)
+update auth.users set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"nombre":"Alfred"}'::jsonb
+  where email ilike 'ferrerasdorado@%';
+update auth.users set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"nombre":"MalosPelos"}'::jsonb
+  where email ilike 'joharicci%';
+
 -- Último uso real de la app (Supabase solo apunta cuándo se escribió la contraseña;
 -- como la sesión se recuerda, eso no dice si alguien la sigue usando)
 create table if not exists public.cm_accesos (
@@ -33,5 +39,7 @@ $$;
 revoke all on function public.cm_registrar_acceso(text) from public, anon;
 grant execute on function public.cm_registrar_acceso(text) to authenticated;
 
--- Comprobación: debe salir tu email
-select u.email from public.cm_admins a join auth.users u on u.id = a.user_id;
+-- Comprobación: debe salir tu email como administrador, y los nombres puestos
+select u.email, 'administrador' as que from public.cm_admins a join auth.users u on u.id = a.user_id
+union all
+select email, 'Hola, ' || (raw_user_meta_data->>'nombre') from auth.users where raw_user_meta_data ? 'nombre';

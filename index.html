@@ -34,6 +34,13 @@
     .pc-nav-logo { display: flex; align-items: center; gap: 9px; }
     .pc-nav-logo .cm-logo { width: 30px; height: 30px; flex: none; }
     h1.marca { display: flex; align-items: center; gap: 11px; margin: 2px 0 18px; }
+    h1.marca .marca-t { display: flex; flex-direction: column; line-height: 1.05; }
+    .saludo { font: 600 13.5px 'Satoshi', -apple-system, sans-serif; letter-spacing: 0; color: var(--k-767973); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+    .saludo:empty { display: none; }
+    h1.marca .marca-n { color: inherit; }
+    h1.marca .saludo, .pc-nav-logo .saludo { color: var(--k-767973); }
+    .pc-nav-logo .saludo { margin: 0 0 0 4px; font-size: 14px; max-width: 220px; }
+    .modo-tv .pc-nav-logo .saludo { display: none; }
     h1.marca .cm-logo { width: 44px; height: 44px; flex: none; filter: drop-shadow(0 4px 10px rgba(143,31,28,0.28)); }
     .cm-logo { display: block; }
     @media (min-width: 768px) { h1.marca { display: none; } } /* en escritorio la marca ya va en la barra superior */
@@ -1865,7 +1872,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
 </div>
 
   <nav class="pc-nav">
-    <div class="pc-nav-logo"><svg class="cm-logo" aria-hidden="true"><use href="#cm-logo"/></svg><span>Cine<b>Mood</b></span></div>
+    <div class="pc-nav-logo"><svg class="cm-logo" aria-hidden="true"><use href="#cm-logo"/></svg><span>Cine<b>Mood</b></span><span class="saludo" id="saludo-pc"></span></div>
     <div class="pc-nav-busqueda">
       <input type="text" id="pc-busqueda-input" placeholder="Buscar película o serie..." onkeydown="if(event.key==='Enter') buscarDesdeNav()">
       <button onclick="buscarDesdeNav()">Buscar</button>
@@ -1885,7 +1892,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     <div class="wrap">
       <div class="inicio-header-row">
         <div>
-          <h1 class="marca"><svg class="cm-logo" aria-hidden="true"><use href="#cm-logo"/></svg><span class="marca-t">Cine<b>Mood</b></span></h1>
+          <h1 class="marca"><svg class="cm-logo" aria-hidden="true"><use href="#cm-logo"/></svg><span class="marca-t"><span class="marca-n">Cine<b>Mood</b></span><span class="saludo" id="saludo-movil"></span></span></h1>
         </div>
         <div class="inicio-mis-acciones" style="display:flex;gap:8px">
           <button class="mi-lista-mobile" type="button" onclick="abrirBiblioteca()">Mi lista</button>
@@ -9495,6 +9502,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       document.getElementById('cuenta-logged-out').style.display = logged ? 'none' : 'block';
       document.getElementById('cuenta-logged-in').style.display = logged ? 'block' : 'none';
       if(logged) document.getElementById('cuenta-email').textContent = sesionActual.user.email;
+      _pintarSaludo();
       if(peliculaActual) cargarEstadoBiblioteca();
       enCursoDesdeCuenta();
       colOrdenDesdeCuenta();
@@ -12369,6 +12377,19 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         <div class="mun-podio">${window._munPodio.map((x,i)=>`<div onclick="abrirDetalle(_munPodio[${i}])"><span>${i===0?'🥇':i===1?'🥈':'🥉'}</span>${_escHtml(x.title)}${i>1?' <small style="color:var(--k-767973)">· semifinal</small>':''}</div>`).join('')}</div>`;
     }
 
+
+    // ══ SALUDO: «Hola, Alfred 👋» bajo la marca (el nombre se pone desde el panel de usuarios) ══
+    function _saludoPoner(nombre){
+      const t = nombre ? `Hola, ${nombre} 👋` : '';
+      ['saludo-movil','saludo-pc'].forEach(id=>{ const e = document.getElementById(id); if(e) e.textContent = t; });
+    }
+    async function _pintarSaludo(){
+      if(!sesionActual){ _saludoPoner(''); return; }
+      const uid = sesionActual.user.id;
+      _saludoPoner(String(sesionActual.user.user_metadata?.nombre || '').trim());
+      // la sesión guardada puede traer el nombre antiguo: se pregunta al servidor el actual
+      try{ const {data} = await sb.auth.getUser(); if(data?.user && sesionActual?.user.id===uid) _saludoPoner(String(data.user.user_metadata?.nombre || '').trim()); }catch(e){}
+    }
     // ══ USO DE LA APP: se apunta cuándo se abre (como mucho cada 30 min por aparato) para el panel de usuarios ══
     function _dispositivo(){
       const ua = navigator.userAgent;
@@ -12455,7 +12476,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
               <div class="adm-sub">${_escHtml(u.email)}</div>
               <div class="adm-uso">${uso}</div>
               <div class="adm-sub">Inició sesión por última vez: <span style="white-space:nowrap">${_admFecha(u.ultimo_login)}</span> · Cuenta creada: <span style="white-space:nowrap">${_admFecha(u.creado)}</span></div>
-              ${u.yo ? '' : `<div class="adm-acc">
+              ${u.yo ? `<div class="adm-acc"><button type="button" class="adm-btn peq" onclick="adminNombre(${i}, this)">✏️ Nombre</button></div>` : `<div class="adm-acc">
+                <button type="button" class="adm-btn peq" onclick="adminNombre(${i}, this)">✏️ Nombre</button>
                 <button type="button" class="adm-btn peq" onclick="adminClave(${i}, this)">🔑 Cambiar contraseña</button>
                 <button type="button" class="adm-btn peq" onclick="adminBloquear(${i}, this)">${u.bloqueado ? '✅ Desbloquear' : '⛔ Bloquear'}</button>
                 <button type="button" class="adm-btn peq peligro" onclick="adminBorrar(${i}, this)">🗑️ Borrar</button></div>`}
@@ -12495,6 +12517,18 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         _admMsg(`✅ Contraseña cambiada para <b>${_escHtml(u.email)}</b>. <button type="button" class="adm-btn peq" onclick="adminCopiar(this)">📋 Copiar para enviársela</button>`, 'ok');
       }catch(e){ _admMsg(_escHtml(e.message), 'mal'); }
       btn.disabled = false;
+    }
+    async function adminNombre(i, btn){
+      const u = _admUsuarios[i]; if(!u) return;
+      const nuevo = prompt(`Nombre para ${u.email} (sale como «Hola, …» al entrar). Déjalo vacío para quitarlo:`, u.nombre || '');
+      if(nuevo==null) return;
+      btn.disabled = true;
+      try{
+        await _adminApi({accion:'nombre', id:u.id, nombre:nuevo.trim()});
+        _admMsg(nuevo.trim() ? `✅ Ahora a ${_escHtml(u.email)} le saldrá «Hola, ${_escHtml(nuevo.trim())} 👋».` : `✅ Nombre quitado.`, 'ok');
+        if(u.yo) _pintarSaludo();
+        adminCargar();
+      }catch(e){ _admMsg(_escHtml(e.message), 'mal'); btn.disabled = false; }
     }
     async function adminBloquear(i, btn){
       const u = _admUsuarios[i]; if(!u) return;
