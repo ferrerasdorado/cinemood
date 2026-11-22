@@ -15780,12 +15780,14 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         if(el === actual || actual.contains(el) || el.contains(actual)) continue;
         const x = r.left + r.width/2, y = r.top + r.height/2, dx = x - ax, dy = y - ay;
         let ok = false, d = Infinity;
+        // izquierda/derecha: solo dentro de la misma franja de altura (antes saltaba a la barra de arriba desde el final de una fila)
+        const solapaY = r.top < a.bottom - 4 && r.bottom > a.top + 4;
         if(dir === 'derecha'){
-          ok = r.left >= a.right - 6 || (dx > 10 && Math.abs(dy) < Math.max(a.height, r.height) * 0.65);
+          ok = solapaY && (r.left >= a.right - 6 || dx > 10);
           const penalFila = (filaActual && el.closest(HSCROLL_SEL) === filaActual) ? 0 : Math.abs(dy) * 1.5;
           d = Math.abs(dx) + Math.abs(dy) * 2.8 + penalFila;
         } else if(dir === 'izquierda'){
-          ok = r.right <= a.left + 6 || (dx < -10 && Math.abs(dy) < Math.max(a.height, r.height) * 0.65);
+          ok = solapaY && (r.right <= a.left + 6 || dx < -10);
           const penalFila = (filaActual && el.closest(HSCROLL_SEL) === filaActual) ? 0 : Math.abs(dy) * 1.5;
           d = Math.abs(dx) + Math.abs(dy) * 2.8 + penalFila;
         } else if(dir === 'abajo'){
