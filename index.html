@@ -859,6 +859,59 @@
     .adm-tag.rojo { background: rgba(192,57,43,.14); color: #c0392b; }
     .adm-acc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .adm-resumen { font-size: 13px; color: var(--k-61635e); margin: 2px 0 6px; }
+
+    /* ── Seis grados ── */
+    .sg-entrada .inicio-trailers-ic { background: #5b3fa8; }
+    .sg-par { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; margin: 4px 0 14px; }
+    .sg-slot { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px; border-radius: 14px; border: 1.5px dashed var(--line); background: var(--surface); cursor: pointer; text-align: center; font: 700 13.5px 'Satoshi', -apple-system, sans-serif; color: var(--ink); min-height: 132px; justify-content: center; }
+    .sg-slot.lleno { border-style: solid; }
+    .sg-slot img, .sg-slot .sg-sinfoto { width: 74px; height: 74px; border-radius: 50%; object-fit: cover; background: var(--k-e9e7e0); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+    .sg-slot small { font-weight: 500; color: var(--k-767973); font-size: 11.5px; }
+    .sg-y { font: 800 22px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--acento); }
+    .sg-botones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .sg-botones .adm-btn { flex: 1; padding: 12px; font-size: 14px; }
+    .sg-buscador { margin: 0 0 14px; }
+    .sg-resultados { display: grid; gap: 4px; margin-bottom: 14px; }
+    .sg-persona { display: flex; align-items: center; gap: 11px; padding: 7px 8px; border-radius: 10px; cursor: pointer; border: 0; background: none; color: inherit; text-align: left; font: inherit; width: 100%; }
+    .sg-persona:hover { background: var(--surface); }
+    .sg-persona img, .sg-persona .sg-sinfoto { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: var(--k-e9e7e0); flex: none; display: flex; align-items: center; justify-content: center; }
+    .sg-persona b { display: block; font-size: 14.5px; }
+    .sg-persona small { color: var(--k-767973); font-size: 12px; }
+    .sg-titular { text-align: center; font: 800 24px/1.15 'Cabinet Grotesk', -apple-system, sans-serif; margin: 6px 0 4px; }
+    .sg-titular em { font-style: normal; color: var(--acento); }
+    .sg-sub { text-align: center; font-size: 13px; color: var(--k-767973); margin-bottom: 14px; }
+    .sg-cadena { display: flex; flex-direction: column; align-items: center; margin: 4px 0 16px; }
+    .sg-nodo { opacity: 0; animation: sgEntra .5s cubic-bezier(.2,.8,.2,1.15) both; cursor: pointer; }
+    @keyframes sgEntra { from { opacity: 0; transform: translateY(14px) scale(.85); } to { opacity: 1; transform: none; } }
+    .sg-actor { display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; }
+    .sg-actor img, .sg-actor .sg-sinfoto { width: 78px; height: 78px; border-radius: 50%; object-fit: cover; border: 3px solid var(--acento); background: var(--k-e9e7e0); box-shadow: 0 6px 18px rgba(0,0,0,.18); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+    .sg-actor.extremo img, .sg-actor.extremo .sg-sinfoto { width: 96px; height: 96px; }
+    .sg-actor b { font-size: 15px; }
+    .sg-peli { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 8px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); max-width: 320px; }
+    .sg-peli img { width: 52px; height: 78px; border-radius: 7px; object-fit: cover; flex: none; background: var(--k-e9e7e0); }
+    .sg-peli b { display: block; font-size: 14px; line-height: 1.25; }
+    .sg-peli small { color: var(--k-767973); font-size: 12px; }
+    .sg-peli .sg-vista { display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 800; color: var(--green); }
+    .sg-linea { width: 3px; height: 26px; background: linear-gradient(var(--acento), color-mix(in srgb, var(--acento) 40%, transparent)); border-radius: 2px; transform-origin: top; animation: sgLinea .3s ease-out both; }
+    @keyframes sgLinea { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    .sg-cargando { text-align: center; padding: 30px 10px; color: var(--k-61635e); font-size: 14px; }
+    .sg-cargando .sg-pulso { font-size: 40px; display: inline-block; animation: sgPulso 1s ease-in-out infinite; }
+    @keyframes sgPulso { 50% { transform: scale(1.2) rotate(-10deg); } }
+    .sg-juego-cab { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); margin-bottom: 12px; }
+    .sg-juego-cab img, .sg-juego-cab .sg-sinfoto { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex: none; background: var(--k-e9e7e0); display: flex; align-items: center; justify-content: center; }
+    .sg-juego-cab .i { flex: 1; min-width: 0; font-size: 13px; color: var(--k-61635e); }
+    .sg-juego-cab .i b { display: block; font-size: 15px; color: var(--ink); }
+    .sg-pasos { font: 800 22px 'Cabinet Grotesk', -apple-system, sans-serif; color: var(--acento); text-align: center; line-height: 1; }
+    .sg-pasos small { display: block; font: 600 10.5px 'Satoshi', -apple-system, sans-serif; color: var(--k-767973); letter-spacing: .05em; text-transform: uppercase; }
+    .sg-miga { font-size: 12.5px; color: var(--k-767973); margin: 0 0 10px; line-height: 1.5; }
+    .sg-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+    .sg-rejilla button { border: 0; background: none; padding: 0; color: inherit; text-align: center; cursor: pointer; font: 600 12px/1.3 'Satoshi', -apple-system, sans-serif; }
+    .sg-rejilla button img, .sg-rejilla .sg-sinfoto { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 9px; background: var(--k-e9e7e0); display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 4px; }
+    .sg-rejilla.caras button img, .sg-rejilla.caras .sg-sinfoto { aspect-ratio: 1; border-radius: 50%; }
+    .sg-rejilla button small { display: block; color: var(--k-767973); font-weight: 500; font-size: 11px; }
+    .sg-rejilla button.objetivo img { outline: 3px solid var(--acento); outline-offset: 2px; }
+    .sg-gana { text-align: center; padding: 10px 0 4px; }
+    .sg-gana .sg-big { font-size: 54px; animation: sgPulso 1.2s ease-in-out 2; display: inline-block; }
     .avisos-caja { margin-bottom: 18px; font-size: 13.5px; line-height: 1.5; }
     .avisos-caja p { margin: 0 0 10px; color: var(--k-61635e); }
     .avisos-caja .ml-preferencia { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
@@ -2091,6 +2144,17 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     </div>
   </div>
 
+  <div class="pantalla" id="p-seis">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="if(_navEstado().i>0) history.back(); else irA('p-descubre', true)">‹ Atrás</span>
+        <h2>Seis grados</h2>
+        <span></span>
+      </div>
+      <div id="sg-cont"></div>
+    </div>
+  </div>
+
   <div class="pantalla" id="p-explorar">
     <div class="wrap">
       <div class="pantalla-header">
@@ -2193,6 +2257,11 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       <button type="button" class="inicio-trailers qv-entrada imp-entrada" onclick="abrirImprescindibles()">
         <span class="inicio-trailers-ic">🏅</span>
         <span class="inicio-trailers-t"><b>Las 100 imprescindibles</b><span id="imp-entrada-sub">Las mejor valoradas de la historia: ¿cuántas has visto?</span></span>
+        <span class="inicio-trailers-f">›</span>
+      </button>
+      <button type="button" class="inicio-trailers qv-entrada sg-entrada" onclick="abrirSeisGrados()">
+        <span class="inicio-trailers-ic">🔗</span>
+        <span class="inicio-trailers-t"><b>Seis grados</b><span>Elige dos actores y descubre qué películas los unen. O juega a encontrarlo tú</span></span>
         <span class="inicio-trailers-f">›</span>
       </button>
       <div id="desc-top10"></div>
@@ -2748,6 +2817,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           <div class="persona-nombre-grande" id="p-nombre"></div>
           <div class="persona-rol" id="p-rol"></div>
           <div class="persona-datos" id="p-datos"></div>
+          <button type="button" class="d-saga-link" style="margin-top:6px" onclick="abrirSeisGrados(window._personaArgs ? {id:window._personaArgs.id, name:window._personaArgs.nombre, profile_path:window._personaArgs.foto} : null)">🔗 Conectar con otro actor ›</button>
         </div>
       </div>
       <div class="persona-bio" id="p-bio" hidden></div>
@@ -12378,6 +12448,263 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
 
 
+
+    // ══ SEIS GRADOS: el camino más corto entre dos actores, película a película (y un juego para encontrarlo tú) ══
+    // Se busca desde los dos lados a la vez. Para no hacer cientos de consultas se tiran por las películas conocidas
+    // y los actores populares (los «puentes» habituales); entre los caminos más cortos, primero los que pasan por películas que has visto.
+    window._sgCred = window._sgCred || new Map(); window._sgRep = window._sgRep || new Map();
+    const _sgFoto = (p, t) => p ? `<img loading="lazy" src="https://image.tmdb.org/t/p/${t||'w185'}${p}" alt="">` : '<div class="sg-sinfoto">👤</div>';
+    const _sgPoster = p => p ? `<img loading="lazy" src="https://image.tmdb.org/t/p/w154${p}" alt="">` : '<div class="sg-sinfoto">🎬</div>';
+    const _sgAnio = f => (f.release_date||'').slice(0,4);
+    const _SG_FUERA = /\b(himself|herself|themselves|self|narrator|uncredited|archive|archival)\b|archivo|^(él mismo|ella misma)$/i;
+    async function _sgPelis(pid){
+      if(_sgCred.has(pid)) return _sgCred.get(pid);
+      const pr = _tmdbJson(`/person/${pid}/movie_credits&language=es-ES`).then(d=>{
+        const vistas = new Map();
+        (d.cast||[]).forEach(c=>{
+          if(!c.release_date || vistas.has(c.id) || (c.genre_ids||[]).includes(99) || _SG_FUERA.test(c.character||'')) return;
+          vistas.set(c.id, {id:c.id, title:c.title, poster_path:c.poster_path, release_date:c.release_date, popularity:c.popularity||0, vote_count:c.vote_count||0, _tipo:'movie'});
+        });
+        return [...vistas.values()];
+      }).catch(()=>{ _sgCred.delete(pid); return []; });
+      _sgCred.set(pid, pr); return pr;
+    }
+    async function _sgReparto(mid){
+      if(_sgRep.has(mid)) return _sgRep.get(mid);
+      const pr = _tmdbJson(`/movie/${mid}/credits&language=es-ES`).then(d=>(d.cast||[]).filter(c=>c.order < 30 && !_SG_FUERA.test(c.character||'')).map(c=>({id:c.id, name:c.name, profile_path:c.profile_path, popularity:c.popularity||0, character:c.character||''})))
+        .catch(()=>{ _sgRep.delete(mid); return []; });
+      _sgRep.set(mid, pr); return pr;
+    }
+    const _sgFamosas = (pelis, n) => pelis.filter(f=>f.vote_count>=25).sort((a,b)=>b.vote_count-a.vote_count).slice(0, n);
+    // Devuelve {grados, caminos:[[actor, peli, actor, peli, …, actor]]} o null
+    async function _sgBuscar(A, B, avance){
+      avance = avance || (()=>{});
+      let nPelis = 0, nActores = 0;
+      const [FA, FB] = await Promise.all([_sgPelis(A.id), _sgPelis(B.id)]);
+      if(!FA.length || !FB.length) return {sinPelis: !FA.length ? A : B};
+      // 1 grado: han salido juntos
+      const idsB = new Set(FB.map(f=>f.id));
+      const juntos = FA.filter(f=>idsB.has(f.id));
+      if(juntos.length) return {grados:1, caminos: juntos.map(f=>[A, f, B])};
+      // 2 grados: alguien que ha trabajado con los dos
+      const vecinos = async (pelis, excluir, mapa) => {
+        await _fetchEnLotes(pelis, async f=>{ const rep = await _sgReparto(f.id); nPelis++; rep.forEach(p=>{ if(p.id!==excluir && !mapa.has(p.id)){ mapa.set(p.id, {p, f}); nActores++; } }); avance(nPelis, nActores); }, 10);
+      };
+      const LA = new Map(), LB = new Map();
+      await Promise.all([vecinos(_sgFamosas(FA, 45), A.id, LA), vecinos(_sgFamosas(FB, 45), B.id, LB)]);
+      const dos = [...LA.keys()].filter(k=>LB.has(k) && k!==A.id && k!==B.id).map(k=>[A, LA.get(k).f, LA.get(k).p, LB.get(k).f, B]);
+      if(dos.length) return {grados:2, caminos: dos};
+      // 3 grados: un compañero de A y uno de B que coincidieron en otra película
+      const topes = [[0, 30], [30, 80]];
+      const porPeliA = new Map(), porPeliB = new Map();
+      const masPopulares = L => [...L.values()].sort((a,b)=>b.p.popularity-a.p.popularity);
+      const ordA = masPopulares(LA), ordB = masPopulares(LB);
+      for(const [desde, hasta] of topes){
+        const cargar = async (lista, mapa) => {
+          await _fetchEnLotes(lista.slice(desde, hasta), async x=>{ const pelis = await _sgPelis(x.p.id); nActores++; avance(nPelis, nActores); pelis.forEach(f=>{ if(!mapa.has(f.id)) mapa.set(f.id, []); mapa.get(f.id).push(x); }); }, 10);
+        };
+        await Promise.all([cargar(ordA, porPeliA), cargar(ordB, porPeliB)]);
+        const tres = [];
+        porPeliA.forEach((xs, fid)=>{
+          const ys = porPeliB.get(fid); if(!ys) return;
+          xs.forEach(x=>ys.forEach(y=>{
+            if(x.p.id===y.p.id || x.f.id===fid || y.f.id===fid) return;
+            tres.push({x, y, fid});
+          }));
+        });
+        if(tres.length){
+          const caminos = [];
+          for(const t of tres.slice(0, 60)){
+            const pelisX = await _sgPelis(t.x.p.id), F = pelisX.find(f=>f.id===t.fid);
+            if(F) caminos.push([A, t.x.f, t.x.p, F, t.y.p, t.y.f, B]);
+          }
+          if(caminos.length) return {grados:3, caminos};
+        }
+      }
+      return null;
+    }
+    // Primero los caminos con películas que has visto; luego, los de películas más conocidas
+    function _sgOrdenar(caminos){
+      const vistos = window.idsVistosSet || new Set();
+      const nota = c => { let v = 0, fama = 0; for(let i=1;i<c.length;i+=2){ if(vistos.has(`${c[i].id}-movie`)) v++; fama += Math.log10(1 + (c[i].vote_count||0)); } return v*10 + fama; };
+      const vistosK = new Set();
+      return caminos.filter(c=>{ const k = c.map(x=>x.id).join('-'); if(vistosK.has(k)) return false; vistosK.add(k); return true; }).sort((a,b)=>nota(b)-nota(a));
+    }
+
+    // ── pantalla
+    let _sg = {A:null, B:null, eligiendo:null, caminos:[], idx:0, grados:0, juego:null};
+    function abrirSeisGrados(actor){
+      _sg = {A: actor && actor.id ? {id:actor.id, name:actor.name, profile_path:actor.profile_path||''} : null, B:null, eligiendo:null, caminos:[], idx:0, grados:0, juego:null};
+      irA('p-seis');
+      _sgPintarInicio();
+      if(_sg.A) _sgElegir('B');
+    }
+    function _sgSlot(cual){
+      const a = _sg[cual];
+      return `<button type="button" class="sg-slot${a?' lleno':''}" onclick="_sgElegir('${cual}')">${a ? _sgFoto(a.profile_path) + _escHtml(a.name) + '<small>Cambiar</small>' : '<div class="sg-sinfoto">＋</div>Elige actor<small>o actriz</small>'}</button>`;
+    }
+    function _sgPintarInicio(){
+      const c = document.getElementById('sg-cont'); if(!c) return;
+      c.innerHTML = `<p class="rk-ayuda">Dicen que entre dos actores cualesquiera hay como mucho seis pasos: películas que comparten con otros actores. Elige dos y te enseño el camino más corto.</p>
+        <div class="sg-par">${_sgSlot('A')}<span class="sg-y">↔</span>${_sgSlot('B')}</div>
+        <div id="sg-elegir"></div>
+        <div class="sg-botones">
+          <button type="button" class="adm-btn prim" onclick="sgConectar()" ${_sg.A && _sg.B ? '' : 'disabled'}>🔗 Conectar</button>
+          <button type="button" class="adm-btn" onclick="sgJugar()" ${_sg.A && _sg.B ? '' : 'disabled'}>🎮 Encontrarlo yo</button>
+        </div>
+        <button type="button" class="adm-btn" style="width:100%;margin-bottom:18px" onclick="sgAleatorio(this)">🎲 Reto aleatorio: dos actores al azar</button>
+        <div id="sg-res"></div>`;
+    }
+    function _sgElegir(cual){
+      _sg.eligiendo = cual;
+      const box = document.getElementById('sg-elegir'); if(!box) return;
+      box.innerHTML = `<div class="sg-buscador"><input class="auth-input" id="sg-q" type="search" placeholder="${cual==='A'?'Primer':'Segundo'} actor o actriz…" autocomplete="off" oninput="_sgBuscarPersona(this.value)"></div><div class="sg-resultados" id="sg-personas"></div>`;
+      const i = document.getElementById('sg-q'); if(i && !document.documentElement.classList.contains('modo-tv')) i.focus();
+    }
+    let _sgQT = null;
+    function _sgBuscarPersona(q){
+      clearTimeout(_sgQT);
+      const box = document.getElementById('sg-personas'); if(!box) return;
+      if(q.trim().length < 2){ box.innerHTML = ''; return; }
+      _sgQT = setTimeout(async ()=>{
+        try{
+          const r = ((await _tmdbJson(`/search/person&language=es-ES&include_adult=false&query=${encodeURIComponent(q.trim())}`)).results||[])
+            .filter(p=>!p.adult).sort((a,b)=>(b.known_for_department==='Acting') - (a.known_for_department==='Acting') || b.popularity-a.popularity).slice(0,8);
+          if(document.getElementById('sg-q')?.value.trim() !== q.trim()) return;
+          window._sgOpc = r;
+          box.innerHTML = r.length ? r.map((p,i)=>`<button type="button" class="sg-persona" onclick="_sgPoner(${i})">${_sgFoto(p.profile_path)}<span><b>${_escHtml(p.name)}</b><small>${_escHtml((p.known_for||[]).map(k=>k.title||k.name).filter(Boolean).slice(0,2).join(' · '))}</small></span></button>`).join('') : '<p class="rk-ayuda">No encuentro a nadie con ese nombre.</p>';
+        }catch(e){ box.innerHTML = '<p class="rk-ayuda">No se ha podido buscar. Prueba otra vez.</p>'; }
+      }, 280);
+    }
+    function _sgPoner(i){
+      const p = (window._sgOpc||[])[i]; if(!p) return;
+      const cual = _sg.eligiendo || (_sg.A ? 'B' : 'A');
+      _sg[cual] = {id:p.id, name:p.name, profile_path:p.profile_path||''};
+      _sg.eligiendo = null;
+      _sgPintarInicio();
+      if(!_sg.A) _sgElegir('A'); else if(!_sg.B) _sgElegir('B');
+    }
+    async function sgAleatorio(btn){
+      if(btn){ btn.disabled = true; btn.textContent = '🎲 Eligiendo…'; }
+      try{
+        const pags = [1,2,3,4,5].sort(()=>Math.random()-.5).slice(0,2);
+        const r = (await Promise.all(pags.map(n=>_tmdbJson(`/person/popular&language=es-ES&page=${n}`).catch(()=>({}))))).flatMap(d=>d.results||[])
+          .filter(p=>p.known_for_department==='Acting' && !p.adult && p.profile_path && (p.known_for||[]).some(k=>k.media_type==='movie'));
+        if(r.length < 2) throw 0;
+        const a = r.splice(Math.floor(Math.random()*r.length), 1)[0], b = r[Math.floor(Math.random()*r.length)];
+        _sg.A = {id:a.id, name:a.name, profile_path:a.profile_path}; _sg.B = {id:b.id, name:b.name, profile_path:b.profile_path};
+        _sgPintarInicio();
+        sgConectar();
+      }catch(e){ if(btn){ btn.disabled = false; btn.textContent = '🎲 Reto aleatorio: dos actores al azar'; } }
+    }
+    async function sgConectar(){
+      const {A, B} = _sg; if(!A || !B) return;
+      const res = document.getElementById('sg-res'); if(!res) return;
+      if(A.id===B.id){ res.innerHTML = '<p class="sg-sub">Es la misma persona: 0 grados 😄</p>'; return; }
+      res.innerHTML = `<div class="sg-cargando"><span class="sg-pulso">🔗</span><div id="sg-avance">Buscando el camino…</div></div>`;
+      res.scrollIntoView({block:'start', behavior:'smooth'});
+      const par = `${A.id}-${B.id}`;
+      const r = await _sgBuscar(A, B, (p, a)=>{ const e = document.getElementById('sg-avance'); if(e) e.textContent = `Revisadas ${p} películas y ${a.toLocaleString('es-ES')} actores…`; }).catch(()=>null);
+      if(`${_sg.A?.id}-${_sg.B?.id}` !== par) return;
+      if(r && r.sinPelis){ res.innerHTML = `<p class="sg-sub">${_escHtml(r.sinPelis.name)} no aparece como actor o actriz en ninguna película. Prueba con otra persona.</p>`; return; }
+      if(!r){ res.innerHTML = `<div class="sg-titular">¡Están lejísimos! 🌌</div><p class="sg-sub">No he encontrado un camino de 3 pasos o menos entre ${_escHtml(A.name)} y ${_escHtml(B.name)}. Rarísimo: casi todos los actores conocidos están a 3 o menos.</p>`; return; }
+      _sg.caminos = _sgOrdenar(r.caminos); _sg.idx = 0; _sg.grados = r.grados;
+      _sgPintarCamino();
+    }
+    function _sgPintarCamino(){
+      const res = document.getElementById('sg-res'), c = _sg.caminos[_sg.idx]; if(!res || !c) return;
+      const vistos = window.idsVistosSet || new Set(), g = _sg.grados;
+      window._sgActual = c;
+      let html = '', d = 0;
+      c.forEach((x, i)=>{
+        if(i>0) html += `<div class="sg-linea" style="animation-delay:${d - .15}s"></div>`;
+        if(i%2===0) html += `<div class="sg-nodo sg-actor${i===0||i===c.length-1?' extremo':''}" style="animation-delay:${d}s" onclick="_sgAbrir(${i})">${_sgFoto(x.profile_path)}<b>${_escHtml(x.name)}</b></div>`;
+        else html += `<div class="sg-nodo sg-peli" style="animation-delay:${d}s" onclick="_sgAbrir(${i})">${_sgPoster(x.poster_path)}<div><b>${_escHtml(x.title)}</b><small>${_sgAnio(x)}</small>${vistos.has(`${x.id}-movie`) ? '<br><span class="sg-vista">✓ La has visto</span>' : ''}</div></div>`;
+        d += .32;
+      });
+      const nVistas = c.filter((x,i)=>i%2===1 && vistos.has(`${x.id}-movie`)).length;
+      res.innerHTML = `<div class="sg-titular">${_escHtml(_sg.A.name)} y ${_escHtml(_sg.B.name)}<br>están a <em>${g} ${g===1?'grado':'grados'}</em></div>
+        <div class="sg-sub">${_sg.caminos.length > 1 ? `Hay ${_sg.caminos.length} caminos así de cortos${_sg.caminos.length>1 ? ` · este es el ${_sg.idx+1}` : ''}` : 'Solo hay un camino así de corto'}${nVistas ? ` · pasa por ${nVistas} ${nVistas===1?'película que has visto':'películas que has visto'}` : ''}</div>
+        <div class="sg-cadena">${html}</div>
+        <div class="sg-botones">
+          ${_sg.caminos.length > 1 ? `<button type="button" class="adm-btn" onclick="_sg.idx=(_sg.idx+1)%_sg.caminos.length;_sgPintarCamino()">↻ Otro camino</button>` : ''}
+          <button type="button" class="adm-btn" onclick="sgCompartir()">📤 Compartir</button>
+          <button type="button" class="adm-btn" onclick="sgJugar()">🎮 Jugar con este par</button>
+        </div>`;
+    }
+    function _sgAbrir(i){
+      const x = (window._sgActual||[])[i]; if(!x) return;
+      if(i%2===1) abrirDetalle({...x, _tipo:'movie'});
+      else mostrarFilmografia(x.id, x.name, x.profile_path||'', 'Actor');
+    }
+    async function sgCompartir(){
+      const c = window._sgActual; if(!c) return;
+      const txt = `${c[0].name} y ${c[c.length-1].name} están a ${_sg.grados} ${_sg.grados===1?'grado':'grados'}:\n` + c.map((x,i)=>i%2 ? `   🎬 ${x.title} (${_sgAnio(x)})` : `👤 ${x.name}`).join('\n') + `\n\nDescubierto con CineMood 🔗`;
+      try{ if(navigator.share){ await navigator.share({text: txt}); return; } }catch(e){ return; }
+      try{ await navigator.clipboard.writeText(txt); alert('Copiado: pégalo donde quieras.'); }catch(e){ prompt('Copia el camino:', txt); }
+    }
+
+    // ── el juego: llega tú de A a B saltando de película en película
+    async function sgJugar(){
+      const {A, B} = _sg; if(!A || !B) return;
+      _sg.juego = {pasos:[A], mejor:null, actual:A, peli:null};
+      _sgBuscar(A, B).then(r=>{ if(_sg.juego && r && r.grados){ _sg.juego.mejor = r.grados; if(!_sg.caminos.length || _sg.grados!==r.grados){ _sg.caminos = _sgOrdenar(r.caminos); _sg.idx = 0; _sg.grados = r.grados; } } }).catch(()=>{});
+      _sgPintarJuego();
+    }
+    async function _sgPintarJuego(){
+      const j = _sg.juego, res = document.getElementById('sg-res'); if(!j || !res) return;
+      const saltos = (j.pasos.length - 1);
+      const miga = j.pasos.map((x,i)=>i%2 ? `🎬 ${_escHtml(x.title)}` : `<b>${_escHtml(x.name)}</b>`).join(' → ');
+      const cab = `<div class="sg-juego-cab">${_sgFoto(_sg.B.profile_path)}<div class="i">Tienes que llegar a<b>${_escHtml(_sg.B.name)}</b></div><div class="sg-pasos">${Math.floor(saltos/2)}<small>grados</small></div></div>
+        <div class="sg-miga">${miga}</div>
+        <div class="sg-botones">${j.pasos.length > 1 ? '<button type="button" class="adm-btn" onclick="_sgDeshacer()">↩ Deshacer</button>' : ''}<button type="button" class="adm-btn" onclick="_sgRendirse()">🏳️ Ver la solución</button></div>`;
+      res.scrollIntoView({block:'start', behavior:'smooth'});
+      if(!j.peli){
+        res.innerHTML = cab + `<p class="rk-ayuda">Elige una película de <b>${_escHtml(j.actual.name)}</b>:</p><input class="auth-input" type="search" placeholder="Filtrar por título…" oninput="_sgFiltrarRejilla(this.value)" style="margin-bottom:10px"><div class="sg-rejilla" id="sg-rej"><div class="sg-cargando">Cargando…</div></div>`;
+        const pelis = (await _sgPelis(j.actual.id)).slice().sort((a,b)=>b.vote_count-a.vote_count).slice(0, 80);
+        if(_sg.juego!==j || j.peli) return;
+        window._sgOpcJ = pelis;
+        document.getElementById('sg-rej').innerHTML = pelis.map((f,i)=>`<button type="button" data-t="${_escHtml((f.title||'').toLowerCase())}" onclick="_sgElegirPeli(${i})">${_sgPoster(f.poster_path)}${_escHtml(f.title)}<small>${_sgAnio(f)}</small></button>`).join('') || '<p class="rk-ayuda">No hay películas.</p>';
+      }else{
+        res.innerHTML = cab + `<p class="rk-ayuda">¿Con quién de <b>${_escHtml(j.peli.title)}</b> sigues?</p><div class="sg-rejilla caras" id="sg-rej"><div class="sg-cargando">Cargando…</div></div>`;
+        const rep = (await _sgReparto(j.peli.id)).filter(p=>p.id!==j.actual.id);
+        if(_sg.juego!==j || !j.peli) return;
+        window._sgOpcJ = rep;
+        document.getElementById('sg-rej').innerHTML = rep.map((p,i)=>`<button type="button" onclick="_sgElegirActor(${i})">${_sgFoto(p.profile_path)}${_escHtml(p.name)}<small>${_escHtml(p.character)}</small></button>`).join('');
+      }
+    }
+    function _sgFiltrarRejilla(q){ q = q.trim().toLowerCase(); document.querySelectorAll('#sg-rej button').forEach(b=>{ b.style.display = !q || (b.dataset.t||'').includes(q) ? '' : 'none'; }); }
+    function _sgElegirPeli(i){ const j = _sg.juego, f = (window._sgOpcJ||[])[i]; if(!j || !f) return; j.peli = f; j.pasos.push(f); _sgPintarJuego(); }
+    function _sgElegirActor(i){
+      const j = _sg.juego, p = (window._sgOpcJ||[])[i]; if(!j || !p) return;
+      j.pasos.push(p); j.actual = p; j.peli = null;
+      if(p.id === _sg.B.id) return _sgGanar();
+      _sgPintarJuego();
+    }
+    function _sgDeshacer(){
+      const j = _sg.juego; if(!j || j.pasos.length < 2) return;
+      j.pasos.pop();
+      const ult = j.pasos[j.pasos.length-1];
+      if(j.pasos.length % 2 === 0){ j.peli = ult; j.actual = j.pasos[j.pasos.length-2]; } else { j.peli = null; j.actual = ult; }
+      _sgPintarJuego();
+    }
+    function _sgGanar(){
+      const j = _sg.juego, res = document.getElementById('sg-res'); if(!j || !res) return;
+      const g = Math.floor((j.pasos.length-1)/2), mejor = j.mejor;
+      const veredicto = mejor == null ? '' : g <= mejor ? `🏆 ¡Perfecto! Es el camino más corto posible.` : `El más corto era de ${mejor} ${mejor===1?'grado':'grados'}. ¿Lo intentas otra vez?`;
+      _sg.caminos = [j.pasos.slice(), ...(_sg.caminos||[])]; _sg.idx = 0;
+      window._sgActual = j.pasos.slice();
+      res.innerHTML = `<div class="sg-gana"><span class="sg-big">${mejor!=null && g<=mejor ? '🏆' : '🎉'}</span><div class="sg-titular">¡Llegaste en <em>${g} ${g===1?'grado':'grados'}</em>!</div><div class="sg-sub">${veredicto}</div></div>
+        <div class="sg-cadena">${j.pasos.map((x,i)=>(i?`<div class="sg-linea" style="animation-delay:${i*.25-.1}s"></div>`:'') + (i%2 ? `<div class="sg-nodo sg-peli" style="animation-delay:${i*.25}s" onclick="_sgAbrir(${i})">${_sgPoster(x.poster_path)}<div><b>${_escHtml(x.title)}</b><small>${_sgAnio(x)}</small></div></div>` : `<div class="sg-nodo sg-actor${i===0||i===j.pasos.length-1?' extremo':''}" style="animation-delay:${i*.25}s" onclick="_sgAbrir(${i})">${_sgFoto(x.profile_path)}<b>${_escHtml(x.name)}</b></div>`)).join('')}</div>
+        <div class="sg-botones"><button type="button" class="adm-btn" onclick="_sg.grados=${g};sgCompartir()">📤 Compartir</button>${mejor!=null && g>mejor ? '<button type="button" class="adm-btn" onclick="_sgRendirse()">Ver el más corto</button>' : ''}<button type="button" class="adm-btn prim" onclick="sgAleatorio()">🎲 Otro reto</button></div>`;
+      _sg.juego = null;
+    }
+    async function _sgRendirse(){
+      _sg.juego = null;
+      const res = document.getElementById('sg-res');
+      if(_sg.caminos.length && _sg.grados){ _sg.caminos = _sg.caminos.filter(c=>(c.length-1)/2===_sg.grados); _sg.idx = 0; _sgPintarCamino(); }
+      else sgConectar();
+    }
     // ══ SALUDO: «Hola, Alfred 👋» bajo la marca (el nombre se pone desde el panel de usuarios) ══
     function _saludoPoner(nombre){
       const t = nombre ? `Hola, ${nombre} 👋` : '';
