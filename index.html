@@ -14811,8 +14811,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         return true;
       }catch(e){
         const msg = String(e && (e.message||e.details) || '');
-        if(/info_hash|fuente/i.test(msg)) alert('Faltan las columnas info_hash y fuente en la tabla solicitudes_descarga de Supabase. Añádelas para poder elegir el torrent.');
-        else alert('No se pudo guardar la solicitud. Comprueba tu sesión, permisos y conexión.');
+        const detalle = [e && e.code, msg, e && e.details, e && e.hint].filter(Boolean).join(' · ').slice(0,400);
+        console.error('Supabase solicitudes_descarga:', e);
+        if(/could not find .*(info_hash|fuente)|column .*(info_hash|fuente).* does not exist/i.test(msg)) alert('Faltan las columnas info_hash y fuente en la tabla solicitudes_descarga de Supabase. Añádelas para poder elegir el torrent.');
+        else alert('No se pudo guardar la solicitud.\n\nError de Supabase: '+(detalle||'sin detalle (¿conexión?)'));
         return false;
       }finally{
         _nasEnviando = false;
