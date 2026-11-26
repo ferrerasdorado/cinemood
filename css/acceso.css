@@ -1,0 +1,45 @@
+/* CineMood · Pantalla de entrada (sin sesión) y arranque */
+/* ══════════ PANTALLA DE ENTRADA: sin sesión no se ve nada más ══════════ */
+#gate{display:none;position:fixed;inset:0;z-index:5000;background:var(--bg);align-items:center;justify-content:center;padding:24px;overflow:auto}
+body.sin-sesion #gate{display:flex}
+body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript){display:none!important}
+.gate-box{width:100%;max-width:340px}
+.gate-logo{font-size:32px;font-weight:800;text-align:center;margin-bottom:28px;justify-content:center}
+.gate-logo .cm-logo{width:46px;height:46px}
+.gate-label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 4px}
+.gate-box button.cta-btn{border:0;width:100%;font-family:inherit;cursor:pointer}
+.gate-olvide{display:inline-block;margin-top:14px;font-size:12px;color:var(--accent);cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+.gate-pie{text-align:right}
+  
+
+  .ml-ayuda{font-size:13px;line-height:1.6;color:var(--muted);margin:8px 0 16px}
+  .ml-preferencia{display:flex;align-items:flex-start;gap:12px;font-size:14px;line-height:1.6;color:var(--ink)}
+  .ml-preferencia input{width:20px;height:20px;flex-shrink:0;margin-top:2px;accent-color:var(--accent)}
+  .ml-secundario,.ml-enlace,.mi-lista-mobile{font:600 14px 'Satoshi',-apple-system,sans-serif;cursor:pointer;min-height:44px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);padding:10px 14px}
+  .ml-enlace{background:none;border-color:transparent;color:var(--accent-ink);padding:6px}
+  .mi-lista-mobile{white-space:nowrap;color:var(--accent-ink)}
+  .ml-herramientas{display:flex;align-items:center;gap:12px;margin:16px 0;font-size:13px;color:var(--muted)}
+  .ml-herramientas select{min-width:0;flex:1;min-height:44px;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:14px 'Satoshi',-apple-system,sans-serif}
+  #p-biblioteca .tipo-btn{font-family:inherit;min-height:48px}
+  #p-biblioteca .pantalla-header h2{white-space:nowrap}
+  .ml-fila{display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;margin-bottom:10px}
+  .ml-fila img{width:64px;height:96px;object-fit:cover;border-radius:4px;flex-shrink:0;background:var(--surface-2)}
+  .ml-info{flex:1;min-width:0}
+  .ml-titulo{display:block;width:100%;padding:0;min-height:32px;text-align:left;border:0;background:none;color:var(--ink);font:700 16px/1.4 'Satoshi',-apple-system,sans-serif;cursor:pointer;overflow-wrap:anywhere}
+  .ml-meta{font-size:12px;line-height:1.5;color:var(--muted);margin:4px 0 8px}
+  .ml-fila-acciones{display:flex;gap:8px;flex-wrap:wrap}
+  .ml-fila-acciones button{font-size:12px;min-height:44px;padding:8px 10px}
+  .ml-nota{font-size:13px;font-weight:700;color:var(--accent-ink);margin:6px 0}
+  .ml-vacio{border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:20px;color:var(--ink);font-size:14px;line-height:1.6}
+  .ml-resumen-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+  .ml-dato{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+  .ml-dato strong{display:block;font:800 24px 'Cabinet Grotesk',sans-serif;color:var(--ink)}
+  .ml-dato span{font-size:13px;color:var(--muted)}
+  .ml-subtitulo{font-size:16px;line-height:1.5;color:var(--ink);margin:24px 0 12px}
+  .ml-top{width:100%;display:flex;justify-content:space-between;gap:12px;text-align:left;padding:14px 0;min-height:48px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:14px/1.5 'Satoshi',sans-serif;cursor:pointer}
+  .ml-top span{overflow-wrap:anywhere;min-width:0}
+  .ml-top b{flex-shrink:0;color:var(--accent-ink)}
+  .ml-secundario:disabled,#btn-elige-por-mi:disabled{opacity:.6;cursor:wait}
+  .ml-secundario:focus-visible,.ml-enlace:focus-visible,.ml-titulo:focus-visible,.ml-top:focus-visible,.mi-lista-mobile:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  @media(min-width:768px){.mi-lista-mobile{display:none}}
+  @media(max-width:480px){.inicio-header-row{flex-wrap:wrap}.inicio-mis-acciones{margin-left:auto;align-items:center}.ml-fila{gap:10px}.ml-fila img{width:52px;height:78px}}

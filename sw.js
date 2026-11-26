@@ -2,7 +2,9 @@
 // 1) La app se guarda en el móvil y se abre al instante (aunque haya poca cobertura).
 //    Cada vez que se abre, se descarga la versión nueva en segundo plano; si ha cambiado, la app ofrece «Actualizar».
 // 2) Avisos (notificaciones push).
-const CACHE = 'cinemood-v1';
+// v2: la app está repartida en css/ y js/. Cada archivo lleva ?v=<huella> en index.html,
+// así que cuando cambia, su dirección cambia y se descarga el nuevo (herramientas/versionar.py)
+const CACHE = 'cinemood-v2';
 const BASICOS = ['index.html', 'manifest.json', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png', 'icon.svg'];
 
 self.addEventListener('install', e => {

@@ -11,3 +11,6 @@ android-tv/firma/
 android-tv/*.apk
 android-tv/*.idsig
 backups/
+nas/.env
+.env
+node_modules/
