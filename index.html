@@ -15003,7 +15003,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       function pintar(){
         const lista=resultados.filter(r=>{
           const m=r.meta,f=filtros;
-          if(ctx.nas&&!r.s.infoHash)return false;
+          if(ctx.nas&&!_hashDeFuente(r.s))return false;
           if(f.proveedor!=='todos'&&String(r.proveedor)!==f.proveedor)return false;
           if(f.buscar&&!m.texto.toLowerCase().includes(f.buscar))return false;
           if(f.idioma==='es'&&!m.es)return false;
@@ -15028,7 +15028,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           return a.proveedor-b.proveedor||a.pos-b.pos;
         });
         listaUI.replaceChildren(...lista.map(r=>_fEl('div',{},_fEl('p',{class:'fte-msg',text:r.a.nombre+' · '+(r.meta.calidad?r.meta.calidad+'p':'Resolución sin identificar')+' · Semillas: '+(r.meta.semillas<0?'sin dato':r.meta.semillas)+' · Subtítulos: '+(r.meta.subs?'indicados por la fuente':'sin información')}),_fteFila(r.s,r.a,ctx))));
-        if(!lista.length)listaUI.append(_fEl('p',{class:'fte-msg',text:resultados.length?(ctx.nas&&!resultados.some(r=>r.s.infoHash)?'Tus proveedores no han devuelto ningún torrent para este título.':'Ningún resultado coincide. Prueba a quitar filtros.'):pend?'Esperando resultados…':'No se han encontrado resultados.'}));
+        if(!lista.length)listaUI.append(_fEl('p',{class:'fte-msg',text:resultados.length?(ctx.nas&&!resultados.some(r=>_hashDeFuente(r.s))?'Tus proveedores no han devuelto ningún torrent para este título.':'Ningún resultado coincide. Prueba a quitar filtros.'):pend?'Esperando resultados…':'No se han encontrado resultados.'}));
         resumen.textContent=lista.length+' visibles de '+resultados.length+' recibidos · '+(pend?'Buscando en '+pend+' proveedores…':'Búsqueda terminada.');
         avisosUI.replaceChildren(...avisos.map(text=>_fEl('p',{class:'fte-msg',text})));
       }
@@ -15181,6 +15181,22 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     // ── Modo NAS de la hoja de fuentes: eliges el proveedor (addon) y el torrent ──
     // Hash de un torrent: 40 caracteres hexadecimales o 32 en base32
     const _HASH_TORRENT = /^(?:[a-f0-9]{40}|[a-z2-7]{32})$/i;
+    // El hash del torrent puede venir de tres formas según el addon:
+    //  1) en el campo infoHash (Torrentio sin servicio de debrid)
+    //  2) dentro de un enlace magnet:?xt=urn:btih:HASH
+    //  3) dentro del enlace ya resuelto por un debrid, como hace Torrentio con
+    //     Real-Debrid: …/resolve/realdebrid/CLAVE/HASH/…/archivo.mkv
+    //     (se busca un tramo de la ruta de exactamente 40 caracteres hexadecimales;
+    //      la clave de Real-Debrid no lo cumple, así que nunca se guarda)
+    function _hashDeFuente(s){
+      const h = String(s.infoHash||'').trim();
+      if(_HASH_TORRENT.test(h)) return h.toLowerCase();
+      const u = String(s.url||'');
+      let m = u.match(/btih:([a-f0-9]{40}|[a-z2-7]{32})(?![a-z0-9])/i);
+      if(m) return m[1].toLowerCase();
+      m = u.match(/\/([a-f0-9]{40})(?=[\/?#]|$)/i);
+      return m ? m[1].toLowerCase() : null;
+    }
     function _nasBloqueAuto(){
       return _fEl('div',{class:'fte-fila fte-opciones'},
         _fEl('div',{class:'fte-cuerpo'},
@@ -15191,17 +15207,17 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function _nasFilaTorrent(s, a){
       const nombre = s.name || a.nombre;
-      const hash = String(s.infoHash||'').trim();
+      const hash = _hashDeFuente(s) || '';
       const cuerpo = _fEl('div',{class:'fte-cuerpo'}, _fEl('span',{class:'fte-nombre',text:nombre}),
         s.description && _fEl('span',{class:'fte-desc',text:s.description}),
         _fEl('span',{class:'fte-aviso',text:'Proveedor: '+a.nombre}));
       if(!_HASH_TORRENT.test(hash))
         return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'Hash no válido'}));
-      const fuente = (a.nombre+' · '+(s.filename || s.description.split('\n')[0] || nombre)).slice(0,300);
+      const fuente = (a.nombre+' · '+(s.filename || s.description.split('\n')[0] || nombre)).slice(0,300); // nunca el enlace: puede llevar tu clave de Real-Debrid
       return _fEl('div',{class:'fte-fila fte-opciones'}, cuerpo,
         _fEl('div',{class:'fte-acciones'},
           _fEl('button',{class:'fte-accion fte-accion-vlc',type:'button',onclick:async()=>{
-            if(await _enviarSolicitudesNAS([{info_hash:hash.toLowerCase(), fuente}])) cerrarFuentes();
+            if(await _enviarSolicitudesNAS([{info_hash:hash, fuente}])) cerrarFuentes();
           }},'Enviar al NAS')));
     }
 
