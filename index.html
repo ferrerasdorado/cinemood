@@ -14779,8 +14779,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       if(_nasEnviando) return;
       if(!sesionActual){ alert('Inicia sesión para solicitar una descarga al NAS.'); return; }
       const p = peliculaActual; if(!p) return;
-      // Las películas no tienen nada que elegir: se piden directamente
-      if(p._tipo!=='tv'){ _enviarSolicitudesNAS([{temporada:null, episodio:null}]); return; }
+      // Películas: se abre la hoja de fuentes en «modo NAS» para elegir proveedor y torrent
+      if(p._tipo!=='tv'){ abrirFuentes({tipo:'movie', tmdbId:p.id, titulo:p.title||p.name||'', nas:true}); return; }
       // Las series abren el pop-up para elegir qué descargar
       abrirNasModal();
     }
@@ -14795,7 +14795,10 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const p = peliculaActual; if(!p) return false;
       const tipo = p._tipo==='tv' ? 'tv' : 'movie';
       const titulo = String(p.title||p.name||'Sin título').slice(0,500);
-      const filas = partes.map(x=>({tmdb_id:p.id, tipo, titulo, temporada:x.temporada, episodio:x.episodio}));
+      // info_hash y fuente solo se envían cuando eliges un torrent concreto;
+      // sin ellos, el NAS elige automáticamente (como antes)
+      const filas = partes.map(x=>({tmdb_id:p.id, tipo, titulo, temporada:x.temporada??null, episodio:x.episodio??null,
+        ...(x.info_hash ? {info_hash:x.info_hash, fuente:x.fuente} : {})}));
       const btn = document.getElementById('btn-descargar-nas');
       const btnModal = document.getElementById('nas-enviar');
       _nasEnviando = true;
@@ -14807,7 +14810,9 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         alert((filas.length>1 ? filas.length+' solicitudes guardadas' : 'Solicitud guardada')+' en la cola del NAS. La descarga solo comenzará cuando el servicio del NAS esté instalado y activo.');
         return true;
       }catch(e){
-        alert('No se pudo guardar la solicitud. Comprueba tu sesión, permisos y conexión.');
+        const msg = String(e && (e.message||e.details) || '');
+        if(/info_hash|fuente/i.test(msg)) alert('Faltan las columnas info_hash y fuente en la tabla solicitudes_descarga de Supabase. Añádelas para poder elegir el torrent.');
+        else alert('No se pudo guardar la solicitud. Comprueba tu sesión, permisos y conexión.');
         return false;
       }finally{
         _nasEnviando = false;
@@ -14933,7 +14938,8 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
     }
     function abrirFuentes(ctx){
       window._fte = ctx;
-      document.getElementById('fte-titulo').textContent = ctx.titulo;
+      document.getElementById('fte-titulo').textContent = ctx.nas ? 'Enviar al NAS · '+ctx.titulo : ctx.titulo;
+      document.querySelector('#fuentes-modal .fte-nota').style.display = ctx.nas ? 'none' : '';
       _fteSelectores();
       document.getElementById('fuentes-modal').classList.add('activo');
       document.body.style.overflow = 'hidden';
@@ -14961,7 +14967,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       const vivo = ()=>mi===window._fteTurno && window._fte===ctx;
       const addons = addonsLeer();
       if(!addons.length){
-        body.replaceChildren(_fEl('p',{class:'fte-msg',text:'Aún no has añadido addons. Necesitas al menos uno que ofrezca fuentes de vídeo.'}),
+        body.replaceChildren(...(ctx.nas ? [_nasBloqueAuto()] : []), _fEl('p',{class:'fte-msg',text:'Aún no has añadido addons. Necesitas al menos uno que ofrezca fuentes de vídeo.'}),
           _fEl('div',{class:'cta-btn',onclick:()=>{ cerrarFuentes(); abrirAddons(); }},'Añadir un addon'));
         return;
       }
@@ -14992,10 +14998,12 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       seleccionar('orden','Orden',[['original','Orden de proveedores'],['es','Español → resolución → semillas'],['calidad','Resolución → semillas'],['semillas','Semillas → resolución']]);
       const texto=_fEl('input',{type:'search',placeholder:'Buscar en nombre o descripción','aria-label':'Buscar en resultados',oninput:e=>{filtros.buscar=e.target.value.toLowerCase();pintar();}});
       barra.append(texto,_fEl('button',{type:'button',onclick:()=>{Object.assign(filtros,{idioma:'todos',resolucion:'todas',subtitulos:'todos',proveedor:'todos',buscar:'',orden:'original'});barra.querySelectorAll('select').forEach(el=>el.selectedIndex=0);texto.value='';pintar();}},'Restablecer'));
+      if(ctx.nas) body.append(_nasBloqueAuto());
       body.append(barra,_fEl('p',{class:'fte-msg',text:'Los filtros usan las etiquetas y datos del proveedor, sin comprobar el audio ni el archivo. Sin identificar no significa que no tenga ese idioma o subtítulos. Los filtros no encuentran nuevas fuentes.'}),resumen,listaUI,avisosUI);
       function pintar(){
         const lista=resultados.filter(r=>{
           const m=r.meta,f=filtros;
+          if(ctx.nas&&!r.s.infoHash)return false;
           if(f.proveedor!=='todos'&&String(r.proveedor)!==f.proveedor)return false;
           if(f.buscar&&!m.texto.toLowerCase().includes(f.buscar))return false;
           if(f.idioma==='es'&&!m.es)return false;
@@ -15020,7 +15028,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
           return a.proveedor-b.proveedor||a.pos-b.pos;
         });
         listaUI.replaceChildren(...lista.map(r=>_fEl('div',{},_fEl('p',{class:'fte-msg',text:r.a.nombre+' · '+(r.meta.calidad?r.meta.calidad+'p':'Resolución sin identificar')+' · Semillas: '+(r.meta.semillas<0?'sin dato':r.meta.semillas)+' · Subtítulos: '+(r.meta.subs?'indicados por la fuente':'sin información')}),_fteFila(r.s,r.a,ctx))));
-        if(!lista.length)listaUI.append(_fEl('p',{class:'fte-msg',text:resultados.length?'Ningún resultado coincide. Prueba a quitar filtros.':pend?'Esperando resultados…':'No se han encontrado resultados.'}));
+        if(!lista.length)listaUI.append(_fEl('p',{class:'fte-msg',text:resultados.length?(ctx.nas&&!resultados.some(r=>r.s.infoHash)?'Tus proveedores no han devuelto ningún torrent para este título.':'Ningún resultado coincide. Prueba a quitar filtros.'):pend?'Esperando resultados…':'No se han encontrado resultados.'}));
         resumen.textContent=lista.length+' visibles de '+resultados.length+' recibidos · '+(pend?'Buscando en '+pend+' proveedores…':'Búsqueda terminada.');
         avisosUI.replaceChildren(...avisos.map(text=>_fEl('p',{class:'fte-msg',text})));
       }
@@ -15132,6 +15140,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
       }
     }
     function _fteFila(s, a, ctx){
+      if(ctx.nas) return _nasFilaTorrent(s, a);
       const c = _clasificarFuente(s);
       const nombre = s.name || a.nombre;
       const cuerpo = _fEl('div',{class:'fte-cuerpo'}, _fEl('span',{class:'fte-nombre',text:nombre}),
@@ -15167,6 +15176,33 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         return _fEl('div',{class:'fte-fila fte-opciones'},cuerpo,acciones,estado);
       }
       return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'No compatible'}));
+    }
+
+    // ── Modo NAS de la hoja de fuentes: eliges el proveedor (addon) y el torrent ──
+    // Hash de un torrent: 40 caracteres hexadecimales o 32 en base32
+    const _HASH_TORRENT = /^(?:[a-f0-9]{40}|[a-z2-7]{32})$/i;
+    function _nasBloqueAuto(){
+      return _fEl('div',{class:'fte-fila fte-opciones'},
+        _fEl('div',{class:'fte-cuerpo'},
+          _fEl('span',{class:'fte-nombre',text:'Elige el torrent que quieres'}),
+          _fEl('span',{class:'fte-desc',text:'Filtra por proveedor, idioma o resolución y pulsa «Enviar al NAS» en el torrent que prefieras. Si no quieres elegir, el NAS buscará uno automáticamente.'})),
+        _fEl('div',{class:'fte-acciones'},
+          _fEl('button',{class:'fte-accion',type:'button',onclick:async()=>{ if(await _enviarSolicitudesNAS([{}])) cerrarFuentes(); }},'Que elija el NAS automáticamente')));
+    }
+    function _nasFilaTorrent(s, a){
+      const nombre = s.name || a.nombre;
+      const hash = String(s.infoHash||'').trim();
+      const cuerpo = _fEl('div',{class:'fte-cuerpo'}, _fEl('span',{class:'fte-nombre',text:nombre}),
+        s.description && _fEl('span',{class:'fte-desc',text:s.description}),
+        _fEl('span',{class:'fte-aviso',text:'Proveedor: '+a.nombre}));
+      if(!_HASH_TORRENT.test(hash))
+        return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'Hash no válido'}));
+      const fuente = (a.nombre+' · '+(s.filename || s.description.split('\n')[0] || nombre)).slice(0,300);
+      return _fEl('div',{class:'fte-fila fte-opciones'}, cuerpo,
+        _fEl('div',{class:'fte-acciones'},
+          _fEl('button',{class:'fte-accion fte-accion-vlc',type:'button',onclick:async()=>{
+            if(await _enviarSolicitudesNAS([{info_hash:hash.toLowerCase(), fuente}])) cerrarFuentes();
+          }},'Enviar al NAS')));
     }
 
     // ── Reproductor interno: Media3 ExoPlayer en app Android TV + HTML5/hls.js/mpegts.js en web ──
