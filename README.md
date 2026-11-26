@@ -59,7 +59,8 @@ restante, que el NAS copia desde RDT-Client. Desde ahí se puede:
 - **Reintentar** lo que falló o **volver a pedir** lo cancelado.
 - **Quitar de la lista** lo que ya no está en marcha.
 
-Si un torrent se borra a mano en RDT-Client, la solicitud pasa sola a «cancelada».
+Si un torrent desaparece de RDT-Client (que suele quitarlo al terminar), la solicitud pasa a «completada»
+si ya iba por el 95 % o más, y a «cancelada» si se borró a medias.
 
 ### Cómo funciona por dentro
 

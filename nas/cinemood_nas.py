@@ -178,7 +178,8 @@ def process(sol, sess):
         cat = CAT_MOVIES if sol["tipo"] == "movie" else CAT_SERIES
         r = sess.post(f"{RDT}/api/v2/torrents/add", data={"urls": magnet(st, sol["titulo"]), "category": cat}, timeout=30)
         if r.status_code != 200: raise RuntimeError(f"RDT-Client respondió {r.status_code}")
-        sb_patch("solicitudes_descarga", sol["id"], {"estado": "descargando", "cliente_id": st["infoHash"].lower(), "error_mensaje": None})
+        sb_patch("solicitudes_descarga", sol["id"], {"estado": "descargando", "cliente_id": st["infoHash"].lower(), "error_mensaje": None,
+                                                   **({"progreso": 0} if CON_PROGRESO else {})})
         log("enviada a RDT-Client:", sol["titulo"], "categoría", cat)
     except Exception as e:
         fin = sol["intentos"] + 1 >= MAX_INTENTOS
@@ -195,8 +196,11 @@ def columnas_nuevas():
         log("Aviso: faltan las columnas de progreso/cancelar; ejecuta supabase/nas.sql para activarlas")
         return False
 
+CON_PROGRESO = False          # se decide al arrancar (columnas_nuevas)
 ETA_INFINITA = 8640000          # qBittorrent (y RDT-Client) usan este valor para «sin estimación»
 ESTADOS_ERROR = {"error", "missingFiles"}
+# Estados de qBittorrent (los usa RDT-Client) que significan «descarga terminada»
+ESTADOS_TERMINADO = {"uploading", "stalledUP", "pausedUP", "stoppedUP", "queuedUP", "forcedUP", "checkingUP"}
 _ausencias = {}                 # id → revisiones seguidas en las que el torrent no aparece en RDT-Client
 
 def comprobar_descargas(sess, con_progreso):
@@ -207,19 +211,29 @@ def comprobar_descargas(sess, con_progreso):
             r.raise_for_status()
             info = r.json()
             if not info:
-                # No está en RDT-Client: se borró a mano. Se espera a no verlo dos veces seguidas
-                # por si RDT-Client aún no lo había registrado justo después de añadirlo.
+                # Ya no está en RDT-Client. Se espera a no verlo dos veces seguidas, por si RDT-Client
+                # aún no lo había registrado justo después de añadirlo. Después:
+                #  - RDT-Client suele quitar el torrent al terminar: si iba por el 95 % o más, está terminada.
+                #  - Solicitudes antiguas (de antes de guardar el progreso: progreso vacío): no se puede saber
+                #    cómo iban; si ya no están en RDT-Client, se dan por terminadas.
+                #  - Si desaparece a medias, alguien la borró a mano: cancelada.
                 _ausencias[sol["id"]] = _ausencias.get(sol["id"], 0) + 1
                 if _ausencias[sol["id"]] >= 2:
                     _ausencias.pop(sol["id"], None)
-                    sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "error_mensaje": "Se borró en RDT-Client",
-                                                               **({"velocidad": None, "eta": None} if con_progreso else {})})
-                    log("borrada en RDT-Client:", sol["id"])
+                    prog = sol.get("progreso") if con_progreso else None
+                    if prog is None or prog >= 95:
+                        sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
+                                                                   **({"progreso": 100, "velocidad": None, "eta": None} if con_progreso else {})})
+                        log("terminada (ya no está en RDT-Client):", sol["id"])
+                    else:
+                        sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "error_mensaje": "Se borró en RDT-Client",
+                                                                   "velocidad": None, "eta": None})
+                        log("borrada en RDT-Client:", sol["id"])
                 continue
             _ausencias.pop(sol["id"], None)
             t = info[0]
             progreso = max(0.0, min(100.0, float(t.get("progress", 0)) * 100))
-            if progreso >= 100:
+            if progreso >= 100 or t.get("state") in ESTADOS_TERMINADO:
                 sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
                                                            **({"progreso": 100, "velocidad": None, "eta": None} if con_progreso else {})})
             elif t.get("state") in ESTADOS_ERROR:
@@ -252,7 +266,8 @@ def atender_cancelaciones(sess):
 
 def main():
     log("CineMood NAS iniciado")
-    con_progreso = columnas_nuevas()
+    global CON_PROGRESO
+    con_progreso = CON_PROGRESO = columnas_nuevas()
     # Si el servicio se paró a medias, lo que quedó «procesando» vuelve a la cola
     # (las que ya estaban «descargando» siguen en RDT-Client y se vuelven a seguir solas)
     try:
