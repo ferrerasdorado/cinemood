@@ -2,7 +2,7 @@
     /* ═════════════ REDISEÑO EDITORIAL ═════════════
        Fondo cálido, superficies claras, acento rojo y franjas oscuras
        solo donde hay imagen (tiles de Especiales, cabecera de la ficha). */
-    :root { --bg:#f5f3ef; --surface:#fffefb; --surface-2:#f1efe6; --ink:#202221; --muted:#61635e; --faint:#767973; --line:#dedfd8; --dark:#1b1d1c; --dark-2:#262927; --dark-muted:#b7bbb5; --accent:var(--acento); --accent-hover:var(--acento-osc); --accent-soft:#f6e6df; --accent-ink:var(--acento-osc); --accent-light:#e4675f; --green:#3d6651; --green-soft:#e7ede5; }
+    :root { --accent-texto: var(--acento); --bg:#f5f3ef; --surface:#fffefb; --surface-2:#f1efe6; --ink:#202221; --muted:#61635e; --faint:#767973; --line:#dedfd8; --dark:#1b1d1c; --dark-2:#262927; --dark-muted:#b7bbb5; --accent:var(--acento); --accent-hover:var(--acento-osc); --accent-soft:#f6e6df; --accent-ink:var(--acento-osc); --accent-light:#e4675f; --green:#3d6651; --green-soft:#e7ede5; }
     html { -webkit-font-smoothing: antialiased; }
     :root { --acento:#b52c29; --acento-rgb:181,44,41; --acento-osc:#9c2723; --acento-claro:#e4675f; }
     :root[data-acento] { --k-f6e6df: color-mix(in srgb, var(--acento) 13%, #fffefb); --accent-light: var(--acento-claro); }
@@ -35,7 +35,7 @@
     .cta-sec:hover { background: var(--surface); border-color: var(--ink); }
     .btn-mas-info:hover { opacity: 1; background: var(--accent-hover); }
     .busqueda-rapida button:hover, .pc-nav-busqueda button:hover { background: var(--accent-hover); }
-    .btn-limpiar { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
+    .btn-limpiar { color: var(--accent-texto); font-weight: 600; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; }
     .btn-limpiar:hover { text-decoration-color: currentColor; }
 
     /* Selectores: activo = sólido oscuro, como las pestañas de la referencia */
@@ -58,9 +58,9 @@
 
     /* Cabeceras de pantalla */
     .pantalla-header h2 { color: var(--ink); text-shadow: none; font-weight: 800; }
-    .btn-atras { color: var(--accent); text-shadow: none; font-weight: 600; }
+    .btn-atras { color: var(--accent-texto); text-shadow: none; font-weight: 600; }
     #p-especial .pantalla-header h2 { color: var(--ink); }
-    #p-especial .btn-atras { color: var(--accent); }
+    #p-especial .btn-atras { color: var(--accent-texto); }
     #p-detalle .pantalla-header h2 { color: #fffefb; text-shadow: 0 1px 4px rgba(0,0,0,0.85), 0 1px 12px rgba(0,0,0,0.5); }
     #p-detalle .btn-atras { color: #fffefb; text-shadow: 0 1px 4px rgba(0,0,0,0.85), 0 1px 12px rgba(0,0,0,0.5); }
 
@@ -116,7 +116,7 @@
     .wrapped-verde .wrapped-num { color: var(--green); }
     .wrapped-hero { background: var(--dark); border: none; }
     .wrapped-hero-sub { color: var(--dark-muted); }
-    .wrapped-num { color: var(--accent); }
+    .wrapped-num { color: var(--accent-texto); }
     .wrapped-label { color: var(--muted); }
     .wrapped-destacado { background: var(--surface); border-color: var(--line); }
     .wrapped-destacado-nota { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
@@ -210,7 +210,7 @@
     .tl-hito-ano { font-family: 'Cabinet Grotesk', -apple-system, sans-serif; font-weight: 800; font-size: 36px; line-height: 1; letter-spacing: -0.035em; color: var(--ink); white-space: nowrap; transition: color .35s; font-variant-numeric: tabular-nums; }
     .tl-hito-ano.tl-ano-m { font-size: 30px; }
     .tl-hito-ano.tl-ano-s { font-size: 24px; }
-    .tl-hito.tl-pasado .tl-hito-ano { color: var(--accent); }
+    .tl-hito.tl-pasado .tl-hito-ano { color: var(--accent-texto); }
     .tl-hito-linea { flex: 1; height: 1px; background: linear-gradient(90deg, #cfd1c9, transparent); }
     .tl-hito-cap { display: block; margin-top: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
     .tl-stamp { margin-top: 2px; color: var(--muted); }
@@ -229,7 +229,7 @@
     .pantalla-header.cab-fija { background: color-mix(in srgb, var(--k-f5f3ef) 90%, transparent); -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px); border-bottom-color: var(--line); box-shadow: 0 8px 20px -18px rgba(32,34,33,0.5); }
     .btn-atras { display: inline-flex; align-items: center; min-height: 36px; padding-right: 12px; }
     #p-detalle .pantalla-header.cab-fija h2, #p-detalle .pantalla-header.cab-fija .btn-atras { color: var(--ink); text-shadow: none; }
-    #p-detalle .pantalla-header.cab-fija .btn-atras { color: var(--accent); }
+    #p-detalle .pantalla-header.cab-fija .btn-atras { color: var(--accent-texto); }
     .tl-era-flotante { top: calc(var(--nav-h, 0px) + var(--cab-h, 58px) + 8px); }
     @media (min-width: 768px) {
       .pantalla-header { margin: -10px -40px 26px; margin-top: calc(-10px - env(safe-area-inset-top, 0px)); padding: 10px 40px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
@@ -266,7 +266,7 @@
     .tl-rel-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .tl-rel-titulo { font-size: 12.5px; font-weight: 700; color: var(--ink); line-height: 1.3; }
     .tl-rel-txt { font-size: 12px; color: var(--k-4d514a); line-height: 1.45; }
-    .tl-rel-ir { flex-shrink: 0; color: var(--accent); font-size: 18px; font-weight: 700; line-height: 1; margin-top: 2px; }
+    .tl-rel-ir { flex-shrink: 0; color: var(--accent-texto); font-size: 18px; font-weight: 700; line-height: 1; margin-top: 2px; }
     /* Tiempo restante de la ruta */
     .tl-tiempo { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; padding: 13px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
     .tl-tiempo-ico { font-size: 18px; flex-shrink: 0; }
@@ -299,7 +299,7 @@
     .col-ov-borrar { text-align: center; color: #b3261e; font-size: 13px; font-weight: 600; cursor: pointer; margin: 4px 0 10px; }
     .col-nueva-tile { background: transparent; border: 1.5px dashed var(--k-b3b7ad); color: var(--ink); box-shadow: none; }
     .col-nueva-tile:hover { border-color: var(--ink); }
-    .col-nueva-tile .especial-tile-emoji { font-size: 26px; font-weight: 300; color: var(--accent); }
+    .col-nueva-tile .especial-tile-emoji { font-size: 26px; font-weight: 300; color: var(--accent-texto); }
     .col-nueva-tile .especial-tile-titulo { color: var(--ink); }
     .col-nueva-tile .especial-tile-sub { color: var(--muted); }
     .col-nueva-tile .especial-tile-titulo, .col-nueva-tile .especial-tile-sub, .col-nueva-tile .especial-tile-emoji { text-shadow: none; }
@@ -320,7 +320,7 @@
       .tabbar { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 130; background: rgba(255,254,251,0.93); -webkit-backdrop-filter: saturate(160%) blur(14px); backdrop-filter: saturate(160%) blur(14px); border-top: 1px solid var(--line); padding: 8px max(6px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
       .tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 48px; background: none; border: 0; padding: 4px 0; color: var(--k-8a8d86); font: 600 10.5px 'Satoshi', -apple-system, sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; }
       .tab svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
-      .tab.activo { color: var(--accent); }
+      .tab.activo { color: var(--accent-texto); }
       .tab.activo svg { fill: rgba(var(--acento-rgb),0.12); }
       body { padding-bottom: calc(76px + max(12px, env(safe-area-inset-bottom, 0px))); }
       .tl-siguiente { bottom: calc(80px + max(12px, env(safe-area-inset-bottom, 0px))); }
@@ -354,5 +354,11 @@
         --bg:#121413; --surface:#1c1f1d; --surface-2:#222523; --ink:#ecebe6; --muted:#aeb1aa; --faint:#979a93; --line:#333734;
         --dark:#0b0c0c; --dark-2:#191b1a; --accent-soft:#3a1f1c; --accent-ink:#f08a82; }
       :root[data-theme="dark"] img { color: transparent; }
+      /* Texto en color de acento: en oscuro, una versión más clara del acento que haya elegido cada usuario
+         (el rojo de marca sobre negro no llega al contraste mínimo). En claro es el mismo acento de siempre. */
+      :root[data-theme="dark"] { --accent-texto: #f08a82; }
+      @supports (color: color-mix(in srgb, red 50%, white)) { :root[data-theme="dark"] { --accent-texto: color-mix(in srgb, var(--acento) 52%, #fff); } }
+      /* Botón activo: fondo claro en oscuro, así que su texto va oscuro */
+      :root[data-theme="dark"] .tipo-btn.active .tipo-text, :root[data-theme="dark"] .mood-btn.active .mood-text { color: var(--bg); }
       :root[data-theme="dark"] .tipo-btn.active, :root[data-theme="dark"] .mood-btn.active, :root[data-theme="dark"] .genre-chip.active, :root[data-theme="dark"] .punt-chip.active, :root[data-theme="dark"] .tone-pill.active, :root[data-theme="dark"] .platform-chip.active { background: var(--ink); border-color: var(--ink); color: var(--bg); }
       :root[data-theme="dark"] .pantalla-header.cab-fija, :root[data-theme="dark"] .tabbar, :root[data-theme="dark"] .tab-bar, :root[data-theme="dark"] nav.tabs { background-color: color-mix(in srgb, var(--bg) 92%, transparent); }

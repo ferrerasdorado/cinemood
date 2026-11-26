@@ -19,10 +19,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=39bc19d0">
-  <link rel="stylesheet" href="css/editorial.css?v=b5dde468">
-  <link rel="stylesheet" href="css/fuentes-nas.css?v=3da8dd73">
-  <link rel="stylesheet" href="css/acceso.css?v=42c13d21">
+  <link rel="stylesheet" href="css/app.css?v=e142d82b">
+  <link rel="stylesheet" href="css/editorial.css?v=c46a78e2">
+  <link rel="stylesheet" href="css/fuentes-nas.css?v=0373ae4c">
+  <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
 </head>
 <body class="sin-sesion">
 <div id="splash" aria-hidden="true">
@@ -174,7 +174,7 @@
         <div class="punt-chip" data-min="6" data-max="7.9" onclick="togglePunt(this)">Buena 6–8 ⭐⭐</div>
         <div class="punt-chip" data-min="8" data-max="10" onclick="togglePunt(this)">Excelente +8 ⭐⭐⭐</div>
       </div>
-      <div class="section-label">Año <span id="year-toggle-label" style="color:var(--acento);cursor:pointer;font-size:11px;margin-left:6px" onclick="toggleYear()">▸ desde 1990</span></div>
+      <div class="section-label">Año <span id="year-toggle-label" style="color:var(--accent-texto);cursor:pointer;font-size:11px;margin-left:6px" onclick="toggleYear()">▸ desde 1990</span></div>
       <div id="year-section" style="display:none;margin-bottom:20px">
         <div class="year-row"><span class="year-label">1950</span><input type="range" class="year-slider" id="year-desde" min="1950" max="2026" value="1990" oninput="actualizarAnos()"><span class="year-label">2026</span></div>
         <div class="year-row"><span class="year-label">1950</span><input type="range" class="year-slider" id="year-hasta" min="1950" max="2026" value="2026" oninput="actualizarAnos()"><span class="year-label">2026</span></div>
@@ -685,7 +685,7 @@
         <div class="section-label">Iniciar sesión</div>
         <input class="auth-input" id="login-email" type="email" placeholder="Email" autocomplete="email">
         <input class="auth-input" id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
-        <div style="text-align:right;margin:-4px 0 12px"><span style="font-size:12px;color:var(--acento);cursor:pointer" onclick="olvideContrasena()">¿Olvidaste tu contraseña?</span></div>
+        <div style="text-align:right;margin:-4px 0 12px"><span role="button" tabindex="0" style="font-size:12px;color:var(--accent-texto);cursor:pointer" onclick="olvideContrasena()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();olvideContrasena();}">¿Olvidaste tu contraseña?</span></div>
         <div class="cta-btn" onclick="login()">Entrar</div>
         <div class="auth-error" id="login-error"></div>
       </div>
