@@ -15175,8 +15175,14 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
               estado.textContent='Se abrirá el archivo original para guardarlo. Si el navegador lo muestra, usa su opción de descargar.';
             }},'Descargar'));
         }
+        const nas = _nasBotonEnVer(s, a, ctx, estado);
+        if(nas) acciones.append(nas);
         return _fEl('div',{class:'fte-fila fte-opciones'},cuerpo,acciones,estado);
       }
+      // Torrent sin enlace directo: no se puede reproducir aquí, pero sí enviar al NAS
+      const estadoNas = _fEl('p',{class:'fte-vlc-ayuda',role:'status','aria-live':'polite'});
+      const nasSolo = _nasBotonEnVer(s, a, ctx, estadoNas);
+      if(nasSolo) return _fEl('div',{class:'fte-fila fte-opciones'}, cuerpo, _fEl('div',{class:'fte-acciones'}, nasSolo), estadoNas);
       return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'No compatible'}));
     }
 
@@ -15207,6 +15213,23 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         _fEl('div',{class:'fte-acciones'},
           _fEl('button',{class:'fte-accion',type:'button',onclick:async()=>{ if(await _enviarSolicitudesNAS([{}])) cerrarFuentes(); }},'Que elija el NAS automáticamente')));
     }
+    // Texto que se guarda en «fuente»: proveedor y nombre del archivo (nunca el enlace: puede llevar tu clave del debrid)
+    function _nasFuenteTexto(s, a){
+      return (a.nombre+' · '+(s.filename || String(s.description||'').split('\n')[0] || s.name || '')).slice(0,300);
+    }
+    // Botón «Enviar al NAS» para la hoja normal de «Ver»: solo en fuentes que son torrents.
+    // En series manda el capítulo que tienes elegido arriba (temporada y episodio).
+    function _nasBotonEnVer(s, a, ctx, estado){
+      const hash = _hashDeFuente(s);
+      if(!hash) return null;
+      return _fEl('button',{class:'fte-accion',type:'button',onclick:async()=>{
+        if(!sesionActual){ alert('Inicia sesión para enviar descargas al NAS.'); return; }
+        const parte = {info_hash:hash, fuente:_nasFuenteTexto(s, a)};
+        if(ctx.tipo==='tv'){ parte.temporada = ctx.season; parte.episodio = ctx.episode; }
+        if(await _enviarSolicitudesNAS([parte]) && estado)
+          estado.textContent = 'Enviado al NAS'+(ctx.tipo==='tv'?' (T'+ctx.season+' · E'+ctx.episode+')':'')+'. Cuando termine la descarga aparecerá en Plex.';
+      }},'Enviar al NAS');
+    }
     function _nasFilaTorrent(s, a){
       const nombre = s.name || a.nombre;
       const hash = _hashDeFuente(s) || '';
@@ -15215,7 +15238,7 @@ body.sin-sesion > *:not(#gate):not(#splash):not(script):not(style):not(noscript)
         _fEl('span',{class:'fte-aviso',text:'Proveedor: '+a.nombre}));
       if(!_HASH_TORRENT.test(hash))
         return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'Hash no válido'}));
-      const fuente = (a.nombre+' · '+(s.filename || s.description.split('\n')[0] || nombre)).slice(0,300); // nunca el enlace: puede llevar tu clave de Real-Debrid
+      const fuente = _nasFuenteTexto(s, a);
       return _fEl('div',{class:'fte-fila fte-opciones'}, cuerpo,
         _fEl('div',{class:'fte-acciones'},
           _fEl('button',{class:'fte-accion fte-accion-vlc',type:'button',onclick:async()=>{
