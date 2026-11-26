@@ -6,6 +6,7 @@
 --
 --   pendiente → procesando → descargando → completada
 --                         ↘ error / sin_fuentes (se pueden reintentar desde «Mis descargas»)
+--   cancelada: la cancelaste desde «Mis descargas» o se borró a mano en RDT-Client
 --
 -- Se puede ejecutar entero en el SQL Editor de Supabase tantas veces como haga falta:
 -- lo que ya existe no se duplica ni se borra.
@@ -89,5 +90,36 @@ create index if not exists solicitudes_descarga_usuario_idx
 create index if not exists solicitudes_descarga_estado_idx
   on public.solicitudes_descarga (estado, creada_en);
 
--- 6) Que la API de Supabase vea los cambios al momento
+-- 6) Progreso de la descarga y cancelar desde la app
+--    El NAS copia aquí lo que le dice RDT-Client cada vez que revisa (cada INTERVAL segundos).
+alter table public.solicitudes_descarga
+  add column if not exists progreso  real    check (progreso is null or progreso between 0 and 100),
+  add column if not exists velocidad bigint  check (velocidad is null or velocidad >= 0),  -- bytes por segundo
+  add column if not exists eta       integer check (eta is null or eta >= 0),              -- segundos que faltan
+  add column if not exists tamano    bigint  check (tamano is null or tamano >= 0),        -- bytes
+  add column if not exists cancelar  boolean not null default false;                      -- lo marca la app; lo atiende el NAS
+
+-- Nuevo estado «cancelada»: la cancelaste desde la app o se borró a mano en RDT-Client.
+-- «not valid»: no revisa las filas que ya existen, solo las nuevas y las que cambien.
+alter table public.solicitudes_descarga drop constraint if exists solicitudes_descarga_estado_check;
+alter table public.solicitudes_descarga add constraint solicitudes_descarga_estado_check
+  check (estado in ('pendiente', 'procesando', 'descargando', 'completada', 'error', 'sin_fuentes', 'cancelada')) not valid;
+
+-- La app puede leer el progreso y pedir que se cancele (solo esa columna, y solo en sus filas)
+grant select (progreso, velocidad, eta, tamano, cancelar) on public.solicitudes_descarga to authenticated;
+grant update (cancelar) on public.solicitudes_descarga to authenticated;
+
+drop policy if exists "nas: cancelar las mías" on public.solicitudes_descarga;
+create policy "nas: cancelar las mías" on public.solicitudes_descarga
+  for update to authenticated
+  using (user_id = auth.uid() and estado in ('pendiente', 'procesando', 'descargando'))
+  with check (user_id = auth.uid());
+
+-- Las canceladas también se pueden quitar de la lista
+drop policy if exists "nas: quitar las mías" on public.solicitudes_descarga;
+create policy "nas: quitar las mías" on public.solicitudes_descarga
+  for delete to authenticated
+  using (user_id = auth.uid() and estado in ('pendiente', 'completada', 'error', 'sin_fuentes', 'cancelada'));
+
+-- 7) Que la API de Supabase vea los cambios al momento
 notify pgrst, 'reload schema';

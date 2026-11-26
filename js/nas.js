@@ -244,9 +244,11 @@
       completada:  {txt:'Completada',       grupo:'ok'},
       error:       {txt:'Error',            grupo:'mal'},
       sin_fuentes: {txt:'Sin fuentes',      grupo:'mal'},
+      cancelada:   {txt:'Cancelada',        grupo:'mal'},
     };
     const _nasEstado = e => _NAS_ESTADOS[e] || {txt:e||'Desconocido', grupo:'curso'};
-    const _nasMis = {filas:[], filtro:'todas', abiertos:new Set(), timer:null, cargando:false};
+    const _nasMis = {filas:[], filtro:'todas', abiertos:new Set(), timer:null, cargando:false, conProgreso:true};
+    const _NAS_COLS = 'id,tmdb_id,tipo,titulo,temporada,episodio,estado,fuente,error_mensaje,info_hash,creada_en,actualizada_en';
 
     async function abrirMisDescargas(){
       irA('p-nas');
@@ -266,9 +268,12 @@
       _nasMis.cargando = true;
       if(!silencioso) estado.textContent = 'Cargando…';
       try{
-        const {data, error} = await sb.from('solicitudes_descarga')
-          .select('id,tmdb_id,tipo,titulo,temporada,episodio,estado,fuente,error_mensaje,info_hash,creada_en,actualizada_en')
+        // Con progreso y cancelar (supabase/nas.sql, apartado 6). Si aún no existen esas columnas, sin ellas.
+        const leer = cols => sb.from('solicitudes_descarga').select(cols)
           .eq('user_id', sesionActual.user.id).order('creada_en', {ascending:false}).limit(1000);
+        let {data, error} = await leer(_NAS_COLS+',progreso,velocidad,eta,tamano,cancelar');
+        _nasMis.conProgreso = !error;
+        if(error && /progreso|velocidad|eta|tamano|cancelar|42703|PGRST204/i.test(String(error.message)+' '+error.code)) ({data, error} = await leer(_NAS_COLS));
         if(error) throw error;
         _nasMis.filas = data || [];
         estado.textContent = 'Actualizado a las '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'.';
@@ -325,9 +330,12 @@
           _nasDetalle(f0));
       }
       // Series (o varias peticiones del mismo título): barra de progreso y lista desplegable
-      const ok = g.filter(f=>f.estado==='completada').length, mal = g.filter(f=>_nasEstado(f.estado).grupo==='mal');
-      const resumen = `${g.length} ${g.length===1?'elemento':(serie?'capítulos':'peticiones')} · ${ok} completad${g.length===1?'o':'os'}`+(mal.length?` · ${mal.length} con problemas`:'');
-      const pct = Math.round(ok*100/g.length);
+      const ok = g.filter(f=>f.estado==='completada').length, mal = g.filter(f=>f.estado==='error' || f.estado==='sin_fuentes');
+      const bajando = g.filter(f=>f.estado==='descargando').length;
+      const resumen = `${g.length} ${g.length===1?'elemento':(serie?'capítulos':'peticiones')} · ${ok} completad${g.length===1?'o':'os'}`
+        +(bajando?` · ${bajando} descargando`:'')+(mal.length?` · ${mal.length} con problemas`:'');
+      const parcial = g.reduce((s,f)=>s+(f.estado==='descargando' && f.progreso>0 ? Math.min(f.progreso,100)/100 : 0),0);
+      const pct = Math.round((ok+parcial)*100/g.length);
       const orden = [...g].sort((a,b)=>(a.temporada??-1)-(b.temporada??-1)||(a.episodio??-1)-(b.episodio??-1)||String(a.creada_en).localeCompare(String(b.creada_en)));
       const det = _fEl('details',{class:'nas-det',open:_nasMis.abiertos.has(clave)},
         _fEl('summary',{text:'Ver '+(serie?'capítulos':'peticiones')}),
@@ -343,6 +351,31 @@
         acciones.childNodes.length ? acciones : null, det);
     }
 
+    // 3,2 MB/s · 1,4 GB · quedan 12 min
+    function _nasBytes(n){
+      if(!(n>0)) return '0 B';
+      const u=['B','KB','MB','GB','TB']; let i=0; while(n>=1024 && i<u.length-1){ n/=1024; i++; }
+      return n.toLocaleString('es-ES',{maximumFractionDigits: n<10&&i>1 ? 1 : 0})+' '+u[i];
+    }
+    function _nasQueda(seg){
+      if(!(seg>0)) return '';
+      if(seg<60) return 'menos de 1 min';
+      const h=Math.floor(seg/3600), m=Math.round((seg%3600)/60);
+      return h ? `${h} h ${m} min` : `${m} min`;
+    }
+    // Barra de progreso de una descarga en curso (datos que copia el NAS desde RDT-Client)
+    function _nasProgreso(f){
+      if(f.estado!=='descargando' || f.progreso==null) return null;
+      const pct = Math.max(0, Math.min(100, Number(f.progreso)||0));
+      const datos = [pct.toLocaleString('es-ES',{maximumFractionDigits:1})+' %'];
+      if(f.tamano) datos.push(_nasBytes(f.tamano*pct/100)+' de '+_nasBytes(f.tamano));
+      if(f.velocidad>0) datos.push(_nasBytes(f.velocidad)+'/s'); else datos.push('esperando velocidad');
+      const queda = _nasQueda(f.eta); if(queda) datos.push('quedan '+queda);
+      return _fEl('div',{class:'nas-prog'},
+        _fEl('div',{class:'nas-barra nas-barra-viva',role:'progressbar','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(Math.round(pct)),'aria-label':'Descargado'}, _fEl('i',{style:'width:'+pct+'%'})),
+        _fEl('span',{class:'nas-prog-txt',text:datos.join(' · ')}));
+    }
+
     // Datos de una solicitud y sus botones
     function _nasDetalle(f){
       const enMarcha = f.estado==='procesando' || f.estado==='descargando';
@@ -351,13 +384,41 @@
         'Pedido el '+_nasFecha(f.creada_en)+(f.actualizada_en && f.actualizada_en!==f.creada_en ? ' · último cambio el '+_nasFecha(f.actualizada_en) : ''),
       ];
       const acciones = _fEl('div',{class:'vid-acciones'});
-      if(_nasEstado(f.estado).grupo==='mal') acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar([f],e.currentTarget)},'↻ Reintentar'));
+      if(f.estado==='error' || f.estado==='sin_fuentes') acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar([f],e.currentTarget)},'↻ Reintentar'));
+      if(f.estado==='cancelada') acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar([f],e.currentTarget)},'↻ Volver a pedir'));
+      if(enMarcha && _nasMis.conProgreso && !f.cancelar) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasCancelar(f,e.currentTarget)},'✕ Cancelar descarga'));
       if(!enMarcha) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasQuitar(f,e.currentTarget)},'Quitar de la lista'));
+      let nota = null;
+      if(f.cancelar && enMarcha) nota = 'Cancelando: el NAS la borrará de RDT-Client en unos segundos.';
+      else if(enMarcha && !_nasMis.conProgreso) nota = 'Se está procesando en el NAS: no se puede quitar hasta que termine.';
       return _fEl('div',{class:'nas-info'},
+        _nasProgreso(f),
         ...lineas.map(t=>_fEl('span',{text:t})),
-        f.error_mensaje && _nasEstado(f.estado).grupo==='mal' ? _fEl('span',{class:'nas-err',text:'Motivo: '+f.error_mensaje}) : null,
-        enMarcha ? _fEl('span',{class:'nas-nota',text:'Se está procesando en el NAS: no se puede quitar hasta que termine.'}) : null,
+        f.error_mensaje && _nasEstado(f.estado).grupo==='mal' ? _fEl('span',{class:f.estado==='cancelada'?'':'nas-err',text:(f.estado==='cancelada'?'':'Motivo: ')+f.error_mensaje}) : null,
+        nota ? _fEl('span',{class:'nas-nota',text:nota}) : null,
         acciones.childNodes.length ? acciones : null);
+    }
+
+    // Los botones que borran o cancelan piden confirmación pulsando otra vez (sin ventanas del navegador)
+    function _nasConfirmado(btn){
+      if(btn.dataset.confirmar==='1') return true;
+      btn.dataset.confirmar = '1'; const txt = btn.textContent; btn.textContent = '¿Seguro? Pulsa otra vez';
+      setTimeout(()=>{ if(btn.isConnected){ btn.dataset.confirmar=''; btn.textContent = txt; } }, 3500);
+      return false;
+    }
+    // Cancelar = marcarla; el NAS borra el torrent de RDT-Client en su siguiente repaso
+    async function _nasCancelar(f, btn){
+      if(!_nasConfirmado(btn)) return;
+      btn.disabled = true;
+      try{
+        const {error} = await sb.from('solicitudes_descarga').update({cancelar:true}).eq('id', f.id).eq('user_id', sesionActual.user.id);
+        if(error) throw error;
+        f.cancelar = true;
+        pintarMisDescargas();
+        _nasAviso('Cancelando: el NAS la borrará de RDT-Client en unos segundos. Lo ya descargado no se borra.');
+      }catch(e){
+        console.error(e); btn.disabled = false; _nasAviso(_nasTextoError(e, 'No se pudo cancelar.'), true);
+      }
     }
 
     // Reintentar = volver a ponerla en la cola (copia nueva en «pendiente») y quitar la fallida
@@ -377,11 +438,7 @@
     }
     // Quitar pide confirmación pulsando dos veces (sin ventanas del navegador)
     async function _nasQuitar(f, btn){
-      if(btn.dataset.confirmar!=='1'){
-        btn.dataset.confirmar = '1'; const txt = btn.textContent; btn.textContent = '¿Seguro? Pulsa otra vez';
-        setTimeout(()=>{ if(btn.isConnected){ btn.dataset.confirmar=''; btn.textContent = txt; } }, 3500);
-        return;
-      }
+      if(!_nasConfirmado(btn)) return;
       btn.disabled = true;
       try{
         const {error} = await sb.from('solicitudes_descarga').delete().eq('id', f.id).eq('user_id', sesionActual.user.id);

@@ -6,6 +6,10 @@ que lee Plex) y va actualizando el estado de cada solicitud:
 
     pendiente → procesando → descargando → completada   (o error / sin_fuentes)
 
+Mientras descarga, copia el progreso, la velocidad y el tiempo restante para verlos en «Mis descargas».
+Si pides cancelar desde la app, borra el torrent de RDT-Client; si lo borras a mano en RDT-Client,
+la solicitud pasa a «cancelada».
+
 - Si en la app elegiste un torrent, la fila trae info_hash y se usa ese.
 - Si no, busca el mejor torrent en tus addons (ADDON_HINTS) según calidad, idioma y semillas.
 
@@ -181,24 +185,91 @@ def process(sol, sess):
         sb_patch("solicitudes_descarga", sol["id"], {"estado": "error" if fin else "pendiente", "error_mensaje": str(e)[:300]})
         log("error:", sol["titulo"], e)
 
-def comprobar_descargas(sess):
-    for sol in sb_get("solicitudes_descarga", {"estado": "eq.descargando", "select": "id,cliente_id"}):
+# ¿Existen ya las columnas de progreso y cancelar? (supabase/nas.sql, apartado 6)
+# Si no, el servicio sigue funcionando como antes, sin progreso ni cancelaciones.
+def columnas_nuevas():
+    try:
+        sb_get("solicitudes_descarga", {"select": "id,progreso,cancelar", "limit": "1"})
+        return True
+    except Exception:
+        log("Aviso: faltan las columnas de progreso/cancelar; ejecuta supabase/nas.sql para activarlas")
+        return False
+
+ETA_INFINITA = 8640000          # qBittorrent (y RDT-Client) usan este valor para «sin estimación»
+ESTADOS_ERROR = {"error", "missingFiles"}
+_ausencias = {}                 # id → revisiones seguidas en las que el torrent no aparece en RDT-Client
+
+def comprobar_descargas(sess, con_progreso):
+    campos = "id,cliente_id" + (",progreso" if con_progreso else "")
+    for sol in sb_get("solicitudes_descarga", {"estado": "eq.descargando", "select": campos}):
         try:
             r = sess.get(f"{RDT}/api/v2/torrents/info", params={"hashes": sol["cliente_id"]}, timeout=20)
+            r.raise_for_status()
             info = r.json()
-            if info and float(info[0].get("progress", 0)) >= 1:
-                sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada"})
+            if not info:
+                # No está en RDT-Client: se borró a mano. Se espera a no verlo dos veces seguidas
+                # por si RDT-Client aún no lo había registrado justo después de añadirlo.
+                _ausencias[sol["id"]] = _ausencias.get(sol["id"], 0) + 1
+                if _ausencias[sol["id"]] >= 2:
+                    _ausencias.pop(sol["id"], None)
+                    sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "error_mensaje": "Se borró en RDT-Client",
+                                                               **({"velocidad": None, "eta": None} if con_progreso else {})})
+                    log("borrada en RDT-Client:", sol["id"])
+                continue
+            _ausencias.pop(sol["id"], None)
+            t = info[0]
+            progreso = max(0.0, min(100.0, float(t.get("progress", 0)) * 100))
+            if progreso >= 100:
+                sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
+                                                           **({"progreso": 100, "velocidad": None, "eta": None} if con_progreso else {})})
+            elif t.get("state") in ESTADOS_ERROR:
+                sb_patch("solicitudes_descarga", sol["id"], {"estado": "error", "error_mensaje": f"RDT-Client: {t.get('state')}"})
+            elif con_progreso:
+                eta = t.get("eta")
+                sb_patch("solicitudes_descarga", sol["id"], {
+                    "progreso": round(progreso, 1),
+                    "velocidad": max(0, int(t.get("dlspeed") or 0)),
+                    "eta": int(eta) if isinstance(eta, (int, float)) and 0 <= eta < ETA_INFINITA else None,
+                    "tamano": int(t["size"]) if t.get("size") else None,
+                })
         except Exception as e:
             log("comprobación falló", type(e).__name__)
 
+# Cancelaciones pedidas desde «Mis descargas»: se borra el torrent de RDT-Client
+# (sin borrar archivos ya descargados) y la solicitud queda como «cancelada».
+def atender_cancelaciones(sess):
+    for sol in sb_get("solicitudes_descarga", {"cancelar": "is.true", "estado": "in.(pendiente,procesando,descargando)",
+                                               "select": "id,titulo,cliente_id,estado"}):
+        try:
+            if sol.get("cliente_id"):
+                r = sess.post(f"{RDT}/api/v2/torrents/delete", data={"hashes": sol["cliente_id"], "deleteFiles": "false"}, timeout=30)
+                if r.status_code != 200: raise RuntimeError(f"RDT-Client respondió {r.status_code}")
+            sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "cancelar": False, "velocidad": None, "eta": None,
+                                                       "error_mensaje": "Cancelada desde la app"})
+            log("cancelada:", sol["titulo"])
+        except Exception as e:
+            log("no se pudo cancelar", sol.get("titulo"), e)
+
 def main():
     log("CineMood NAS iniciado")
+    con_progreso = columnas_nuevas()
+    # Si el servicio se paró a medias, lo que quedó «procesando» vuelve a la cola
+    # (las que ya estaban «descargando» siguen en RDT-Client y se vuelven a seguir solas)
+    try:
+        for sol in sb_get("solicitudes_descarga", {"estado": "eq.procesando", "select": "id,titulo"}):
+            sb_patch("solicitudes_descarga", sol["id"], {"estado": "pendiente"})
+            log("vuelve a la cola:", sol["titulo"])
+    except Exception as e:
+        log("no se pudo revisar lo que quedó a medias:", e)
     while True:
         try:
             sess = rdt_session()
-            for sol in sb_get("solicitudes_descarga", {"estado": "eq.pendiente", "order": "creada_en.asc", "limit": "5", "select": "*"}):
+            if con_progreso: atender_cancelaciones(sess)
+            filtro = {"estado": "eq.pendiente", "order": "creada_en.asc", "limit": "5", "select": "*"}
+            if con_progreso: filtro["cancelar"] = "is.false"
+            for sol in sb_get("solicitudes_descarga", filtro):
                 process(sol, sess)
-            comprobar_descargas(sess)
+            comprobar_descargas(sess, con_progreso)
         except Exception as e:
             log("ciclo falló:", e)
         time.sleep(INTERVAL)

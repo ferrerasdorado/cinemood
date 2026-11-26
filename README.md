@@ -51,8 +51,15 @@ En la ficha de una película o serie:
 - No se repite lo que ya está en la cola. Los avisos salen dentro de la app, no en ventanas del navegador.
 
 **Tú → 📥 Mis descargas del NAS** muestra todo lo enviado, agrupado por título y con su estado
-(en cola, buscando torrent, descargando, completada, error o sin fuentes). Se actualiza sola cada 20 segundos
-y permite reintentar lo que falló o quitarlo de la lista.
+(en cola, buscando torrent, descargando, completada, error, sin fuentes o cancelada). Se actualiza sola
+cada 20 segundos. Lo que se está descargando lleva su barra con porcentaje, tamaño, velocidad y tiempo
+restante, que el NAS copia desde RDT-Client. Desde ahí se puede:
+
+- **Cancelar descarga**: el NAS borra el torrent de RDT-Client (sin borrar lo ya descargado).
+- **Reintentar** lo que falló o **volver a pedir** lo cancelado.
+- **Quitar de la lista** lo que ya no está en marcha.
+
+Si un torrent se borra a mano en RDT-Client, la solicitud pasa sola a «cancelada».
 
 ### Cómo funciona por dentro
 
@@ -72,9 +79,12 @@ App ──insert──▶ Supabase (solicitudes_descarga) ◀──lee y actuali
 - Del torrent elegido se guarda solo el hash, nunca el enlace: el enlace de un addon con debrid lleva
   dentro la clave privada de esa cuenta.
 
+Para entrar en RDT-Client desde fuera de casa, lo recomendable es una VPN como Tailscale en el NAS
+y en el móvil, en lugar de abrir su puerto en el router.
+
 ### Puesta en marcha del NAS
 
-1. Ejecuta `supabase/nas.sql` en el SQL Editor de Supabase.
+1. Ejecuta `supabase/nas.sql` en el SQL Editor de Supabase (se puede volver a ejecutar entero cuando cambie).
 2. En el NAS: `pip install -r nas/requirements.txt`, copia `nas/.env.example` como `.env`, rellénalo
    y arranca `python3 nas/cinemood_nas.py`.
 

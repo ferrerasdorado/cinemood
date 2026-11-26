@@ -66,11 +66,18 @@ function instalarDbFalsa() {
           if (r.info_hash != null && !/^([a-f0-9]{40}|[a-z2-7]{32})$/i.test(r.info_hash)) return { data: null, error: { code: '23514', message: 'info_hash check' } };
         }
         const ahora = new Date().toISOString();
-        st.filas.forEach(r => t.push({ id: 'id' + (sig++), user_id: sesionActual.user.id, estado: 'pendiente', error_mensaje: null, info_hash: null, fuente: null, creada_en: ahora, actualizada_en: ahora, ...r }));
+        st.filas.forEach(r => t.push({ id: 'id' + (sig++), user_id: sesionActual.user.id, estado: 'pendiente', error_mensaje: null, info_hash: null, fuente: null,
+          progreso: null, velocidad: null, eta: null, tamano: null, cancelar: false, creada_en: ahora, actualizada_en: ahora, ...r }));
+        return { data: null, error: null };
+      }
+      if (st.op === 'update') {
+        const extra = Object.keys(st.vals).filter(k => k !== 'cancelar');
+        if (extra.length) return { data: null, error: { code: '42501', message: 'permission denied (' + extra + ')' } };
+        t.filter(r => coincide(r) && ['pendiente', 'procesando', 'descargando'].includes(r.estado)).forEach(r => Object.assign(r, st.vals));
         return { data: null, error: null };
       }
       if (st.op === 'delete') {
-        const borrar = t.filter(r => coincide(r) && ['pendiente', 'completada', 'error', 'sin_fuentes'].includes(r.estado));
+        const borrar = t.filter(r => coincide(r) && ['pendiente', 'completada', 'error', 'sin_fuentes', 'cancelada'].includes(r.estado));
         db.solicitudes_descarga = t.filter(r => !borrar.includes(r));
         return { data: null, error: null };
       }
@@ -80,7 +87,8 @@ function instalarDbFalsa() {
     const api = new Proxy({}, { get(_, k) {
       if (k === 'then') return (res, rej) => Promise.resolve().then(run).then(res, rej);
       if (k === 'insert' || k === 'upsert') return filas => { st.op = k === 'insert' ? 'insert' : 'upsert'; st.filas = Array.isArray(filas) ? filas : [filas]; return api; };
-      if (k === 'delete' || k === 'update') return () => { st.op = k; return api; };
+      if (k === 'delete') return () => { st.op = k; return api; };
+      if (k === 'update') return v => { st.op = k; st.vals = v; return api; };
       if (k === 'eq') return (c, v) => { st.filtros.push(r => r[c] === v); return api; };
       if (k === 'in') return (c, vs) => { st.filtros.push(r => vs.includes(r[c])); return api; };
       if (k === 'maybeSingle' || k === 'single') return () => { st.uno = true; return api; };
@@ -227,7 +235,7 @@ function instalarDbFalsa() {
     const t = window.__db.solicitudes_descarga;
     t.find(f => f.tipo === 'movie').estado = 'completada';
     const e = t.find(f => f.temporada === 1 && f.episodio === 1); e.estado = 'error'; e.error_mensaje = 'RDT-Client respondió 500';
-    t.find(f => f.temporada === 2 && f.episodio === 1).estado = 'descargando';
+    Object.assign(t.find(f => f.temporada === 2 && f.episodio === 1), { estado: 'descargando', progreso: 42.5, velocidad: 3355443, eta: 720, tamano: 2147483648 });
     t.find(f => f.temporada === 3 && f.episodio === 1).estado = 'sin_fuentes';
   });
   await page.evaluate(() => irA('p-cuenta'));
@@ -241,19 +249,36 @@ function instalarDbFalsa() {
   await page.click('.nas-det summary');
   await esperar(300);
   ok(await page.isVisible('text=Motivo: RDT-Client respondió 500'), 'Se ve el motivo del error');
-  ok(await page.isVisible('text=no se puede quitar hasta que termine'), 'Lo que se está descargando no se puede quitar');
+  const prog = await page.locator('.nas-prog-txt').first().textContent();
+  ok(/42,5 %/.test(prog) && /3,2 MB\/s/.test(prog) && /quedan 12 min/.test(prog) && /de 2 GB/.test(prog), 'Progreso de la descarga: «' + prog + '»');
+  ok(await page.locator('.nas-item:has(.nas-prog) button:has-text("Quitar de la lista")').count() === 0, 'Lo que se está descargando no se puede quitar (se cancela)');
+  const cancelar = await page.$('button:has-text("Cancelar descarga")');
+  await cancelar.click(); await esperar(200);
+  ok((await cancelar.textContent()).includes('¿Seguro?'), 'Cancelar pide confirmación');
+  await cancelar.click(); await esperar(800);
+  ok((await db()).find(f => f.temporada === 2 && f.episodio === 1).cancelar === true, 'Cancelar marca la solicitud para que el NAS la borre de RDT-Client');
+  ok(await page.isVisible('text=Cancelando: el NAS la borrará'), 'Se indica que se está cancelando');
+  await foto('8b-cancelando');
   await foto('8-mis-descargas-detalle');
+  // El NAS la da por cancelada (o se borró a mano en RDT-Client): se puede volver a pedir o quitar
+  await page.evaluate(() => { const r = window.__db.solicitudes_descarga.find(f => f.temporada === 2 && f.episodio === 1); Object.assign(r, { estado: 'cancelada', cancelar: false, error_mensaje: 'Se borró en RDT-Client' }); });
+  await page.click('button:has-text("Actualizar")'); await esperar(600);
+  ok(await page.isVisible('text=Se borró en RDT-Client') && await page.isVisible('button:has-text("Volver a pedir")'), 'Una descarga borrada en RDT-Client sale como cancelada y se puede volver a pedir');
   await page.click('button:has-text("Reintentar los 2 con problemas")');
   await esperar(1000);
   filas = await db();
   ok(filas.filter(f => f.estado === 'error' || f.estado === 'sin_fuentes').length === 0 && filas.length === 63, 'Reintentar vuelve a poner en cola los fallidos');
+  await page.click('.nas-chip:has-text("Con problemas")'); await esperar(300);
+  const quitarCancelada = await page.$('button:has-text("Quitar de la lista")');
+  await quitarCancelada.click(); await esperar(200); await quitarCancelada.click(); await esperar(800);
+  ok((await db()).length === 62 && !(await db()).some(f => f.estado === 'cancelada'), 'La cancelada se quita de la lista');
   await page.click('.nas-chip:has-text("Completadas")');
   await esperar(300);
   const quitar = await page.$('button:has-text("Quitar de la lista")');
   await quitar.click(); await esperar(200);
   ok((await quitar.textContent()).includes('¿Seguro?'), 'Quitar pide confirmación');
   await quitar.click(); await esperar(800);
-  ok((await db()).length === 62, 'Quitar borra la fila tras confirmar');
+  ok((await db()).length === 61, 'Quitar borra la fila tras confirmar');
 
   // 7) Reproductor embebido con un vídeo directo (webm de prueba)
   await page.evaluate(() => reproducirFuente({ url: location.origin + '/_prueba.webm', name: 'Prueba', description: '' }, { tipo: 'movie', tmdbId: 603, titulo: 'Prueba', fuente: 'Prueba' }));
