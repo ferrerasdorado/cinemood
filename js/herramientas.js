@@ -314,12 +314,12 @@
     }
     async function escanerVivo(){
       if(!sesionActual){ mostrarCuenta(); return; }
-      if(!navigator.mediaDevices?.getUserMedia){ alert('Este navegador no deja usar la cámara. Usa una captura o foto.'); return; }
+      if(!navigator.mediaDevices?.getUserMedia){ _aviso('Este navegador no deja usar la cámara. Usa una captura o foto.', true); return; }
       const caja = document.getElementById('esc-vivo'), video = document.getElementById('esc-video'), est = document.getElementById('esc-vivo-estado');
       document.getElementById('esc-res').innerHTML = ''; document.getElementById('esc-estado').innerHTML = '';
       try{
         window._escStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1440}}, audio:false});
-      }catch(e){ alert('No se ha podido abrir la cámara. Revisa el permiso de cámara para CineMood (o Safari) en Ajustes del iPhone.'); return; }
+      }catch(e){ _aviso('No se ha podido abrir la cámara. Revisa el permiso de cámara para CineMood (o Safari) en Ajustes del iPhone.', true); return; }
       video.srcObject = window._escStream; caja.hidden = false; document.getElementById('esc-btn-camara').style.display = 'none';
       caja.querySelector('.esc-chips')?.remove(); document.getElementById('esc-vivo-res').innerHTML = '';
       try{ await video.play(); }catch(e){}
@@ -672,7 +672,7 @@
       const c = window._sgActual; if(!c) return;
       const txt = `${c[0].name} y ${c[c.length-1].name} están a ${_sg.grados} ${_sg.grados===1?'grado':'grados'}:\n` + c.map((x,i)=>i%2 ? `   🎬 ${x.title} (${_sgAnio(x)})` : `👤 ${x.name}`).join('\n') + `\n\nDescubierto con CineMood 🔗`;
       try{ if(navigator.share){ await navigator.share({text: txt}); return; } }catch(e){ return; }
-      try{ await navigator.clipboard.writeText(txt); alert('Copiado: pégalo donde quieras.'); }catch(e){ prompt('Copia el camino:', txt); }
+      try{ await navigator.clipboard.writeText(txt); _aviso('Copiado: pégalo donde quieras.'); }catch(e){ _mostrarParaCopiar('Copia el camino:', txt); }
     }
 
     // ── el juego: llega tú de A a B saltando de película en película

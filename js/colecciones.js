@@ -249,7 +249,7 @@
     }
     async function colBorrarActual(){
       const col = _colEditando; if(!col) return;
-      if(!confirm(`¿Borrar la colección «${col.nombre}»? Los títulos no se borran de tu lista.`)) return;
+      if(!(await _confirmar(`¿Borrar la colección «${col.nombre}»? Los títulos no se borran de tu lista.`, {aceptar:'Borrar', peligro:true}))) return;
       window.misColecciones = window.misColecciones.filter(x=>x!==col);
       colGuardarLocal();
       if(sesionActual && window._colNube !== false && !String(col.id).startsWith('local-')){

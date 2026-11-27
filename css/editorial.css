@@ -2,7 +2,7 @@
     /* ═════════════ REDISEÑO EDITORIAL ═════════════
        Fondo cálido, superficies claras, acento rojo y franjas oscuras
        solo donde hay imagen (tiles de Especiales, cabecera de la ficha). */
-    :root { --accent-texto: var(--acento); --bg:#f5f3ef; --surface:#fffefb; --surface-2:#f1efe6; --ink:#202221; --muted:#61635e; --faint:#767973; --line:#dedfd8; --dark:#1b1d1c; --dark-2:#262927; --dark-muted:#b7bbb5; --accent:var(--acento); --accent-hover:var(--acento-osc); --accent-soft:#f6e6df; --accent-ink:var(--acento-osc); --accent-light:#e4675f; --green:#3d6651; --green-soft:#e7ede5; }
+    :root { --accent-texto: var(--acento); --bg:#f5f3ef; --surface:#fffefb; --surface-2:#f1efe6; --ink:#202221; --muted:#61635e; --faint:#676964; --line:#dedfd8; --dark:#1b1d1c; --dark-2:#262927; --dark-muted:#b7bbb5; --accent:var(--acento); --accent-hover:var(--acento-osc); --accent-soft:#f6e6df; --accent-ink:var(--acento-osc); --accent-light:#e4675f; --green:#3d6651; --green-soft:#e7ede5; }
     html { -webkit-font-smoothing: antialiased; }
     :root { --acento:#b52c29; --acento-rgb:181,44,41; --acento-osc:#9c2723; --acento-claro:#e4675f; }
     :root[data-acento] { --k-f6e6df: color-mix(in srgb, var(--acento) 13%, #fffefb); --accent-light: var(--acento-claro); }
@@ -349,7 +349,7 @@
   
     /* ═════════════ MODO OSCURO (botón 🌙/☀️) ═════════════
        Los colores claros fijos usan variables --k-xxxxxx que en modo claro valen lo mismo que antes. */
-    :root { color-scheme: light; --k-e4e1d9:#e4e1d9;--k-e7ede5:#e7ede5;--k-e9e7e0:#e9e7e0;--k-e9e9e3:#e9e9e3;--k-ece9e2:#ece9e2;--k-f5f3ef:#f5f3ef;--k-f6e6df:#f6e6df;--k-fffefb:#fffefb;--k-202221:#202221;--k-303330:#303330;--k-3d6651:#3d6651;--k-3f5e4c:#3f5e4c;--k-4d514a:#4d514a;--k-50554d:#50554d;--k-61635e:#61635e;--k-6b6e68:#6b6e68;--k-767973:#767973;--k-8a8d86:#8a8d86;--k-9a9d96:#9a9d96;--k-9c2723:var(--acento-osc);--k-b3b7ad:#b3b7ad;--k-c4c6bd:#c4c6bd;--k-dcddd5:#dcddd5;--k-dedfd8:#dedfd8; }
+    :root { color-scheme: light; --k-e4e1d9:#e4e1d9;--k-e7ede5:#e7ede5;--k-e9e7e0:#e9e7e0;--k-e9e9e3:#e9e9e3;--k-ece9e2:#ece9e2;--k-f5f3ef:#f5f3ef;--k-f6e6df:#f6e6df;--k-fffefb:#fffefb;--k-202221:#202221;--k-303330:#303330;--k-3d6651:#3d6651;--k-3f5e4c:#3f5e4c;--k-4d514a:#4d514a;--k-50554d:#50554d;--k-61635e:#61635e;--k-6b6e68:#5c5f59;--k-767973:#62645e;--k-8a8d86:#6d706a;--k-9a9d96:#9a9d96;--k-9c2723:var(--acento-osc);--k-b3b7ad:#b3b7ad;--k-c4c6bd:#c4c6bd;--k-dcddd5:#dcddd5;--k-dedfd8:#dedfd8; }
     :root[data-theme="dark"] { color-scheme: dark; --k-e4e1d9:#2e322f;--k-e7ede5:#1e2a22;--k-e9e7e0:#2a2d2b;--k-e9e9e3:#2a2d2b;--k-ece9e2:#262927;--k-f5f3ef:#121413;--k-f6e6df:#3a1f1c;--k-fffefb:#1c1f1d;--k-202221:#ecebe6;--k-303330:#dcdbd5;--k-3d6651:#8cc7a3;--k-3f5e4c:#9fd0b3;--k-4d514a:#c6c8c1;--k-50554d:#c0c3bb;--k-61635e:#aeb1aa;--k-6b6e68:#a3a69f;--k-767973:#979a93;--k-8a8d86:#8e918a;--k-9a9d96:#8a8d86;--k-9c2723:#f08a82;--k-b3b7ad:#4a4f4b;--k-c4c6bd:#444845;--k-dcddd5:#333734;--k-dedfd8:#333734;
         --bg:#121413; --surface:#1c1f1d; --surface-2:#222523; --ink:#ecebe6; --muted:#aeb1aa; --faint:#979a93; --line:#333734;
         --dark:#0b0c0c; --dark-2:#191b1a; --accent-soft:#3a1f1c; --accent-ink:#f08a82; }

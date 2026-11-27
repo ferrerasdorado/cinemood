@@ -135,11 +135,11 @@
     }
     async function adminCopiar(btn){
       try{ await navigator.clipboard.writeText(window._admTexto || ''); btn.textContent = '✓ Copiado'; }
-      catch(e){ prompt('Copia estos datos:', window._admTexto || ''); }
+      catch(e){ _mostrarParaCopiar('Copia estos datos:', window._admTexto || ''); }
     }
     async function adminClave(i, btn){
       const u = _admUsuarios[i]; if(!u) return;
-      const nueva = prompt(`Nueva contraseña para ${u.email} (mín. 8 caracteres):`, _admClaveNueva());
+      const nueva = await _pedirTexto(`Nueva contraseña para ${u.email} (mínimo 8 caracteres):`, {valor:_admClaveNueva(), aceptar:'Cambiar'});
       if(nueva==null) return;
       if(nueva.length < 8){ _admMsg('La contraseña tiene que tener al menos 8 caracteres.', 'mal'); return; }
       btn.disabled = true;
@@ -152,7 +152,7 @@
     }
     async function adminNombre(i, btn){
       const u = _admUsuarios[i]; if(!u) return;
-      const nuevo = prompt(`Nombre para ${u.email} (sale como «Hola, …» al entrar). Déjalo vacío para quitarlo:`, u.nombre || '');
+      const nuevo = await _pedirTexto(`Nombre para ${u.email} (sale como «Hola, …» al entrar). Déjalo vacío para quitarlo:`, {valor:u.nombre || '', aceptar:'Guardar'});
       if(nuevo==null) return;
       btn.disabled = true;
       try{
@@ -164,14 +164,14 @@
     }
     async function adminBloquear(i, btn){
       const u = _admUsuarios[i]; if(!u) return;
-      if(!u.bloqueado && !confirm(`¿Bloquear a ${u.email}? No podrá volver a iniciar sesión hasta que lo desbloquees.`)) return;
+      if(!u.bloqueado && !(await _confirmar(`¿Bloquear a ${u.email}? No podrá volver a iniciar sesión hasta que lo desbloquees.`, {aceptar:'Bloquear', peligro:true}))) return;
       btn.disabled = true;
       try{ await _adminApi({accion:'bloquear', id:u.id, si:!u.bloqueado}); _admMsg(u.bloqueado ? `✅ ${_escHtml(u.email)} ya puede volver a entrar.` : `⛔ ${_escHtml(u.email)} está bloqueado.`, 'ok'); adminCargar(); }
       catch(e){ _admMsg(_escHtml(e.message), 'mal'); btn.disabled = false; }
     }
     async function adminBorrar(i, btn){
       const u = _admUsuarios[i]; if(!u) return;
-      if(!confirm(`¿Borrar la cuenta de ${u.email}? Se pierden sus listas y notas, y no se puede deshacer.`)) return;
+      if(!(await _confirmar(`¿Borrar la cuenta de ${u.email}? Se pierden sus listas y notas, y no se puede deshacer.`, {aceptar:'Borrar la cuenta', peligro:true}))) return;
       btn.disabled = true;
       try{ await _adminApi({accion:'borrar', id:u.id}); _admMsg(`🗑️ Cuenta de ${_escHtml(u.email)} borrada.`, 'ok'); adminCargar(); }
       catch(e){ _admMsg(_escHtml(e.message), 'mal'); btn.disabled = false; }
@@ -179,6 +179,9 @@
     // ══ AVISOS EN EL MÓVIL (Web Push): episodios de hoy, novedades que te van a encantar y el estreno del finde ══
     const VAPID_PUBLICO = 'BInIGCCADygEMmBV-jFsbqkZV4vjoBmt2Yg6aacYn5Ts6d_MsKhWZLQk7j2uAA2c7XYWgphnU5wx1ZT3GGx7Css';
     const _avisosTipos = [['episodios','📺 Cuando salga un episodio nuevo de tus series'],['llegadas','🔮 Cuando llegue a una plataforma algo que te va a encantar'],['estrenos','🍿 Los viernes, el estreno de cine que más encaja contigo']];
+    // Aviso de descarga terminada en el NAS: activado salvo que se desactive (se guarda como «sin-descargas»,
+    // así las cuentas que ya tenían sus tipos guardados lo reciben sin tener que volver a marcarlo)
+    const _AVISO_DESCARGAS = ['descargas','📥 Cuando termine una descarga en el NAS'];
     const _avisosOn = () => { try{ return localStorage.getItem('cm:avisosOn')==='1'; }catch(e){ return false; } };
     const _esIOS = () => /iPhone|iPad|iPod/.test(navigator.userAgent);
     const _instalada = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true;
@@ -212,6 +215,7 @@
       const perfil = await _avisosPerfilLeer() || {}, tipos = perfil.tipos || _avisosTipos.map(x=>x[0]), plats = perfil.plats || [];
       box.innerHTML = `<div class="avisos-ok">✓ Avisos activados en este móvil</div>
         ${_avisosTipos.map(([k,t])=>`<label class="ml-preferencia"><input type="checkbox" ${tipos.includes(k)?'checked':''} onchange="avisosTipo('${k}', this.checked)"> ${t}</label>`).join('')}
+        <label class="ml-preferencia"><input type="checkbox" ${tipos.includes('sin-descargas')?'':'checked'} onchange="avisosTipo('descargas', this.checked)"> ${_AVISO_DESCARGAS[1]}</label>
         <div class="section-label" style="margin-top:12px">¿De qué plataformas? <span style="text-transform:none;letter-spacing:0;font-weight:500">(sin marcar ninguna: de cualquiera)</span></div>
         <div class="noche-chips">${DESC_PLATAFORMAS.filter(([id])=>id).map(([id,n])=>`<button type="button" class="noche-chip${plats.includes(id)?' activo':''}" onclick="avisosPlat('${id}', this)">${_escHtml(n)}</button>`).join('')}</div>
         <div class="avisos-btns"><button type="button" class="ml-secundario" onclick="avisosPrueba(this)">Enviarme uno de prueba</button><button type="button" class="ml-secundario" onclick="desactivarAvisos(this)">Desactivar</button></div>`;
@@ -231,11 +235,12 @@
         try{ localStorage.setItem('cm:avisosOn','1'); }catch(e){}
         await _modeloNotaObtener().catch(()=>null);
         await _avisosSubirPerfil(); // sin plataformas marcadas = avisos de cualquiera
-      }catch(e){ alert('No se pudieron activar los avisos. Inténtalo de nuevo.'); }
+      }catch(e){ _aviso('No se pudieron activar los avisos. Inténtalo de nuevo.', true); }
       _avisosPintar();
     }
     async function avisosTipo(k, on){
       const p = await _avisosPerfilLeer() || {}; let t = p.tipos || _avisosTipos.map(x=>x[0]);
+      if(k==='descargas'){ k = 'sin-descargas'; on = !on; }
       t = on ? [...new Set([...t, k])] : t.filter(x=>x!==k);
       try{ await sb.from('push_perfil').upsert({user_id:sesionActual.user.id, tipos:t}, {onConflict:'user_id'}); }catch(e){}
     }
@@ -396,6 +401,6 @@
         const archivo = new File([blob], 'mi-adn-de-cine.png', {type:'image/png'});
         if(navigator.canShare && navigator.canShare({files:[archivo]})){ try{ await navigator.share({files:[archivo], title:'Mi ADN de cine · CineMood'}); }catch(e){} }
         else { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = archivo.name; a.click(); setTimeout(()=>URL.revokeObjectURL(u), 3000); }
-      }catch(e){ alert('No se pudo generar la imagen. Inténtalo de nuevo.'); }
+      }catch(e){ _aviso('No se pudo generar la imagen. Inténtalo de nuevo.', true); }
       finally{ btn.textContent = original; }
     }

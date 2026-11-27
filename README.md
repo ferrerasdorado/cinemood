@@ -18,9 +18,10 @@ css/                  Estilos, en el orden en que se aplican
   editorial.css       Rediseño editorial, cabecera fija, menú inferior y modo oscuro
   fuentes-nas.css     Hoja «Ver», NAS, «Mis descargas», addons y vídeos
   acceso.css          Pantalla de entrada
-js/                   Lógica, un archivo por apartado (nucleo, navegacion, descubre, ficha, fuentes,
-                      reproductor, subtitulos, hosters, nas, cuenta…). Se cargan como scripts clásicos y
-                      comparten el ámbito global.
+  componentes.css     Avisos, diálogos, foco con teclado y ajustes comunes (ficha, Mi lista, Tú, Acerca de)
+js/                   Lógica, un archivo por apartado (nucleo, dialogos, accesibilidad, navegacion,
+                      descubre, ficha, fuentes, reproductor, subtitulos, hosters, nas, cuenta…). Se cargan
+                      como scripts clásicos y comparten el ámbito global.
   app.js              Lo único que se ejecuta al cargar, en orden. Se carga después de los demás,
                       así todas las funciones ya existen cuando arranca.
 sw.js                 Service worker: abre la app al instante y avisa cuando hay versión nueva
@@ -86,6 +87,11 @@ restante, que el NAS copia desde RDT-Client. Desde ahí se puede:
 Si un torrent desaparece de RDT-Client (que suele quitarlo al terminar), la solicitud pasa a «completada»
 si ya iba por el 95 % o más, y a «cancelada» si se borró a medias.
 
+- **Atascada**: si una descarga lleva `ATASCO_MIN` minutos (15 por defecto) sin avanzar, sale marcada y con
+  **«Probar con otro torrent»**: se cancela y se vuelve a pedir; el NAS descarta los torrents que ya fallaron.
+- **Aviso al móvil al terminar** («📥 Descarga terminada»), desactivable en Tú → Ajustes → Avisos. Lo manda el
+  NAS a través de la función `supabase/functions/cinemood-avisos` (hay que publicarla, ver abajo).
+
 ### Cómo funciona por dentro
 
 ```
@@ -107,9 +113,19 @@ App ──insert──▶ Supabase (solicitudes_descarga) ◀──lee y actuali
 Para entrar en RDT-Client desde fuera de casa, lo recomendable es una VPN como Tailscale en el NAS
 y en el móvil, en lugar de abrir su puerto en el router.
 
+### Accesibilidad y detalles de interfaz
+
+- Se puede hacer zoom; en iPhone los campos de texto van a 16 px para que Safari no amplíe solo.
+- Todo lo que se pulsa funciona con teclado y lector de pantalla (`js/accesibilidad.js`); foco visible.
+- Sin ventanas del navegador: avisos, confirmaciones y campos propios de la app (`js/dialogos.js`).
+- Géneros de series que TMDB no traduce («Action & Adventure»…) se traducen al recibirlos (`js/app.js`).
+- Contraste mínimo de 4,5 en textos, en modo claro y oscuro.
+
 ### Puesta en marcha del NAS
 
 1. Ejecuta `supabase/nas.sql` en el SQL Editor de Supabase (se puede volver a ejecutar entero cuando cambie).
+1. Para el aviso al terminar una descarga: en Supabase → Edge Functions → `cinemood-avisos`, pega el contenido
+   de `supabase/functions/cinemood-avisos/index.ts` y pulsa Deploy.
 2. En el NAS: `pip install -r nas/requirements.txt`, copia `nas/.env.example` como `.env`, rellénalo
    y arranca `python3 nas/cinemood_nas.py`.
 

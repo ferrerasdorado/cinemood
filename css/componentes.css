@@ -1,0 +1,84 @@
+/* CineMood · Componentes comunes: avisos, diálogos y foco visible con teclado */
+
+/* Aviso flotante (js/dialogos.js · _aviso) */
+.cm-aviso{align-items:flex-start}
+.cm-aviso span{white-space:normal;line-height:1.4}
+.cm-aviso.error{background:#5c1a16}
+.cm-aviso button{flex-shrink:0;background:none;border:0;color:inherit;font-size:15px;cursor:pointer;padding:0 2px;opacity:.8}
+
+/* Diálogo modal (confirmar, pedir un texto, mostrar algo para copiar) */
+.cm-dlg-fondo{position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+.cm-dlg{width:100%;max-width:400px;background:var(--bg);color:var(--ink);border-radius:16px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.cm-dlg-tit{margin:0 0 8px;font-size:17px;font-weight:800}
+.cm-dlg-txt{margin:0 0 16px;font-size:15px;line-height:1.45;color:var(--ink)}
+.cm-dlg-campo{display:block;width:100%;box-sizing:border-box;margin:0 0 16px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-family:inherit;font-size:16px;resize:vertical}
+.cm-dlg-botones{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.cm-dlg-btn{min-height:42px;padding:8px 16px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.cm-dlg-btn.prim{background:var(--accent);border-color:var(--accent);color:#fff}
+.cm-dlg-btn.prim.peligro{background:#b3261e;border-color:#b3261e}
+
+/* Foco visible al moverse con el teclado (sin marcar al tocar con el dedo o el ratón) */
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+[role="button"]{cursor:pointer}
+
+/* En iPhone, un campo con letra de menos de 16 px hace que Safari amplíe la página al tocarlo.
+   Ahora que se permite el zoom, los campos van a 16 px solo allí. */
+@supports (-webkit-touch-callout: none){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea{font-size:16px !important}
+}
+
+/* Pantalla «Tú» */
+.tu-email{margin-bottom:16px;font-size:14px;color:var(--ink);word-break:break-all}
+.tu-pie{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;padding-top:16px;border-top:1px solid var(--line)}
+.tu-pie .ml-secundario{flex:1 1 160px}
+
+/* Pantalla «Acerca de» */
+.acerca{font-size:14px;line-height:1.55;color:var(--ink)}
+.acerca p{margin:0 0 14px}
+.acerca ul{margin:0 0 16px;padding-left:18px}
+.acerca li{margin-bottom:6px}
+.acerca .section-label{margin-top:18px}
+.acerca-marca{display:flex;align-items:center;gap:14px;margin:4px 0 16px}
+.acerca-marca img{border-radius:14px}
+.acerca-marca b{display:block;font-size:20px;font-weight:800}
+.acerca-marca span{font-size:13px;color:var(--muted)}
+.acerca-tmdb{display:flex;align-items:center;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+
+/* Ficha: las 6 acciones en dos filas de 3 en el móvil (antes, 6 en una fila con los textos cortados) */
+@media (max-width:520px){
+  #d-acciones{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  #d-acciones .d-accion-btn{padding:10px 4px;font-size:12px}
+  #d-acciones .d-accion-btn span:last-child{white-space:normal;overflow:visible}
+}
+/* Ficha: «Tu nota» con los 10 números siempre a la vista */
+#d-puntuacion-row{overflow:visible;padding:0;margin-bottom:16px}
+.d-punt-tit{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.d-punt-escala{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;max-width:440px}
+.d-punt-escala .d-punto{width:auto;height:auto;aspect-ratio:1;max-width:40px;padding:0;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;justify-self:center;width:100%}
+
+/* Mi lista: filtros plegados, atajos en una fila y botones pequeños en cada título */
+.ml-mas{margin:0 0 10px}
+.ml-mas>summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--accent-texto);padding:6px 0;width:max-content}
+.ml-mas>summary span{color:var(--muted);font-weight:600}
+.ml-mas[open]>summary{margin-bottom:8px}
+.ml-atajos{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.ml-atajos .cta-btn{margin:0;flex:1 1 100%;min-height:44px;padding:10px 14px}
+.ml-atajos .ml-secundario{flex:1 1 150px;margin:0}
+.ml-fila-acciones{gap:6px}
+.ml-fila-acciones .ml-mini{min-height:34px;padding:6px 12px;font-size:13px;font-weight:700;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
+.ml-fila-acciones .ml-mini.ok{border-color:var(--accent);color:var(--accent-texto)}
+
+/* Ficha sin póster: hueco con el icono de la app en lugar de una imagen rota */
+.d-poster-wrap.sin-poster{position:relative;background:var(--surface-2);border-radius:8px}
+.d-poster-wrap.sin-poster img{visibility:hidden}
+.d-poster-wrap.sin-poster::after{content:"🎬";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:34px;opacity:.6}
+
+/* Enlaces de texto sin estilo propio: color de la app en lugar del azul por defecto del navegador */
+.wrap a:not([class]){color:var(--accent-texto);text-decoration-thickness:1px;text-underline-offset:2px}
+
+/* Utilidades que antes iban escritas a mano en el HTML */
+.txt-suave{color:var(--k-767973);font-size:13px}
+.txt-suave-peq{color:var(--k-767973);font-size:10px;font-weight:400}
+.mb-0{margin-bottom:0}
+.mb-10{margin-bottom:10px}
+.mb-12{margin-bottom:12px}

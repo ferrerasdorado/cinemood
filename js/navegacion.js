@@ -16,7 +16,7 @@
     }
     let _cabRaf = null;
     const _TAB_DE_PANTALLA = {'p-descubre':'descubre','p-descubre-todo':'descubre','p-buscar':'buscar','p-inicio':'inicio','p-comparador':'inicio','p-biblioteca':'milista','p-resumen':'cuenta','p-especiales-hub':'descubre','p-explorar':'descubre','p-especial':'descubre','p-escaner':'buscar','p-mundial':'inicio','p-noche':'inicio',
-      'p-cuenta':'cuenta','p-puntuar':'cuenta','p-logros':'cuenta','p-ranking':'cuenta','p-addons':'cuenta','p-videos':'cuenta','p-nas':'cuenta','p-estadisticas':'cuenta','p-wrapped':'cuenta','p-actividad':'cuenta','p-perfil-gusto':'cuenta','p-evolucion-gusto':'cuenta','p-mapa-cine':'cuenta','p-nueva-password':'cuenta'};
+      'p-cuenta':'cuenta','p-puntuar':'cuenta','p-logros':'cuenta','p-ranking':'cuenta','p-addons':'cuenta','p-videos':'cuenta','p-nas':'cuenta','p-acerca':'cuenta','p-estadisticas':'cuenta','p-wrapped':'cuenta','p-actividad':'cuenta','p-perfil-gusto':'cuenta','p-evolucion-gusto':'cuenta','p-mapa-cine':'cuenta','p-nueva-password':'cuenta'};
     function _tabActualizar(id){
       const t = _TAB_DE_PANTALLA[id]; if(!t) return;   // en fichas y personas se mantiene la pestaña de la que vienes
       document.querySelectorAll('#tabbar .tab').forEach(b=>b.classList.toggle('activo', b.dataset.tab===t));

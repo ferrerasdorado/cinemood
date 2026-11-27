@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>CineMood</title>
+  <meta name="description" content="CineMood: qué ver según tu estado de ánimo, tu lista de películas y series, y fuentes para verlas o descargarlas en tu NAS.">
   <link rel="manifest" href="manifest.json">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,9 +21,10 @@
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css?v=e142d82b">
-  <link rel="stylesheet" href="css/editorial.css?v=c46a78e2">
-  <link rel="stylesheet" href="css/fuentes-nas.css?v=c76ac300">
+  <link rel="stylesheet" href="css/editorial.css?v=fffa323c">
+  <link rel="stylesheet" href="css/fuentes-nas.css?v=fca22c89">
   <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
+  <link rel="stylesheet" href="css/componentes.css?v=164923b8">
 </head>
 <body class="sin-sesion">
 <div id="splash" aria-hidden="true">
@@ -74,8 +76,8 @@
   <nav class="pc-nav">
     <div class="pc-nav-logo"><svg class="cm-logo" aria-hidden="true"><use href="#cm-logo"/></svg><span>Cine<b>Mood</b></span><span class="saludo" id="saludo-pc"></span></div>
     <div class="pc-nav-busqueda">
-      <input type="text" id="pc-busqueda-input" placeholder="Buscar película o serie..." onkeydown="if(event.key==='Enter') buscarDesdeNav()">
-      <button onclick="buscarDesdeNav()">Buscar</button>
+      <input aria-label="Buscar película o serie..." type="text" id="pc-busqueda-input" placeholder="Buscar película o serie..." onkeydown="if(event.key==='Enter') buscarDesdeNav()">
+      <button type="button" onclick="buscarDesdeNav()">Buscar</button>
     </div>
     <div class="pc-nav-actions">
       <div class="pc-nav-btn" onclick="irA('p-inicio')">Inicio</div>
@@ -115,8 +117,8 @@
       <div id="tu-semana" style="display:none"></div>
       <div id="para-ti-wrap" style="display:none">
         <div id="para-ti-pelis-wrap" style="display:none">
-          <div class="result-header" style="margin-bottom:10px">
-            <div class="section-label" style="margin-bottom:0">🎬 Para ti · Películas</div>
+          <div class="result-header mb-10">
+            <div class="section-label mb-0">🎬 Para ti · Películas</div>
             <div class="btn-otras" onclick="refrescarParaTi('movie')">Ver otras ↻</div>
           </div>
           <div class="scroll-wrap">
@@ -126,8 +128,8 @@
           </div>
         </div>
         <div id="para-ti-series-wrap" style="display:none;margin-top:20px">
-          <div class="result-header" style="margin-bottom:10px">
-            <div class="section-label" style="margin-bottom:0">📺 Para ti · Series</div>
+          <div class="result-header mb-10">
+            <div class="section-label mb-0">📺 Para ti · Series</div>
             <div class="btn-otras" onclick="refrescarParaTi('tv')">Ver otras ↻</div>
           </div>
           <div class="scroll-wrap">
@@ -169,7 +171,7 @@
       
       <div class="section-label">Género</div>
       <div class="genre-grid" id="genre-grid"></div>
-      <div class="section-label">Puntuación mínima <span style="color:var(--k-767973);font-size:10px;font-weight:400">(opcional)</span></div>
+      <div class="section-label">Puntuación mínima <span class="txt-suave-peq">(opcional)</span></div>
       <div class="punt-row">
         <div class="punt-chip" data-min="6" data-max="7.9" onclick="togglePunt(this)">Buena 6–8 ⭐⭐</div>
         <div class="punt-chip" data-min="8" data-max="10" onclick="togglePunt(this)">Excelente +8 ⭐⭐⭐</div>
@@ -180,7 +182,7 @@
         <div class="year-row"><span class="year-label">1950</span><input type="range" class="year-slider" id="year-hasta" min="1950" max="2026" value="2026" oninput="actualizarAnos()"><span class="year-label">2026</span></div>
         <div class="year-values"><span class="year-val">Desde <span id="val-desde">1990</span></span><span class="year-val">Hasta <span id="val-hasta">2026</span></span></div>
       </div>
-      <div class="section-label" style="display:none">Disponible en <span style="color:var(--k-767973);font-size:10px;font-weight:400">(opcional)</span></div>
+      <div class="section-label" style="display:none">Disponible en <span class="txt-suave-peq">(opcional)</span></div>
       <div class="platform-grid" style="display:none">
         <div class="platform-chip" data-id="8" onclick="togglePlataforma(this)">Netflix</div>
         <div class="platform-chip" data-id="1899" onclick="togglePlataforma(this)">Max</div>
@@ -194,7 +196,7 @@
       </div>
       <div class="filtros-header">
         <div class="filtros-count" id="filtros-count"></div>
-        <button class="btn-limpiar" onclick="limpiarTodo()">Limpiar todo</button>
+        <button type="button" class="btn-limpiar" onclick="limpiarTodo()">Limpiar todo</button>
       </div>
       <div class="botones-finales">
         <div class="sorpresa-btn" onclick="sorprendeme()" title="¡Sorpréndeme!" aria-label="Sorpréndeme">🎲</div>
@@ -342,10 +344,10 @@
       </div>
       <div id="comparador-busqueda" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="section-label" style="margin-bottom:0">Buscar título</div>
+          <div class="section-label mb-0">Buscar título</div>
           <div class="link-sutil" onclick="cerrarBusquedaComparador()">Cancelar</div>
         </div>
-        <input class="auth-input" id="comp-busqueda-input" type="text" placeholder="Escribe un título..." oninput="buscarParaComparador()">
+        <input aria-label="Escribe un título..." class="auth-input" id="comp-busqueda-input" type="text" placeholder="Escribe un título..." oninput="buscarParaComparador()">
         <div id="comparador-resultados" class="comparador-resultados-grid"></div>
       </div>
       <div id="comparador-tabla"></div>
@@ -370,7 +372,7 @@
         <h2 id="reparto-titulo">Reparto y equipo</h2>
         <span></span>
       </div>
-      <div class="fm-tipos" id="reparto-tabs" style="margin-bottom:12px"></div>
+      <div class="fm-tipos mb-12" id="reparto-tabs"></div>
       <div id="reparto-cont"></div>
     </div>
   </div>
@@ -425,7 +427,7 @@
         <h2>Las 100 imprescindibles</h2>
         <span></span>
       </div>
-      <div class="fm-tipos" id="imp-tipos" style="margin-bottom:12px"></div>
+      <div class="fm-tipos mb-12" id="imp-tipos"></div>
       <div id="imp-progreso"></div>
       <div class="imp-ctl" id="imp-ctl"></div>
       <div id="imp-lista"></div>
@@ -486,7 +488,7 @@
         <span></span>
       </div>
       <form class="buscar-form" onsubmit="event.preventDefault();buscarEnPantalla()">
-        <input type="search" id="buscar-input" placeholder="Película, serie, actor o director…" autocomplete="off" enterkeyhint="search" oninput="_buscarSugerir()">
+        <input aria-label="Película, serie, actor o director" type="search" id="buscar-input" placeholder="Película, serie, actor o director…" autocomplete="off" enterkeyhint="search" oninput="_buscarSugerir()">
         <button type="button" class="buscar-camara" onclick="abrirEscaner();escanerVivo()" aria-label="Escanear con la cámara" title="Escanear con la cámara">📷</button>
         <button type="submit" id="buscar-btn">Buscar</button>
       </form>
@@ -648,27 +650,27 @@
       <div id="d-mood-label" class="detalle-box-label" style="display:none">Encaja si te sientes...</div>
       <div id="d-mood-row" style="display:none;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
       <div class="detalle-box" id="d-temas-box" style="display:none"><div class="detalle-box-label">Temas</div><div class="temas-row" id="d-temas"></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Sinopsis</div><div class="detalle-sinopsis-text" id="d-sinopsis"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Ficha técnica</div><div id="d-ficha"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div id="d-equipo"></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Sinopsis</div><div class="detalle-sinopsis-text" id="d-sinopsis"><span class="txt-suave">Cargando...</span></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Ficha técnica</div><div id="d-ficha"><span class="txt-suave">Cargando...</span></div><div id="d-equipo"></div></div>
       <div class="detalle-box" id="d-rodaje-box" style="display:none"><div class="detalle-box-label">📍 Dónde se rodó</div><div class="rodaje-mapa" id="d-rodaje-mapa"></div><div class="rodaje-lista" id="d-rodaje-lista"></div></div>
       <div class="detalle-box" id="d-wiki-box" style="display:none"><div class="detalle-box-label" id="d-wiki-label">Sobre la película</div><div id="d-wiki"></div></div>
       <div class="detalle-box" id="d-premios-box" style="display:none"><div class="detalle-box-label">🏆 Premios</div><div id="d-premios"></div></div>
       <div class="detalle-box" id="d-galeria-box" style="display:none"><div class="detalle-box-label">Imágenes</div><div class="galeria-tira" id="d-galeria"></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Tráiler</div><div id="d-trailer-content"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="d-videos" id="d-videos"></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Banda sonora</div><div id="d-bso"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Dirección / Creación</div><div id="d-directores"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Reparto <button type="button" class="d-saga-link" onclick="abrirRepartoCompleto()">Reparto y equipo completos ›</button></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-reparto',-1)">‹</div><div class="reparto-scroll" id="d-reparto"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-reparto',1)">›</div></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Tráiler</div><div id="d-trailer-content"><span class="txt-suave">Cargando...</span></div><div class="d-videos" id="d-videos"></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Banda sonora</div><div id="d-bso"><span class="txt-suave">Cargando...</span></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Dirección / Creación</div><div id="d-directores"><span class="txt-suave">Cargando...</span></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Reparto <button type="button" class="d-saga-link" onclick="abrirRepartoCompleto()">Reparto y equipo completos ›</button></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-reparto',-1)">‹</div><div class="reparto-scroll" id="d-reparto"><span class="txt-suave">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-reparto',1)">›</div></div></div>
       <!-- Temporadas — solo series -->
       <div class="detalle-box" id="d-progreso-temporadas-box" style="display:none"><div class="detalle-box-label">Tu progreso</div><div id="d-progreso-temporadas"></div></div>
       <div class="detalle-box" id="d-recap" style="display:none"></div>
-      <div class="detalle-box" id="d-temporadas-box" style="display:none"><div class="detalle-box-label">Temporadas</div><div class="curva" id="d-curva" style="display:none"></div><div class="mejor-ep" id="d-mejor-ep" style="display:none"></div><div id="d-temporadas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
+      <div class="detalle-box" id="d-temporadas-box" style="display:none"><div class="detalle-box-label">Temporadas</div><div class="curva" id="d-curva" style="display:none"></div><div class="mejor-ep" id="d-mejor-ep" style="display:none"></div><div id="d-temporadas"><span class="txt-suave">Cargando...</span></div></div>
 
       <div class="detalle-box" id="d-montajes-box" style="display:none"></div>
       <div class="detalle-box" id="d-versiones-box" style="display:none"></div>
       <!-- Similares -->
-      <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="sim-filtros" id="d-sim-filtros"></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
-      <div class="detalle-box"><div class="detalle-box-label">Disponible en</div><div class="plataformas-row" id="d-plataformas"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div></div>
-      <button class="btn-mas-info" onclick="abrirTMDB()">Ver ficha completa en TMDB ↗</button>
+      <div class="detalle-box"><div class="detalle-box-label">También te puede gustar</div><div class="sim-filtros" id="d-sim-filtros"></div><div class="scroll-wrap"><div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('d-similares',-1)">‹</div><div class="similares-scroll" id="d-similares"><span class="txt-suave">Cargando...</span></div><div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('d-similares',1)">›</div></div></div>
+      <div class="detalle-box"><div class="detalle-box-label">Disponible en</div><div class="plataformas-row" id="d-plataformas"><span class="txt-suave">Cargando...</span></div></div>
+      <button type="button" class="btn-mas-info" onclick="abrirTMDB()">Ver ficha completa en TMDB ↗</button>
       <div class="btn-maraton" onclick="generarSesionDoble()">🍿 Generar sesión doble</div>
       <div class="btn-maraton" onclick="abrirMezcla(peliculaActual)">🔀 Mezclar con otra: algo entre las dos</div>
     </div>
@@ -683,8 +685,8 @@
       </div>
       <div id="cuenta-logged-out">
         <div class="section-label">Iniciar sesión</div>
-        <input class="auth-input" id="login-email" type="email" placeholder="Email" autocomplete="email">
-        <input class="auth-input" id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+        <input aria-label="Email" class="auth-input" id="login-email" type="email" placeholder="Email" autocomplete="email">
+        <input aria-label="Contraseña" class="auth-input" id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
         <div style="text-align:right;margin:-4px 0 12px"><span role="button" tabindex="0" style="font-size:12px;color:var(--accent-texto);cursor:pointer" onclick="olvideContrasena()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();olvideContrasena();}">¿Olvidaste tu contraseña?</span></div>
         <div class="cta-btn" onclick="login()">Entrar</div>
         <div class="auth-error" id="login-error"></div>
@@ -710,11 +712,13 @@
           <button type="button" class="tu-btn" onclick="abrirLaHasVisto()"><span>👀</span>¿La has visto?</button>
           <button type="button" class="tu-btn" onclick="abrirRanking()"><span>🏆</span>Mi ranking</button>
         </div>
-        <hr class="section-divider">
-        <div class="section-label">Ajustes</div>
-        <div class="section-label" style="margin-top:14px">Sesión iniciada como</div>
-        <div style="margin-bottom:20px;font-size:14px;color:var(--k-303330)" id="cuenta-email"></div>
-        <div id="admin-caja" style="display:none"></div>
+        <div class="tu-sec">Ver y descargar</div>
+        <div class="tu-grid">
+          <button type="button" class="tu-btn" onclick="abrirAddons()"><span>🧩</span>Mis addons</button>
+          <button type="button" class="tu-btn" onclick="abrirVideos()"><span>🎞️</span>Mis vídeos</button>
+          <button type="button" class="tu-btn" onclick="abrirMisDescargas()"><span>📥</span>Mis descargas</button>
+        </div>
+        <div class="tu-sec">Ajustes</div>
         <div class="section-label">🔔 Avisos en este móvil</div>
         <div id="avisos-caja" class="avisos-caja"></div>
         <hr class="section-divider">
@@ -732,19 +736,47 @@
         <div class="section-label">Descartados</div>
         <button class="ml-secundario" type="button" onclick="abrirOcultas()">🙅 Lo que marcaste como «No me interesa»</button>
         <p class="ml-ayuda">Puedes volver a mostrar cualquiera de esos títulos.</p>
-        <hr class="section-divider">
+        <div class="tu-sec">Tu cuenta</div>
+        <div class="section-label">Sesión iniciada como</div>
+        <div class="tu-email" id="cuenta-email"></div>
+        <div id="admin-caja" style="display:none"></div>
         <div class="section-label">Mis datos</div>
         <button class="ml-secundario" type="button" onclick="descargarCopiaMiLista(this)">Descargar copia de mi lista</button>
         <p class="ml-ayuda">Copia JSON de tus registros, incluidas notas y episodios guardados. No modifica tu cuenta y no incluye claves de addons.</p>
         <p class="ml-ayuda" id="ml-copia-estado" role="status"></p>
-        <hr class="section-divider">
-        <button class="btn-limpiar" onclick="logout()">Cerrar sesión</button>
+        <button type="button" class="btn-limpiar" onclick="logout()">Cerrar sesión</button>
+        <div class="tu-pie">
+          <button type="button" class="ml-secundario" onclick="irA('p-acerca')">ℹ️ Acerca de CineMood</button>
+          <button type="button" class="ml-secundario" onclick="abrirPropina()">☕ Invítame a algo</button>
+        </div>
       </div>
-      <hr class="section-divider">
-      <div class="cta-btn cta-sec" style="margin-bottom:12px" onclick="abrirAddons()">🧩 Mis addons</div>
-      <div class="cta-btn cta-sec" style="margin-bottom:12px" onclick="abrirVideos()">🎞️ Mis vídeos</div>
-      <div class="cta-btn cta-sec" style="margin-bottom:12px" role="button" tabindex="0" onclick="abrirMisDescargas()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirMisDescargas();}">📥 Mis descargas del NAS</div>
-      <div class="cta-btn cta-sec" onclick="abrirPropina()">☕ Invítame a algo</div>
+    </div>
+  </div>
+
+  <div class="pantalla" id="p-acerca">
+    <div class="wrap">
+      <div class="pantalla-header">
+        <span class="btn-atras" onclick="irA('p-cuenta', true)">‹ Atrás</span>
+        <h2>Acerca de</h2>
+        <span></span>
+      </div>
+      <div class="acerca">
+        <div class="acerca-marca"><img src="icon.svg" alt="" width="56" height="56"><div><b>CineMood</b><span>Qué ver según cómo estás</span></div></div>
+        <p>Recomienda películas y series según tu estado de ánimo, guarda lo que quieres ver y lo que has visto, y te deja verlo con tus addons o mandarlo a descargar a tu NAS para tenerlo en Plex.</p>
+        <div class="section-label">Tus datos</div>
+        <ul>
+          <li>Tu lista, notas, colecciones y solicitudes de descarga se guardan en tu cuenta (Supabase). Solo tú puedes verlas.</li>
+          <li>Las claves de AllDebrid y algunos ajustes se guardan solo en este dispositivo.</li>
+          <li>Cada addon ve qué títulos abres, y el servidor de cada vídeo ve tu dirección IP.</li>
+          <li>Desde Tú → Tu cuenta puedes descargar una copia de tu lista.</li>
+        </ul>
+        <div class="section-label">Datos de películas y series</div>
+        <p class="acerca-tmdb"><img src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg" alt="TMDB" width="90" height="12" loading="lazy">
+          Este producto usa la API de TMDB, pero TMDB no lo respalda ni lo certifica.</p>
+        <p>Premios y festivales: Wikipedia. Estado de las series y versiones: Wikidata.</p>
+        <div class="section-label">Versión</div>
+        <p id="acerca-version">Aplicación web (PWA). Se actualiza sola: cuando hay una versión nueva, la app ofrece «Actualizar».</p>
+      </div>
     </div>
   </div>
 
@@ -756,7 +788,7 @@
         <span></span>
       </div>
       <div class="section-label">Añadir un addon</div>
-      <input class="auth-input" id="addon-url" type="url" placeholder="https://…/manifest.json" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')addonInstalar()">
+      <input aria-label="https:///manifest.json" class="auth-input" id="addon-url" type="url" placeholder="https://…/manifest.json" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')addonInstalar()">
       <div class="cta-btn" id="addon-btn" onclick="addonInstalar()">Añadir</div>
       <div class="auth-error" id="addon-error"></div>
       <hr class="section-divider">
@@ -792,8 +824,8 @@
       <p class="fte-nota" id="vid-sync"></p>
       <hr class="section-divider">
       <div class="section-label">Añadir un vídeo</div>
-      <input class="auth-input" id="vid-titulo" placeholder="Título (por ejemplo: Cumpleaños de Lucía)" maxlength="120" autocomplete="off">
-      <input class="auth-input" id="vid-enlace" type="url" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input aria-label="Título (por ejemplo: Cumpleaños de Lucía)" class="auth-input" id="vid-titulo" placeholder="Título (por ejemplo: Cumpleaños de Lucía)" maxlength="120" autocomplete="off">
+      <input aria-label="https://" class="auth-input" id="vid-enlace" type="url" placeholder="https://…" autocomplete="off" autocapitalize="off" spellcheck="false">
       <select class="auth-input" id="vid-modo" aria-label="Cómo reproducirlo">
         <option value="auto">Automático</option>
         <option value="directo">Directo: un archivo mp4 de mi web</option>
@@ -803,7 +835,7 @@
       <div class="auth-error" id="vid-error"></div>
       <hr class="section-divider">
       <div class="section-label">AllDebrid</div>
-      <input class="auth-input" id="adb-key" type="password" placeholder="Tu API key de AllDebrid" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input aria-label="Tu API key de AllDebrid" class="auth-input" id="adb-key" type="password" placeholder="Tu API key de AllDebrid" autocomplete="off" autocapitalize="off" spellcheck="false">
       <div class="cta-btn cta-sec" onclick="adbGuardar()">Guardar y probar</div>
       <div class="auth-error" id="adb-estado"></div>
       <p class="fte-nota">Solo hace falta para enlaces de webs de descargas. En «Automático», un enlace que acaba en .mp4, .webm o .m3u8 se reproduce directo, sin AllDebrid.</p>
@@ -831,7 +863,7 @@
         <h2>Tus estadísticas</h2>
         <span></span>
       </div>
-      <div id="estadisticas-cont"><span style="color:var(--k-767973);font-size:13px">Calculando...</span></div>
+      <div id="estadisticas-cont"><span class="txt-suave">Calculando...</span></div>
     </div>
   </div>
 
@@ -842,7 +874,7 @@
         <h2>Tu año en cine</h2>
         <span></span>
       </div>
-      <div id="wrapped-cont"><span style="color:var(--k-767973);font-size:13px">Generando tu resumen...</span></div>
+      <div id="wrapped-cont"><span class="txt-suave">Generando tu resumen...</span></div>
     </div>
   </div>
 
@@ -853,7 +885,7 @@
         <h2>Actividad</h2>
         <span></span>
       </div>
-      <div id="actividad-cont"><span style="color:var(--k-767973);font-size:13px">Cargando...</span></div>
+      <div id="actividad-cont"><span class="txt-suave">Cargando...</span></div>
     </div>
   </div>
 
@@ -864,7 +896,7 @@
         <h2>Tu perfil de gusto</h2>
         <span></span>
       </div>
-      <div id="perfil-gusto-cont"><span style="color:var(--k-767973);font-size:13px">Analizando tu biblioteca...</span></div>
+      <div id="perfil-gusto-cont"><span class="txt-suave">Analizando tu biblioteca...</span></div>
     </div>
   </div>
 
@@ -875,7 +907,7 @@
         <h2>Evolución de tu gusto</h2>
         <span></span>
       </div>
-      <div id="evolucion-gusto-cont"><span style="color:var(--k-767973);font-size:13px">Analizando tu historial...</span></div>
+      <div id="evolucion-gusto-cont"><span class="txt-suave">Analizando tu historial...</span></div>
     </div>
   </div>
 
@@ -886,7 +918,7 @@
         <h2>Red de tu cine</h2>
         <span></span>
       </div>
-      <div id="mapa-cine-cont"><span style="color:var(--k-767973);font-size:13px">Construyendo tu mapa...</span></div>
+      <div id="mapa-cine-cont"><span class="txt-suave">Construyendo tu mapa...</span></div>
     </div>
   </div>
 
@@ -898,7 +930,7 @@
         <span></span>
       </div>
       <div class="section-label">Escribe tu nueva contraseña</div>
-      <input class="auth-input" id="nueva-pass" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" autocomplete="new-password">
+      <input aria-label="Nueva contraseña (mín. 6 caracteres)" class="auth-input" id="nueva-pass" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" autocomplete="new-password">
       <div class="cta-btn" onclick="guardarNuevaPassword()">Guardar nueva contraseña</div>
       <div class="auth-error" id="nueva-pass-error"></div>
     </div>
@@ -922,13 +954,16 @@
         <button type="button" class="tipo-btn" data-tipo="movie" aria-pressed="false" onclick="selectBibliotecaTipo(this)"><span class="tipo-text">Películas</span></button>
         <button type="button" class="tipo-btn" data-tipo="tv" aria-pressed="false" onclick="selectBibliotecaTipo(this)"><span class="tipo-text">Series</span></button>
       </div>
-      <input type="search" id="ml-buscar" class="auth-input ml-buscar" placeholder="🔎 Buscar en tu lista…" autocomplete="off" oninput="_mlFiltroCambio(true)">
-      <div class="ml-filtros">
+      <input aria-label="🔎 Buscar en tu lista" type="search" id="ml-buscar" class="auth-input ml-buscar" placeholder="🔎 Buscar en tu lista…" autocomplete="off" oninput="_mlFiltroCambio(true)">
+      <!-- Filtros y orden plegados: la lista se ve antes (el número de filtros activos sale en el título) -->
+      <details class="ml-mas" id="ml-mas">
+        <summary>Filtros y orden <span id="ml-mas-n"></span></summary>
+        <div class="ml-filtros">
         <select id="ml-genero" onchange="_mlFiltroCambio()" aria-label="Género"><option value="">Todos los géneros</option></select>
         <select id="ml-decada" onchange="_mlFiltroCambio()" aria-label="Década"><option value="">Cualquier época</option></select>
         <select id="ml-duracion" onchange="_mlFiltroCambio()" aria-label="Duración"><option value="">Cualquier duración</option><option value="90">Pelis de menos de 1 h 30</option><option value="105">Pelis de menos de 1 h 45</option><option value="120">Pelis de menos de 2 h</option><option value="121">Pelis de más de 2 h</option><option value="mini">Series de 1 temporada</option></select>
-      </div>
-      <div class="ml-herramientas">
+        </div>
+        <div class="ml-herramientas">
         <label for="ml-orden">Ordenar</label>
         <select id="ml-orden" onchange="_mlFiltroCambio()">
           <option value="reciente">Añadidas recientemente</option>
@@ -942,10 +977,13 @@
           <option value="corta">Más cortas primero</option>
         </select>
         <span id="ml-vista-btns"></span>
+        </div>
+      </details>
+      <div class="ml-atajos">
+        <button type="button" class="cta-btn" id="btn-elige-por-mi" style="display:none" onclick="elegirPorMi()">🎲 Elige una por mí</button>
+        <button type="button" class="ml-secundario mun-entrada" id="btn-mundial" style="display:none" onclick="abrirMundial()">🏆 Mundial de tu lista</button>
+        <button type="button" class="ml-secundario" onclick="abrirLaHasVisto()">👀 Añadir lo que ya he visto</button>
       </div>
-      <button type="button" class="cta-btn" id="btn-elige-por-mi" style="margin:14px 0;display:none" onclick="elegirPorMi()">Elige una por mí</button>
-      <button type="button" class="ml-secundario mun-entrada" id="btn-mundial" style="display:none;margin:-4px 0 14px;width:100%" onclick="abrirMundial()">🏆 Mundial de tu lista: elimina hasta quedarte con una</button>
-      <button type="button" class="ml-lhv" onclick="abrirLaHasVisto()">👀 ¿Te faltan títulos? Añade rápido lo que ya has visto</button>
       <p id="ml-estado" class="ml-ayuda" role="status" aria-live="polite"></p>
       <div id="biblioteca-lista" aria-busy="false"></div>
     </div>
@@ -1028,13 +1066,13 @@
       <div id="col-ov-lista"></div>
       <div class="col-ov-form" id="col-ov-form">
         <div class="col-ov-label" id="col-ov-label">Nueva colección</div>
-        <input class="auth-input" id="col-ov-nombre" maxlength="60" placeholder="Nombre de la colección" autocomplete="off" onkeydown="if(event.key==='Enter')colConfirmarForm()">
+        <input aria-label="Nombre de la colección" class="auth-input" id="col-ov-nombre" maxlength="60" placeholder="Nombre de la colección" autocomplete="off" onkeydown="if(event.key==='Enter')colConfirmarForm()">
         <div class="col-ov-emojis" id="col-ov-emojis"></div>
         <div class="cta-btn" id="col-ov-boton" onclick="colConfirmarForm()">Crear y añadir</div>
       </div>
       <div class="col-ov-error" id="col-ov-error"></div>
       <div class="col-ov-borrar" id="col-ov-borrar" style="display:none" onclick="colBorrarActual()">🗑 Borrar esta colección</div>
-      <button class="btn-limpiar" onclick="cerrarColOverlay()">Cerrar</button>
+      <button type="button" class="btn-limpiar" onclick="cerrarColOverlay()">Cerrar</button>
     </div>
   </div>
 
@@ -1056,12 +1094,12 @@
         <div class="punt-chip" data-monto="5" onclick="seleccionarPropinaMonto(5)">5€</div>
         <div class="punt-chip" data-monto="otra" onclick="seleccionarPropinaMonto('otra')">Otra</div>
       </div>
-      <input class="auth-input" id="propina-custom" type="number" min="1" step="1" placeholder="Cantidad en €" style="display:none;margin-bottom:14px">
-      <div class="botones-finales" style="margin-bottom:10px">
+      <input aria-label="Cantidad en €" class="auth-input" id="propina-custom" type="number" min="1" step="1" placeholder="Cantidad en €" style="display:none;margin-bottom:14px">
+      <div class="botones-finales mb-10">
         <div class="cta-btn" style="background:#0070BA" onclick="pagarPropina('paypal')">PayPal</div>
         <div class="cta-btn" style="background:#000000" onclick="pagarPropina('revolut')">Revolut</div>
       </div>
-      <button class="btn-limpiar" onclick="cerrarPropina()">Cerrar</button>
+      <button type="button" class="btn-limpiar" onclick="cerrarPropina()">Cerrar</button>
     </div>
   </div>
 
@@ -1098,33 +1136,35 @@
   </div>
   <!-- Versión fija: una actualización de la librería no puede cambiar la app sin que lo sepamos -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
-  <script src="js/nucleo.js?v=600bb488"></script>
-  <script src="js/navegacion.js?v=3a7931c6"></script>
+  <script src="js/nucleo.js?v=0183641f"></script>
+  <script src="js/dialogos.js?v=de5e07b9"></script>
+  <script src="js/accesibilidad.js?v=cdaf4fe3"></script>
+  <script src="js/navegacion.js?v=ceab7fc5"></script>
   <script src="js/animo.js?v=4760fb6f"></script>
   <script src="js/descubre.js?v=7eff533c"></script>
-  <script src="js/ficha.js?v=f87365af"></script>
-  <script src="js/similares.js?v=211eef8f"></script>
+  <script src="js/ficha.js?v=ed2a7ef7"></script>
+  <script src="js/similares.js?v=c0762c6f"></script>
   <script src="js/especiales.js?v=4b07292f"></script>
-  <script src="js/colecciones.js?v=287fbd54"></script>
-  <script src="js/rutas.js?v=3a037b78"></script>
-  <script src="js/mi-actividad.js?v=e05fbbf9"></script>
-  <script src="js/juegos.js?v=1d086e3e"></script>
-  <script src="js/estadisticas.js?v=140383dd"></script>
+  <script src="js/colecciones.js?v=f61821eb"></script>
+  <script src="js/rutas.js?v=a4e18701"></script>
+  <script src="js/mi-actividad.js?v=a6d6134e"></script>
+  <script src="js/juegos.js?v=974e0aa7"></script>
+  <script src="js/estadisticas.js?v=d4b25b7b"></script>
   <script src="js/extras-ficha.js?v=1dd5303a"></script>
-  <script src="js/herramientas.js?v=6c2c4681"></script>
-  <script src="js/cuenta.js?v=589da597"></script>
+  <script src="js/herramientas.js?v=1cc41103"></script>
+  <script src="js/cuenta.js?v=876d6242"></script>
   <script src="js/premios.js?v=2cc04885"></script>
   <script src="js/esta-noche.js?v=b879e5ab"></script>
-  <script src="js/prediccion.js?v=85152efc"></script>
+  <script src="js/prediccion.js?v=ebb759fa"></script>
   <script src="js/addons.js?v=cb813685"></script>
   <script src="js/fuentes.js?v=a99ad2df"></script>
   <script src="js/reproductor.js?v=887df08f"></script>
   <script src="js/subtitulos.js?v=af5f443a"></script>
   <script src="js/videos.js?v=2fe823c5"></script>
   <script src="js/hosters.js?v=814f88b9"></script>
-  <script src="js/nas.js?v=4a695660"></script>
-  <script src="js/mi-lista.js?v=74f1fd34"></script>
-  <script src="js/app.js?v=f519007b"></script>
+  <script src="js/nas.js?v=5228b1b6"></script>
+  <script src="js/mi-lista.js?v=0a7cccdf"></script>
+  <script src="js/app.js?v=dad4b376"></script>
   <script src="js/mi-lista-arranque.js?v=f60f642c"></script>
   <script src="js/modo-tv.js?v=dee43860"></script>
   <script src="js/service-worker.js?v=9c0366c7"></script>

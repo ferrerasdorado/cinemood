@@ -111,8 +111,9 @@ function instalarDbFalsa() {
   const ctx = await browser.newContext({ ...devices[DISP], serviceWorkers: 'block' });
   const page = await ctx.newPage();
   await page.route('**/_prueba.webm', r => r.fulfill({ status: 200, contentType: 'video/webm', body: video }));
-  const errores = [];
+  const errores = [], dialogosNativos = [];
   page.on('pageerror', e => errores.push(e.message));
+  page.on('dialog', d => { dialogosNativos.push(d.type() + ': ' + d.message()); d.dismiss().catch(() => {}); });
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|supabase|ERR_/.test(m.text())) errores.push('console: ' + m.text().slice(0, 200)); });
   // TMDB simulado (el proxy real exige sesión): Matrix y Breaking Bad (5 temporadas, 62 capítulos)
   const EPS = {1:7, 2:13, 3:13, 4:13, 5:16};
@@ -122,19 +123,27 @@ function instalarDbFalsa() {
     if (/^\/movie\/603\/external_ids/.test(ruta)) d = { imdb_id: 'tt0133093' };
     else if (/^\/tv\/1396\/external_ids/.test(ruta)) d = { imdb_id: 'tt0903747' };
     else if (/^\/tv\/1396\/season\/(\d+)/.test(ruta)) { const n = +ruta.match(/season\/(\d+)/)[1]; d = { season_number: n, episodes: Array.from({ length: EPS[n] || 0 }, (_, i) => ({ episode_number: i + 1, name: 'Capítulo ' + (i + 1), air_date: '2010-01-0' + (1 + i % 9) })) }; }
-    else if (/^\/tv\/1396(\?|$|&)/.test(ruta) || ruta === '/tv/1396') d = { id: 1396, name: 'Breaking Bad', number_of_seasons: 5, number_of_episodes: 62, genres: [], seasons: [{ season_number: 0, episode_count: 3 }, ...Object.entries(EPS).map(([n, c]) => ({ season_number: +n, episode_count: c, name: 'Temporada ' + n }))] };
+    else if (/^\/tv\/1396(\?|$|&)/.test(ruta) || ruta === '/tv/1396') d = { id: 1396, name: 'Breaking Bad', number_of_seasons: 5, number_of_episodes: 62, genres: [{ id: 10759, name: 'Action & Adventure' }, { id: 18, name: 'Drama' }], seasons: [{ season_number: 0, episode_count: 3 }, ...Object.entries(EPS).map(([n, c]) => ({ season_number: +n, episode_count: c, name: 'Temporada ' + n }))] };
     else if (/^\/movie\/603(\?|$|&)/.test(ruta) || ruta === '/movie/603') d = { id: 603, title: 'Matrix', release_date: '1999-03-30', runtime: 136, genres: [] };
     else d = { results: [], cast: [], crew: [], episodes: [] };
     route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(d) });
   });
   const foto = n => page.screenshot({ path: `${S}/e2e-${DISP.replace(/ /g, '_')}-${n}.png` });
   const db = () => page.evaluate(() => window.__db.solicitudes_descarga);
-  const aviso = () => page.evaluate(() => { const t = document.getElementById('nas-aviso'); return t && t.classList.contains('on') ? t.textContent : ''; });
+  const aviso = () => page.evaluate(() => { const t = document.getElementById('cm-aviso'); return t && t.classList.contains('on') ? t.textContent : ''; });
   const esperar = ms => page.waitForTimeout(ms);
 
   await page.goto(URL_APP, { waitUntil: 'load' });
   await esperar(3000);
   await page.evaluate(instalarDbFalsa);
+  const a11y = await page.evaluate(() => ({
+    zoom: !/user-scalable=no|maximum-scale/.test(document.querySelector('meta[name=viewport]').content),
+    sinRol: [...document.querySelectorAll('[onclick]')].filter(e => !e.matches('button, a[href], input, select, textarea, label, summary, video, audio') && e.getAttribute('role') !== 'button').length,
+    camposSinEtiqueta: [...document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range])')].filter(i => !i.getAttribute('aria-label') && !(i.id && document.querySelector('label[for="' + i.id + '"]')) && !i.closest('label')).length,
+  }));
+  ok(a11y.zoom, 'Se puede hacer zoom (sin user-scalable=no)');
+  ok(a11y.sinRol === 0, `Todo lo que se pulsa es un botón para el teclado y el lector de pantalla (${a11y.sinRol} sin rol)`);
+  ok(a11y.camposSinEtiqueta === 0, `Todos los campos de texto tienen etiqueta (${a11y.camposSinEtiqueta} sin ella)`);
   const repetidos = await page.evaluate(() => { const v = {}; document.querySelectorAll('[id]').forEach(e => v[e.id] = (v[e.id] || 0) + 1); return Object.keys(v).filter(k => v[k] > 1); });
   ok(!repetidos.length, 'Sin id repetidos en la página' + (repetidos.length ? ': ' + repetidos.join(', ') : ''));
   ok(await page.$$eval('video', vs => vs.every(v => v.closest('#visor, .pantalla, #feed-overlay, #video-visor'))) && await page.$$eval('#visor video', vs => vs.length) === 1,
@@ -153,10 +162,30 @@ function instalarDbFalsa() {
   const tarjetas = () => page.locator('#fte-body .fte-card');
   const textosBotones = () => page.$$eval('#fte-body .fte-card .fte-btn-prim', bs => bs.map(b => b.textContent));
 
+  // 1b) «Tú» ordenada por secciones y «Acerca de»
+  await page.evaluate(() => { irA('p-cuenta'); document.getElementById('cuenta-logged-in').style.display = 'block'; document.getElementById('cuenta-logged-out').style.display = 'none'; }); await esperar(300);
+  const secciones = await page.$$eval('#p-cuenta .tu-sec', xs => xs.map(x => x.textContent));
+  ok(['Tu gusto', 'Puntúa y ordena', 'Ver y descargar', 'Ajustes', 'Tu cuenta'].every(x => secciones.includes(x)), 'Tú por secciones: ' + secciones.join(' · '));
+  await foto('0-tu');
+  await page.click('button:has-text("Acerca de CineMood")'); await esperar(300);
+  ok(/no lo respalda ni lo certifica/.test(await page.textContent('#p-acerca')), '«Acerca de» con la mención obligatoria a TMDB');
+  // Diálogo propio en lugar de confirm(): se prueba con el de la app
+  const resp = page.evaluate(() => _confirmar('¿Seguro?', { aceptar: 'Borrar', peligro: true }));
+  await page.waitForSelector('.cm-dlg'); ok(await page.isVisible('.cm-dlg-btn.prim.peligro'), 'Diálogo de confirmación propio de la app');
+  await page.keyboard.press('Escape'); ok((await resp) === false && !(await page.$('.cm-dlg')), 'Escape cancela el diálogo');
+
   // 2) «Ver» de una película: resultados compactos, filtros, «Mostrar más» y menú «⋯»
   await page.evaluate(() => abrirDetalle({ id: 603, _tipo: 'movie', title: 'Matrix', poster_path: '' }));
   await esperar(3500);
   ok(await page.isVisible('#btn-descargar-nas'), 'La ficha de la película muestra el botón NAS');
+  const ficha = await page.evaluate(() => { renderPuntuacionRow(true, 8); const ancho = innerWidth;
+    return { cortados: [...document.querySelectorAll('#d-acciones .d-accion-btn span:last-child')].filter(s => s.scrollWidth > s.clientWidth + 1).map(s => s.textContent),
+      notas: [...document.querySelectorAll('#d-puntuacion-row .d-punto')].filter(b => { const r = b.getBoundingClientRect(); return r.right <= ancho && r.left >= 0 && r.width > 20; }).length,
+      tituloNota: (document.querySelector('.d-punt-tit') || {}).textContent, sinPoster: document.querySelector('.d-poster-wrap').classList.contains('sin-poster') }; });
+  ok(!ficha.cortados.length, 'Ficha: ningún texto de las acciones sale cortado' + (ficha.cortados.length ? ' (' + ficha.cortados.join(', ') + ')' : ''));
+  ok(ficha.notas === 10 && ficha.tituloNota === 'Tu nota', `Ficha: «Tu nota» con los 10 números a la vista (${ficha.notas})`);
+  ok(ficha.sinPoster, 'Ficha sin póster: hueco limpio en lugar de imagen rota');
+  await foto('1-ficha');
   await page.evaluate(() => verFuentesFicha());
   await esperarLista();
   const n0 = await tarjetas().count();
@@ -222,6 +251,8 @@ function instalarDbFalsa() {
   await esperarLista();
   const chipsSerie = await page.$$eval('#fte-sel .nas-temps .fte-chip', bs => bs.map(b => b.textContent));
   ok(chipsSerie.join(',') === 'Toda la serie,T1,T2,T3,T4,T5', 'Arriba: ' + chipsSerie.join(' · '));
+  const generosFicha = await page.$$eval('#p-detalle .ficha-tag', xs => xs.map(x => x.textContent));
+  ok(generosFicha.includes('Acción y aventura') && !generosFicha.some(g => /&/.test(g)), 'Géneros de series en español: ' + generosFicha.join(', '));
   const segs = await page.$$eval('#fte-sel .nas-seg-btn', bs => bs.map(b => b.textContent + (b.classList.contains('on') ? '*' : '')));
   ok(segs[0] === 'Temporada completa*' && /^Capítulos \(7\)$/.test(segs[1]), 'Pestañas: ' + segs.join(' · '));
   const packsT1 = await textosBotones();
@@ -297,10 +328,11 @@ function instalarDbFalsa() {
     Object.assign(t.find(f => f.temporada === 1 && f.episodio === 2), { estado: 'error', error_mensaje: 'RDT-Client respondió 500' });
     Object.assign(t.find(f => f.temporada === 1 && f.episodio === 3), { estado: 'sin_fuentes', error_mensaje: 'Solo hay packs con la temporada entera' });
     Object.assign(t.find(f => f.temporada === 1 && f.episodio === null), { estado: 'descargando', progreso: 42.5, velocidad: 3355443, eta: 720, tamano: 2147483648 });
+    Object.assign(t.find(f => f.temporada === 1 && f.episodio === 4), { estado: 'descargando', progreso: 12, velocidad: 0, eta: null, tamano: 1e9, error_mensaje: 'Atascada: no descarga nada desde las 14:46' });
   });
-  const total = (await db()).length;
+  let total = (await db()).length;
   await page.evaluate(() => irA('p-cuenta')); await esperar(400);
-  await page.click('text=Mis descargas del NAS');
+  await page.click('#p-cuenta .tu-btn:has-text("Mis descargas")');
   await page.waitForFunction(() => document.querySelectorAll('#nas-lista .nas-card').length > 0, null, { timeout: 5000 }).catch(() => {});
   ok(await page.locator('#nas-lista .nas-card').count() === 2, 'Mis descargas agrupa por título (película + serie)');
   const chips = (await page.locator('.nas-chip').allTextContents()).join(' | ');
@@ -311,11 +343,18 @@ function instalarDbFalsa() {
   const prog = await page.locator('.nas-prog-txt').first().textContent();
   ok(/42,5 %/.test(prog) && /3,2 MB\/s/.test(prog) && /quedan 12 min/.test(prog), 'Progreso de la descarga: «' + prog + '»');
   await foto('9-mis-descargas');
+  ok(await page.isVisible('.nas-etq-mal:has-text("Atascada")') && await page.isVisible('text=Atascada: no descarga nada'), 'Una descarga atascada sale marcada con su motivo');
+  const otro = await page.$('button:has-text("Probar con otro torrent")');
+  await otro.click(); await esperar(200); await otro.click(); await esperar(1000);
+  const trasOtro = await db();
+  ok(trasOtro.find(f => f.temporada === 1 && f.episodio === 4 && f.info_hash).cancelar === true && trasOtro.some(f => f.temporada === 1 && f.episodio === 4 && !f.info_hash && f.estado === 'pendiente'),
+    '«Probar con otro torrent» cancela el atascado y pide de nuevo el capítulo');
   const cancelar = await page.$('button:has-text("Cancelar descarga")');
   await cancelar.click(); await esperar(200);
   ok((await cancelar.textContent()).includes('¿Seguro?'), 'Cancelar pide confirmación');
   await cancelar.click(); await esperar(800);
   ok((await db()).find(f => f.temporada === 1 && f.episodio === null).cancelar === true, 'Cancelar marca la solicitud para que el NAS la borre de RDT-Client');
+  total = (await db()).length;
   await page.click('button:has-text("Reintentar los 2 con problemas")'); await esperar(1000);
   filas = await db();
   ok(filas.filter(f => f.estado === 'error' || f.estado === 'sin_fuentes').length === 0 && filas.length === total, 'Reintentar vuelve a poner en cola los fallidos');
@@ -325,6 +364,7 @@ function instalarDbFalsa() {
   ok((await db()).length === total - 1, 'Quitar borra la fila tras confirmar');
 
   console.log(`\n=== ${DISP} ===\n` + resultados.join('\n'));
+  ok(!dialogosNativos.length, 'Ninguna ventana alert/confirm/prompt del navegador' + (dialogosNativos.length ? ': ' + dialogosNativos.join(' | ') : ''));
   console.log('Errores de JavaScript en la página:', errores.length ? '\n  ' + errores.join('\n  ') : 'ninguno');
   console.log(fallos ? `\n${fallos} fallos` : '\nTodo correcto');
   console.log('Capturas en:', S);

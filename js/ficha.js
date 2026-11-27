@@ -348,7 +348,12 @@
       document.getElementById('d-siguiente').style.display='none'; window._sagaFicha=null;
       document.getElementById('d-titulo-header').textContent=p.title;
       const posterUrl = p.poster_path?'https://image.tmdb.org/t/p/w300'+p.poster_path:'';
-      document.getElementById('d-poster').src=posterUrl;
+      // Sin póster (o si no carga): hueco limpio en lugar del icono de imagen rota
+      const imgPoster = document.getElementById('d-poster');
+      imgPoster.onerror = ()=>{ imgPoster.removeAttribute('src'); imgPoster.parentElement.classList.add('sin-poster'); };
+      imgPoster.parentElement.classList.toggle('sin-poster', !posterUrl);
+      if(posterUrl) imgPoster.src = posterUrl; else imgPoster.removeAttribute('src');
+      imgPoster.alt = posterUrl ? 'Póster de '+p.title : '';
       document.getElementById('d-titulo').textContent=p.title;
       document.getElementById('d-meta').textContent=(p.release_date?p.release_date.substring(0,4):'')+(p._tipo==='tv'?' · Serie':' · Película');
       document.getElementById('d-score').textContent=p.vote_average?p.vote_average.toFixed(1):'-';
@@ -896,7 +901,7 @@
           const partes = [];
           if(tempsAnteriores.length) partes.push(tempsAnteriores.length===1 ? `la temporada ${tempsAnteriores[0].season_number} entera` : `las temporadas ${tempsAnteriores.map(t=>t.season_number).join(', ').replace(/, (\d+)$/,' y $1')} enteras`);
           if(faltanAqui.length) partes.push(faltanAqui.length===1 ? `el episodio ${faltanAqui[0]} de esta temporada` : `los ${faltanAqui.length} episodios anteriores de esta temporada`);
-          if(confirm(`¿Marco también como vistos ${partes.join(' y ')}?`)){
+          if(await _confirmar(`¿Marco también como vistos ${partes.join(' y ')}?`, {aceptar:'Sí, marcarlos', cancelar:'Solo este'})){
             faltanAqui.forEach(n=>actuales.push(n));
             tempsAnteriores.forEach(se=>{ guardado[se.season_number] = Array.from({length:se.episode_count},(_,i)=>i+1); });
           } else tempsAnteriores = [];

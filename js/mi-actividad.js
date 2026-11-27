@@ -211,7 +211,7 @@
       const btn = document.getElementById('rk-auto'), original = btn.textContent;
       const o = rankingLeer(), colocados = new Set(RK_NIVELES.flatMap(([n])=>o[n]||[]));
       const pendientes = _rk.vistos.filter(x=>!colocados.has(x.k));
-      if(!pendientes.length){ alert('Ya está todo colocado.'); return; }
+      if(!pendientes.length){ _aviso('Ya está todo colocado.'); return; }
       btn.disabled = true; btn.textContent = `⏳ Colocando ${pendientes.length} títulos…`;
       try{
         window._detalleIdCache = window._detalleIdCache || {};
@@ -235,7 +235,7 @@
         const sinDatos = pendientes.length - asignados.length;
         btn.textContent = `✓ ${asignados.length} colocados${sinDatos ? ` · ${sinDatos} sin datos` : ''}`;
         setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 2500);
-      }catch(e){ btn.textContent = original; btn.disabled = false; alert('No se pudo completar. Inténtalo de nuevo.'); }
+      }catch(e){ btn.textContent = original; btn.disabled = false; _aviso('No se pudo completar. Inténtalo de nuevo.', true); }
     }
     function rkElegir(k){ _rk.sel = _rk.sel===k ? null : k; rkPintar(); }
     function rkSoltar(nivel){
@@ -252,7 +252,7 @@
       const btn = document.getElementById('rk-compartir'), original = btn.textContent;
       const o = rankingLeer(), porK = new Map(_rk.vistos.map(x=>[x.k, x]));
       const filas = RK_NIVELES.map(([n,c])=>({n, c, lista:(o[n]||[]).map(k=>porK.get(k)).filter(x=>x && (_rk.tipo==='todo' || x.tipo===_rk.tipo))}));
-      if(!filas.some(f=>f.lista.length)){ alert('Coloca algún título en un nivel para poder compartir tu ranking.'); return; }
+      if(!filas.some(f=>f.lista.length)){ _aviso('Coloca algún título en un nivel para poder compartir tu ranking.'); return; }
       btn.textContent = '⏳ Generando…';
       try{
         const W = 1080, PW = 100, PH = 150, GAP = 8, ETQ = 120, M = 40, porFila = Math.floor((W - M*2 - ETQ - GAP) / (PW + GAP));
@@ -290,7 +290,7 @@
           hecho = true;
         }
         if(!hecho){ const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = archivo.name; a.click(); setTimeout(()=>URL.revokeObjectURL(u), 3000); }
-      }catch(e){ alert('No se pudo generar la imagen. Inténtalo de nuevo.'); }
+      }catch(e){ _aviso('No se pudo generar la imagen. Inténtalo de nuevo.', true); }
       finally{ btn.textContent = original; }
     }
     // ══ LOGROS ══════════════════════════════════════════════════════════════

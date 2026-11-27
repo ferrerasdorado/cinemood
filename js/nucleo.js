@@ -63,10 +63,10 @@
     ];
     // Géneros SERIE — verificados con API real (Thriller 53=0, se mapea a 9648,80)
     const GENEROS_SERIE = [
-      {id:'10759',n:'Acción & Aventura'},{id:'35',n:'Comedia'},{id:'80',n:'Crimen'},
+      {id:'10759',n:'Acción y aventura'},{id:'35',n:'Comedia'},{id:'80',n:'Crimen'},
       {id:'99',n:'Documental'},{id:'18',n:'Drama'},{id:'9648',n:'Misterio'},
-      {id:'10765',n:'Sci-Fi & Fantasy'},{id:'9648,80',n:'Thriller'},
-      {id:'10768',n:'Guerra & Política'},{id:'37',n:'Western'},{id:'16',n:'Animación'}
+      {id:'10765',n:'Ciencia ficción y fantasía'},{id:'9648,80',n:'Thriller'},
+      {id:'10768',n:'Bélica y política'},{id:'37',n:'Western'},{id:'16',n:'Animación'}
     ];
 
     function renderGeneros() {

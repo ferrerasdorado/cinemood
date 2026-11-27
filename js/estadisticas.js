@@ -486,7 +486,7 @@
           try{ await navigator.clipboard.writeText(`${texto}\n${urlCineMood}`); }catch(e){}
         }
       }catch(e){
-        alert('⚠️ No se pudo generar la tarjeta ahora mismo. Inténtalo de nuevo.');
+        _aviso('⚠️ No se pudo generar la tarjeta ahora mismo. Inténtalo de nuevo.', true);
       }finally{
         btn.innerHTML = original;
       }

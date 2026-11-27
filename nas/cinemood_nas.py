@@ -36,6 +36,8 @@ ADDON_HINTS = [h.strip().lower() for h in os.environ.get("ADDON_HINTS",
     "torrentio,comet,peerflix,pelis,stremthru,torz,mediafusion,knightcrawler,jackettio,annatar,orion").split(",") if h.strip()]
 INTERVAL = int(os.environ.get("INTERVAL", "30"))
 MAX_INTENTOS = int(os.environ.get("MAX_INTENTOS", "3"))
+ATASCO_MIN = int(os.environ.get("ATASCO_MIN", "15"))                 # minutos sin avanzar para darla por atascada
+AVISOS_DESCARGAS = os.environ.get("AVISOS_DESCARGAS", "1") != "0"   # aviso al móvil cuando termina una descarga
 
 H = {"apikey": KEY, "Authorization": "Bearer " + KEY, "Content-Type": "application/json"}
 
@@ -156,7 +158,19 @@ def tipo_torrent(st):
     if arch and RE_EP.search(arch): return "temporada", None
     return "episodio", None
 
-def find_stream(sol, imdb, bases):
+def torrents_fallidos(sol):
+    """Torrents que ya se probaron para lo mismo (título, temporada y capítulo) y acabaron cancelados o con error:
+       al volver a pedirlo («Probar con otro torrent») no se vuelve a elegir ninguno de ellos."""
+    try:
+        filtro = {"user_id": f"eq.{sol['user_id']}", "tmdb_id": f"eq.{sol['tmdb_id']}", "tipo": f"eq.{sol['tipo']}",
+                  "estado": "in.(cancelada,error)", "select": "cliente_id"}
+        for campo in ("temporada", "episodio"):
+            filtro[campo] = "is.null" if sol.get(campo) is None else f"eq.{sol[campo]}"
+        return frozenset(str(f["cliente_id"]).lower() for f in sb_get("solicitudes_descarga", filtro) if f.get("cliente_id"))
+    except Exception:
+        return frozenset()
+
+def find_stream(sol, imdb, bases, excluir=frozenset()):
     """Busca el mejor torrent para lo pedido. Devuelve (torrent, motivo si no hay ninguno).
        Película → cualquier torrent. Capítulo → solo torrents de ese capítulo (nunca un pack, que bajaría
        la temporada entera). Temporada sin capítulo → solo packs de esa temporada. Serie → solo packs de la serie."""
@@ -185,6 +199,7 @@ def find_stream(sol, imdb, bases):
                 con_hash.append(x)
         log("addon", name, "->", len(streams), "streams,", len(con_hash), "con torrent")
         for st in con_hash:
+            if st["infoHash"] in excluir: continue      # ya se probó y falló o se atascó
             if quiere:
                 clase, temp = tipo_torrent(st)
                 if clase != quiere or (quiere == "temporada" and temp and temp != t):
@@ -233,7 +248,7 @@ def process(sol, sess):
             imdb = resolver_imdb(sol)
             bases = addon_bases(sol["user_id"])
             if not bases: raise RuntimeError("Sin addons compatibles")
-            st, motivo = find_stream(sol, imdb, bases)
+            st, motivo = find_stream(sol, imdb, bases, torrents_fallidos(sol))
             if not st:
                 sb_patch("solicitudes_descarga", sol["id"], {"estado": "sin_fuentes", "error_mensaje": motivo})
                 log("sin fuentes:", sol["titulo"], "·", motivo); return
@@ -269,16 +284,31 @@ ESTADOS_ERROR = {"error", "missingFiles"}
 ESTADOS_TERMINADO = {"uploading", "stalledUP", "pausedUP", "stoppedUP", "queuedUP", "forcedUP", "checkingUP"}
 _ausencias = {}                 # id → revisiones seguidas en las que el torrent no aparece en RDT-Client
 
+def avisar_descarga(sol):
+    """Aviso al móvil (función cinemood-avisos de Supabase). Si falla, la descarga sigue igual."""
+    if not AVISOS_DESCARGAS or sol.get("progreso") is None:   # las antiguas, sin seguimiento, no avisan
+        return
+    t, e = sol.get("temporada"), sol.get("episodio")
+    detalle = "" if sol.get("tipo") == "movie" else ("serie completa" if t is None else f"temporada {t} completa" if e is None else f"T{t} · E{e}")
+    try:
+        requests.post(f"{SB}/functions/v1/cinemood-avisos", headers=H, timeout=15, data=json.dumps(
+            {"descarga": {"user_id": sol.get("user_id"), "id": sol.get("id"), "titulo": sol.get("titulo"), "detalle": detalle}}))
+    except Exception as ex:
+        log("no se pudo mandar el aviso:", type(ex).__name__)
+
 def _cambia(antes, ahora):
     """¿Merece la pena escribir el progreso? (si no, se evita una escritura cada 30 s por descarga)"""
     if abs((antes.get("progreso") or 0) - (ahora["progreso"] or 0)) >= 1: return True
     if (antes.get("eta") is None) != (ahora["eta"] is None) or abs((antes.get("eta") or 0) - (ahora["eta"] or 0)) >= 60: return True
     v0, v1 = antes.get("velocidad") or 0, ahora["velocidad"] or 0
     if (v0 == 0) != (v1 == 0) or abs(v1 - v0) > 0.25 * max(v0, 1): return True
+    if (antes.get("error_mensaje") or None) != ahora.get("error_mensaje", antes.get("error_mensaje") or None): return True
     return antes.get("tamano") != ahora["tamano"]
 
+_atasco = {}   # id → (progreso de referencia, desde cuándo no avanza)
+
 def comprobar_descargas(sess, con_progreso):
-    campos = "id,cliente_id" + (",progreso,velocidad,eta,tamano" if con_progreso else "")
+    campos = "id,cliente_id,user_id,titulo,tipo,temporada,episodio,error_mensaje" + (",progreso,velocidad,eta,tamano" if con_progreso else "")
     filas = sb_get("solicitudes_descarga", {"estado": "eq.descargando", "select": campos})
     if not filas: return
     # Una sola petición con todos los torrents de RDT-Client (antes, una por descarga)
@@ -300,9 +330,10 @@ def comprobar_descargas(sess, con_progreso):
                     _ausencias.pop(sol["id"], None)
                     prog = sol.get("progreso") if con_progreso else None
                     if prog is None or prog >= 95:
-                        sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
+                        sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada", "error_mensaje": None,
                                                                    **({"progreso": 100, "velocidad": None, "eta": None} if con_progreso else {})})
                         log("terminada (ya no está en RDT-Client):", sol["id"])
+                        avisar_descarga(sol)
                     else:
                         sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "error_mensaje": "Se borró en RDT-Client",
                                                                    "velocidad": None, "eta": None})
@@ -311,17 +342,30 @@ def comprobar_descargas(sess, con_progreso):
             _ausencias.pop(sol["id"], None)
             progreso = max(0.0, min(100.0, float(t.get("progress", 0)) * 100))
             if progreso >= 100 or t.get("state") in ESTADOS_TERMINADO:
-                sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
+                sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada", "error_mensaje": None,
                                                            **({"progreso": 100, "velocidad": None, "eta": None} if con_progreso else {})})
+                _atasco.pop(sol["id"], None)
+                avisar_descarga(sol)
             elif t.get("state") in ESTADOS_ERROR:
                 sb_patch("solicitudes_descarga", sol["id"], {"estado": "error", "error_mensaje": f"RDT-Client: {t.get('state')}"})
             elif con_progreso:
                 eta = t.get("eta")
+                # ¿Atascada? Sin velocidad (o en «stalledDL») y sin avanzar durante ATASCO_MIN minutos
+                moviendo = int(t.get("dlspeed") or 0) > 0 and t.get("state") not in ("stalledDL", "metaDL")
+                ref = _atasco.get(sol["id"])
+                if moviendo or ref is None or progreso > ref[0] + 0.1:
+                    _atasco[sol["id"]] = ref = (progreso, time.time())
+                atascada = not moviendo and time.time() - ref[1] >= ATASCO_MIN * 60
+                previo = sol.get("error_mensaje") or None
+                aviso_atasco = (previo if previo and previo.startswith("Atascada") else
+                                "Atascada: no descarga nada desde las " + time.strftime("%H:%M", time.localtime(ref[1]))) if atascada else \
+                               (None if previo and previo.startswith("Atascada") else previo)
                 ahora = {
                     "progreso": round(progreso, 1),
                     "velocidad": max(0, int(t.get("dlspeed") or 0)),
                     "eta": int(eta) if isinstance(eta, (int, float)) and 0 <= eta < ETA_INFINITA else None,
                     "tamano": int(t["size"]) if t.get("size") else None,
+                    "error_mensaje": aviso_atasco,
                 }
                 if _cambia(sol, ahora): sb_patch("solicitudes_descarga", sol["id"], ahora)
         except Exception as e:

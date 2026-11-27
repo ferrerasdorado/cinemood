@@ -124,6 +124,7 @@
         btn.disabled=!visibles.length;
         estado.textContent=visibles.length+' '+(visibles.length===1?'título':'títulos')+(pendiente?(visibles.length===1?' pendiente':' pendientes'):(visibles.length===1?' visto':' vistos'))+(_mlHayFiltros()?' con estos filtros. ':'. ');
         if(_mlHayFiltros()) estado.append(_fEl('button',{class:'ml-quitar-filtros',type:'button',onclick:_mlQuitarFiltros},'Quitar filtros'));
+        { const n=['ml-genero','ml-decada','ml-duracion'].filter(id=>_mlVal(id)).length; const e=document.getElementById('ml-mas-n'); if(e) e.textContent=n?`· ${n} ${n===1?'activo':'activos'}`:''; }
         cont.replaceChildren();
         if(!visibles.length){
           cont.append(_fEl('div',{class:'ml-vacio'},
@@ -149,8 +150,8 @@
           if(verPrev&&it.puntuacion==null&&_mlPrevista(it)!=null) info.append(_fEl('span',{class:'ml-prevista',text:'🔮 Le pondrías un '+_notaFmt(_mlPrevista(it))}));
           if(!pendiente) info.append(_fEl('p',{class:'ml-nota',text:it.puntuacion!=null?'Mi valoración: '+it.puntuacion+'/10':'Sin valorar'}));
           else info.append(_fEl('div',{class:'ml-fila-acciones'},
-            _fEl('button',{class:'ml-secundario',type:'button',onclick:e=>_mlCambiarEstado(it.id,{visto:true,pendiente:false},e.currentTarget)},'Marcar como vista'),
-            _fEl('button',{class:'ml-secundario',type:'button',onclick:e=>quitarDePendientes(it.id,e.currentTarget)},'Quitar de pendientes')));
+            _fEl('button',{class:'ml-mini ok',type:'button','aria-label':'Marcar «'+String(it.titulo||'')+'» como vista',onclick:e=>_mlCambiarEstado(it.id,{visto:true,pendiente:false},e.currentTarget)},'✓ Vista'),
+            _fEl('button',{class:'ml-mini',type:'button','aria-label':'Quitar «'+String(it.titulo||'')+'» de pendientes',onclick:e=>quitarDePendientes(it.id,e.currentTarget)},'Quitar')));
           const card=_fEl('article',{class:'ml-fila','data-testid':'lista-titulo-'+it.id});
           if(typeof it.poster_path==='string'&&/^\/[^\\]*$/.test(it.poster_path)){
             const img=_fEl('img',{src:'https://image.tmdb.org/t/p/w200'+it.poster_path,alt:'',loading:'lazy',decoding:'async',width:64,height:96});

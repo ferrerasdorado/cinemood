@@ -3,6 +3,7 @@
 // - Algo nuevo en tus plataformas que, según «Le pondrías un…», te va a encantar.
 // - Los viernes: el estreno de cine de la semana que más te va a gustar.
 // La llama pg_cron una vez al día (cabecera x-cron-secret). Con {"prueba":true} y la sesión del usuario, manda solo un aviso de prueba a ese usuario.
+// Con {"descarga":{...}} y la clave de servicio, la llama el servicio del NAS al terminar una descarga (nas/cinemood_nas.py).
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -120,6 +121,20 @@ Deno.serve(async (req) => {
     if (!data?.user) return json({ error: "sin sesión" }, 401);
     const { data: subs } = await sb.from("push_suscripciones").select("*").eq("user_id", data.user.id);
     const n = await enviar(sb, subs || [], { title: "🎬 CineMood", body: "¡Listo! Así te llegarán los avisos.", url: "./" });
+    return json({ enviados: n });
+  }
+  // Descarga terminada en el NAS. Solo la clave de servicio puede usar la API de administración de usuarios:
+  // así se comprueba que la llamada viene del servicio del NAS y no de cualquiera.
+  if (cuerpo.descarga) {
+    const d = cuerpo.descarga, token = (req.headers.get("authorization") || "").replace(/^Bearer /, "");
+    if (!token || !d?.user_id) return json({ error: "datos incompletos" }, 400);
+    const { error } = await createClient(SB_URL, token).auth.admin.getUserById(String(d.user_id));
+    if (error) return json({ error: "no autorizado" }, 401);
+    const { data: perfil } = await sb.from("push_perfil").select("tipos").eq("user_id", d.user_id).maybeSingle();
+    if ((perfil?.tipos || []).includes("sin-descargas")) return json({ enviados: 0, motivo: "desactivado por el usuario" });
+    const { data: subs } = await sb.from("push_suscripciones").select("*").eq("user_id", d.user_id);
+    const titulo = String(d.titulo || "Tu descarga").slice(0, 120), detalle = d.detalle ? ` · ${String(d.detalle).slice(0, 60)}` : "";
+    const n = await enviar(sb, subs || [], { title: "📥 Descarga terminada", body: `${titulo}${detalle} ya está en el NAS y aparecerá en Plex.`, url: "./?accion=descargas", tag: `nas-${String(d.id || titulo).slice(0, 60)}` });
     return json({ enviados: n });
   }
   if (req.headers.get("x-cron-secret") !== Deno.env.get("CRON_SECRET")) return json({ error: "no autorizado" }, 401);

@@ -6,6 +6,17 @@
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     const _cmFetchOriginal = window.fetch.bind(window);
     const _cmProxyURL = new URL(TMDB_PROXY);
+    // TMDB no traduce al español algunos géneros de series: se traducen aquí, en un único sitio,
+    // y solo en el campo "name" de esos géneros (nunca en títulos ni sinopsis)
+    const _CM_GENEROS_ES = {10759:'Acción y aventura',10762:'Infantil',10763:'Noticias',10764:'Reality',10765:'Ciencia ficción y fantasía',10766:'Telenovela',10767:'Entrevistas',10768:'Bélica y política'};
+    const _CM_RE_GENEROS = /"id":(1076[2-8]|10759),"name":"[^"]*"/g;
+    async function _cmTraducirGeneros(r){
+      if(!r.ok || !/json/.test(r.headers.get('content-type')||'')) return r;
+      const txt = await r.clone().text();
+      if(!_CM_RE_GENEROS.test(txt)) return r;
+      _CM_RE_GENEROS.lastIndex = 0;
+      return new Response(txt.replace(_CM_RE_GENEROS, (_, id)=>'"id":'+id+',"name":"'+_CM_GENEROS_ES[id]+'"'), {status:r.status, statusText:r.statusText, headers:r.headers});
+    }
     // Solo intercepta nuestro catálogo. No altera peticiones a addons, AllDebrid o VLC.
     window.fetch = async function(input, init){
       const destino = new URL(input instanceof Request ? input.url : String(input), location.href);
@@ -27,7 +38,7 @@
         try{
           const r = await _cmFetchOriginal(input,{...init,headers,cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer',redirect:'error'});
           if((r.status===429 || r.status>=500) && intento<3){ await new Promise(res=>setTimeout(res, 700*2**intento + Math.random()*300)); continue; }
-          return r;
+          return _cmTraducirGeneros(r);
         }catch(e){
           if(intento>=3 || init?.signal?.aborted) throw e;
           await new Promise(res=>setTimeout(res, 700*2**intento + Math.random()*300));
@@ -641,4 +652,5 @@
     renderGeneros();
     renderEspecialesTiles();
     window.addEventListener('DOMContentLoaded',()=>initAuth(),{once:true});
+    _a11yIniciar();
     ['para-ti-pelis-scroll','para-ti-series-scroll','continuar-viendo-scroll','d-similares','d-reparto','d-puntuacion-row'].forEach(habilitarDragScroll);

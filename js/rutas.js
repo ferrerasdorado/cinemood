@@ -596,7 +596,7 @@
         anio: p.release_date ? p.release_date.substring(0,4) : ''
       };
       const { error } = await sb.from('mi_biblioteca').upsert({...base,...patch}, { onConflict: 'user_id,tmdb_id,tipo' });
-      if(error){ console.error(error); alert('No se ha podido guardar el cambio. Tus datos anteriores se mantienen.'); return; }
+      if(error){ console.error(error); _aviso('No se ha podido guardar el cambio. Tus datos anteriores se mantienen.', true); return; }
       if(deshacer) _avisoDeshacer(deshacer.texto, _deshacerFila(p._tipo, p.id, _antes, _rk));
       // celebraciones: sello al marcar una película, confeti al terminar una serie o una saga
       if(patch.visto===true && !_antesVisto){
@@ -642,9 +642,9 @@
       _pintarMotivos(visible, valorActual);
       const row = document.getElementById('d-puntuacion-row');
       if(!visible){ row.style.display='none'; row.innerHTML=''; return; }
-      row.style.display='flex';
-      row.innerHTML = Array.from({length:10},(_,i)=>i+1).map(n=>
-        `<div class="d-punto ${valorActual==n?'active':''}" onclick="guardarPuntuacion(${n})">${n}</div>`).join('');
+      row.style.display='block';
+      row.innerHTML = `<div class="d-punt-tit" id="d-punt-tit">Tu nota</div><div class="d-punt-escala" role="radiogroup" aria-labelledby="d-punt-tit">`+Array.from({length:10},(_,i)=>i+1).map(n=>
+        `<button type="button" class="d-punto ${valorActual==n?'active':''}" role="radio" aria-checked="${valorActual==n}" aria-label="${n} de 10" onclick="guardarPuntuacion(${n})">${n}</button>`).join('')+`</div>`;
     }
     async function togglePendiente(){
       const nuevo = !document.getElementById('btn-pendiente').classList.contains('active');

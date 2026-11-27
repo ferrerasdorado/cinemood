@@ -271,7 +271,7 @@
       const base = {user_id: sesionActual.user.id, tmdb_id: it.tmdb_id, tipo: it.tipo, titulo: it.t, poster_path: it.poster||null, anio: it.y ? String(it.y) : ''};
       const { error } = await sb.from('mi_biblioteca').upsert({...base, pendiente:true}, { onConflict: 'user_id,tmdb_id,tipo' });
       btn.disabled = false;
-      if(error){ console.error(error); alert('No se ha podido guardar. Inténtalo de nuevo.'); return; }
+      if(error){ console.error(error); _aviso('No se ha podido guardar. Inténtalo de nuevo.', true); return; }
       btn.textContent = '✓ En tu lista'; btn.classList.add('activo'); btn.onclick = null;
       _avisoDeshacer(`＋ «${it.t}» añadida a «Para ver»`, async ()=>{ await _deshacerFila(it.tipo, it.tmdb_id, antes, null)(); btn.textContent = '＋ Para ver'; btn.classList.remove('activo'); btn.onclick = ()=>feedAPendiente(i, btn); });
     }

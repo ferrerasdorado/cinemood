@@ -7,16 +7,8 @@
     // Estados que significan «sigue en marcha»: si ya hay una solicitud así, no se repite
     const _NAS_ACTIVOS = ['pendiente','procesando','descargando'];
 
-    // Aviso flotante de la app (en lugar de alert): admite varias líneas
-    function _nasAviso(texto, esError){
-      let t = document.getElementById('nas-aviso');
-      if(!t){ t = document.createElement('div'); t.id = 'nas-aviso'; t.className = 'cm-deshacer nas-aviso'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite'); document.body.appendChild(t); }
-      t.classList.toggle('error', !!esError);
-      t.replaceChildren(_fEl('span',{text:texto}), _fEl('button',{type:'button','aria-label':'Cerrar aviso',onclick:()=>t.classList.remove('on')},'✕'));
-      clearTimeout(t._tm);
-      t.classList.add('on');
-      t._tm = setTimeout(()=>t.classList.remove('on'), esError ? 9000 : 5000);
-    }
+    // Avisos del NAS: el aviso flotante común de la app (js/dialogos.js)
+    const _nasAviso = (texto, esError) => _aviso(texto, esError);
 
     async function solicitarDescargaNAS(){
       if(_nasEnviando) return;
@@ -271,7 +263,11 @@
         _nasMis.conProgreso = !error;
         if(error && /progreso|velocidad|eta|tamano|cancelar|42703|PGRST204/i.test(String(error.message)+' '+error.code)) ({data, error} = await leer(_NAS_COLS));
         if(error) throw error;
+        // Aviso dentro de la app si algo ha terminado desde la última vez que se miró
+        const antes = new Map(_nasMis.filas.map(x=>[x.id, x.estado]));
         _nasMis.filas = data || [];
+        const nuevas = _nasMis.filas.filter(x=>x.estado==='completada' && antes.has(x.id) && antes.get(x.id)!=='completada');
+        if(nuevas.length) _aviso(nuevas.length===1 ? `✓ Descargado: ${nuevas[0].titulo}${_nasDondeEs(nuevas[0]) ? ' · '+_nasDondeEs(nuevas[0]) : ''}. Ya aparecerá en Plex.` : `✓ ${nuevas.length} descargas terminadas. Ya aparecerán en Plex.`);
         estado.textContent = 'Actualizado a las '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'.';
         pintarMisDescargas();
         _nasProgramarRefresco();
@@ -291,7 +287,12 @@
       if(f.episodio==null) return 'Temporada '+f.temporada+' completa';
       return 'T'+f.temporada+' · E'+f.episodio;
     }
-    function _nasEtiqueta(est){ const e=_nasEstado(est); return _fEl('span',{class:'nas-etq nas-etq-'+e.grupo+(est==='descargando'||est==='procesando'?' nas-etq-vivo':''),text:e.txt}); }
+    // Atascada: el NAS la marca así si lleva un rato sin avanzar (sigue «descargando» por si se recupera)
+    const _nasAtascada = f => f.estado==='descargando' && /^Atascada/.test(f.error_mensaje||'');
+    function _nasEtiqueta(est, f){
+      if(f && _nasAtascada(f)) return _fEl('span',{class:'nas-etq nas-etq-mal',text:'Atascada'});
+      const e=_nasEstado(est); return _fEl('span',{class:'nas-etq nas-etq-'+e.grupo+(est==='descargando'||est==='procesando'?' nas-etq-vivo':''),text:e.txt});
+    }
 
     function pintarMisDescargas(){
       const filas = _nasMis.filas, cont = document.getElementById('nas-lista');
@@ -323,7 +324,7 @@
       const tipoTxt = serie ? '📺 Serie' : '🎬 Película';
       if(!serie && g.length===1){
         return _fEl('div',{class:'addon-card nas-card'},
-          _fEl('div',{class:'nas-cab'}, _fEl('div',{class:'nas-cab-txt'}, titulo, _fEl('span',{class:'nas-sub',text:tipoTxt})), _nasEtiqueta(f0.estado)),
+          _fEl('div',{class:'nas-cab'}, _fEl('div',{class:'nas-cab-txt'}, titulo, _fEl('span',{class:'nas-sub',text:tipoTxt})), _nasEtiqueta(f0.estado, f0)),
           _nasDetalle(f0));
       }
       // Series (o varias peticiones del mismo título): barra de progreso y lista desplegable
@@ -337,7 +338,7 @@
       const det = _fEl('details',{class:'nas-det',open:_nasMis.abiertos.has(clave)},
         _fEl('summary',{text:'Ver '+(serie?'capítulos':'peticiones')}),
         ...orden.map(f=>_fEl('div',{class:'nas-item'},
-          _fEl('div',{class:'nas-cab'}, _fEl('b',{text:_nasDondeEs(f)||_nasFecha(f.creada_en)}), _nasEtiqueta(f.estado)),
+          _fEl('div',{class:'nas-cab'}, _fEl('b',{text:_nasDondeEs(f)||_nasFecha(f.creada_en)}), _nasEtiqueta(f.estado, f)),
           _nasDetalle(f))));
       det.addEventListener('toggle',()=>{ det.open ? _nasMis.abiertos.add(clave) : _nasMis.abiertos.delete(clave); });
       const acciones = _fEl('div',{class:'vid-acciones'});
@@ -384,6 +385,7 @@
       const acciones = _fEl('div',{class:'vid-acciones'});
       if(f.estado==='error' || f.estado==='sin_fuentes') acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar([f],e.currentTarget)},'↻ Reintentar'));
       if(f.estado==='cancelada') acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar([f],e.currentTarget)},'↻ Volver a pedir'));
+      if(_nasAtascada(f) && _nasMis.conProgreso && !f.cancelar) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasProbarOtro(f,e.currentTarget)},'↻ Probar con otro torrent'));
       if(enMarcha && _nasMis.conProgreso && !f.cancelar) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasCancelar(f,e.currentTarget)},'✕ Cancelar descarga'));
       if(!enMarcha) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasQuitar(f,e.currentTarget)},'Quitar de la lista'));
       let nota = null;
@@ -392,7 +394,7 @@
       return _fEl('div',{class:'nas-info'},
         _nasProgreso(f),
         ...lineas.map(t=>_fEl('span',{text:t})),
-        f.error_mensaje && _nasEstado(f.estado).grupo==='mal' ? _fEl('span',{class:f.estado==='cancelada'?'':'nas-err',text:(f.estado==='cancelada'?'':'Motivo: ')+f.error_mensaje}) : null,
+        f.error_mensaje && (_nasEstado(f.estado).grupo==='mal' || _nasAtascada(f)) ? _fEl('span',{class:f.estado==='cancelada'?'':'nas-err',text:(f.estado==='cancelada'||_nasAtascada(f)?'':'Motivo: ')+f.error_mensaje}) : null,
         nota ? _fEl('span',{class:'nas-nota',text:nota}) : null,
         acciones.childNodes.length ? acciones : null);
     }
@@ -403,6 +405,20 @@
       btn.dataset.confirmar = '1'; const txt = btn.textContent; btn.textContent = '¿Seguro? Pulsa otra vez';
       setTimeout(()=>{ if(btn.isConnected){ btn.dataset.confirmar=''; btn.textContent = txt; } }, 3500);
       return false;
+    }
+    // Probar con otro torrent: se cancela la atascada y se pide de nuevo lo mismo sin torrent elegido;
+    // el NAS borra la atascada de RDT-Client y, al buscar, descarta los torrents que ya fallaron para eso
+    async function _nasProbarOtro(f, btn){
+      if(!_nasConfirmado(btn)) return;
+      btn.disabled = true;
+      try{
+        const {error:e1} = await sb.from('solicitudes_descarga').update({cancelar:true}).eq('id', f.id).eq('user_id', sesionActual.user.id);
+        if(e1) throw e1;
+        const {error:e2} = await sb.from('solicitudes_descarga').insert({tmdb_id:f.tmdb_id, tipo:f.tipo, titulo:f.titulo, temporada:f.temporada, episodio:f.episodio});
+        if(e2) throw e2;
+        _nasAviso('Buscando otro torrent: el NAS quitará el atascado y probará con uno distinto.');
+      }catch(e){ console.error(e); btn.disabled = false; _nasAviso(_nasTextoError(e, 'No se pudo cambiar de torrent.'), true); return; }
+      cargarMisDescargas(true);
     }
     // Cancelar = marcarla; el NAS borra el torrent de RDT-Client en su siguiente repaso
     async function _nasCancelar(f, btn){

@@ -116,7 +116,7 @@
       if(nota && !_nivelDeTitulo(key)) _colocarEnNivel(key, _nivelPorNota(nota));
       const base = {user_id:sesionActual.user.id, tmdb_id:it.id, tipo:it.tipo, titulo:it.t, poster_path:it.poster||null, anio:it.f ? it.f.slice(0,4) : ''};
       const { error } = await sb.from('mi_biblioteca').upsert({...base, ...patch}, { onConflict:'user_id,tmdb_id,tipo' });
-      if(error){ alert(`No se pudo guardar «${it.t}». Inténtalo de nuevo.`); _lhv.i = Math.min(_lhv.i, pos); _pintarLHV(); return; }
+      if(error){ _aviso(`No se pudo guardar «${it.t}». Inténtalo de nuevo.`, true); _lhv.i = Math.min(_lhv.i, pos); _pintarLHV(); return; }
       _lhv.conocidos.add(key);
       if(a==='visto'){ _lhv.vistas++; _lhv.ultimo = {_tipo:it.tipo, id:it.id}; } else _lhv.pendientes++;
       const cab = document.querySelector('#lhv-cont .pq-progreso span'); if(cab) cab.textContent = `${_lhv.vistas} ${_lhv.vistas===1?'vista':'vistas'} · ${_lhv.pendientes} para ver`;
@@ -154,7 +154,7 @@
       if(nivel) _colocarEnNivel(k, nivel);
       else if(!_nivelDeTitulo(k)) _colocarEnNivel(k, _nivelPorNota(n));
       const { error } = await sb.from('mi_biblioteca').update({puntuacion:n}).eq('id', it.id).eq('user_id', sesionActual.user.id);
-      if(error){ _pq.hechos--; alert(`No se pudo guardar la nota de «${it.titulo}». Inténtalo luego.`); }
+      if(error){ _pq.hechos--; _aviso(`No se pudo guardar la nota de «${it.titulo}». Inténtalo luego.`, true); }
       else _pq.ultimo = {_tipo:it.tipo, id:it.tmdb_id};
     }
     function pqSaltar(){
@@ -196,7 +196,7 @@
       if(textoDeshacer){ try{ antes = await _filaBiblio(o.tipo, o.id); }catch(e){} }
       const base = {user_id:sesionActual.user.id, tmdb_id:o.id, tipo:o.tipo, titulo:o.t, poster_path:o.poster||null, anio:o.f ? String(o.f).slice(0,4) : ''};
       const { error } = await sb.from('mi_biblioteca').upsert({...base, ...patch}, { onConflict:'user_id,tmdb_id,tipo' });
-      if(error){ alert('No se ha podido guardar. Inténtalo de nuevo.'); return false; }
+      if(error){ _aviso('No se ha podido guardar. Inténtalo de nuevo.', true); return false; }
       if(textoDeshacer) _avisoDeshacer(textoDeshacer, _deshacerFila(o.tipo, o.id, antes, rk));
       if('visto' in patch){ await refrescarIdsVistos(); refrescarVistosNormalizados(); if(o.tipo==='tv') cargarContinuarViendo(); }
       if(patch.puntuacion!=null){ const k = `${o.tipo}:${o.id}`; if(!_nivelDeTitulo(k)) _colocarEnNivel(k, patch.puntuacion>=10 ? 'A' : patch.puntuacion>=8 ? 'B' : patch.puntuacion>=7 ? 'C' : 'D'); }
@@ -275,7 +275,7 @@
       const ev = JSON.parse(JSON.stringify(it.episodios_vistos||{}));
       ev[n.s] = [...new Set([...(ev[n.s]||[]), n.e])].sort((a,b)=>a-b);
       const { error } = await sb.from('mi_biblioteca').update({episodios_vistos:ev}).eq('user_id', sesionActual.user.id).eq('tmdb_id', it.tmdb_id).eq('tipo','tv');
-      if(error){ btn.disabled = false; btn.textContent = '✓ Visto'; alert('No se pudo guardar. Inténtalo de nuevo.'); return; }
+      if(error){ btn.disabled = false; btn.textContent = '✓ Visto'; _aviso('No se pudo guardar. Inténtalo de nuevo.', true); return; }
       const previo = it.episodios_vistos || {};
       _avisoDeshacer(`✓ ${it.titulo} · T${n.s} E${n.e} visto`, async ()=>{
         const { error:e2 } = await sb.from('mi_biblioteca').update({episodios_vistos:previo}).eq('user_id', sesionActual.user.id).eq('tmdb_id', it.tmdb_id).eq('tipo','tv');

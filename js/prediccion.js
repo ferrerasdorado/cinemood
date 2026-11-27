@@ -836,6 +836,7 @@
         else if(accion==='trailers') abrirFeedTrailers();
         else if(accion==='lista') tabIr('milista');
         else if(accion==='cines') abrirEspecial('cines-es');
+        else if(accion==='descargas') abrirMisDescargas();
         return;
       }
       const id = params.get('id');
