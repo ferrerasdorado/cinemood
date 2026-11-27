@@ -289,9 +289,20 @@
     }
     // ── NOTAS EXTERNAS (IMDb, Rotten Tomatoes, Metacritic) vía OMDb: clave gratuita de omdbapi.com ──
     const OMDB_KEY = '8f16c621';
+    // Recuadro bajo la nota con lo que llega tarde («Basada en…», crítica frente a público)
+    function _fichaExtra(id, texto){
+      const el = document.getElementById(id); if(!el) return;
+      el.hidden = !texto; el.textContent = texto || '';
+      _fichaExtraVisible();
+    }
+    function _fichaExtraVisible(){
+      const caja = document.getElementById('d-extra'); if(!caja) return;
+      const b = document.getElementById('d-basada'), g = document.getElementById('d-notas-gap');
+      caja.hidden = !((b && b.style.display!=='none' && b.innerHTML) || (g && !g.hidden));
+    }
     async function _pintarNotasExternas(tipo, id, p){
       const el = document.getElementById('d-notas-ext'); if(!el) return;
-      el.innerHTML = ''; el.style.display = 'none';
+      el.innerHTML = ''; el.style.display = 'none'; _fichaExtra('d-notas-gap', '');
       const sinNotas = ()=>{ if(peliculaActual===p) el.classList.remove('reservado'); };   // su hueco reservado se recoge
       if(!OMDB_KEY){ sinNotas(); return; }
       try{
@@ -310,8 +321,8 @@
         const critica = mc ? Number(mc.replace('/100','')) : rt ? Number(rt.replace('%','')) : null, publico = d.imdbRating && d.imdbRating!=='N/A' ? Number(d.imdbRating)*10 : null;
         if(critica!=null && publico!=null){
           const dif = critica - publico, cn = mc ? `Metacritic ${critica}` : `Rotten ${critica}%`, pn = `IMDb ${String(d.imdbRating).replace('.',',')}`;
-          if(dif >= 15) notas.push(`<div class="nota-gap">🧐 La crítica la valoró bastante mejor que el público (${cn} · ${pn}).</div>`);
-          else if(dif <= -15) notas.push(`<div class="nota-gap">🍿 Al público le gustó mucho más que a la crítica (${pn} · ${cn}).</div>`);
+          const gap = dif >= 15 ? `🧐 La crítica la valoró bastante mejor que el público (${cn} · ${pn}).` : dif <= -15 ? `🍿 Al público le gustó mucho más que a la crítica (${pn} · ${cn}).` : '';
+          if(gap) _fichaExtra('d-notas-gap', gap);
         }
         el.innerHTML = notas.join(''); el.style.display = 'flex'; el.style.flexWrap = 'wrap';
         el.classList.remove('reservado');
@@ -493,6 +504,7 @@
       if(!lineas.length && b.hechos) lineas.push('📰 Basada en hechos reales');
       el.innerHTML = lineas.map(x=>`<div>${x}</div>`).join('');
       el.style.display = lineas.length ? 'block' : 'none';
+      _fichaExtraVisible();
     }
     // Mapa con los lugares de rodaje (Leaflet se descarga solo cuando hace falta)
     function _cargarLeaflet(){
@@ -647,7 +659,7 @@
         _pintarEquipo(data.crew||[], p);
         _pintarPremios(tipo, id, data, p);
         _pintarWikipedia(tipo, id, p);
-        _fichaEspera(_cargarWikidataFicha(tipo, id, p));
+        _cargarWikidataFicha(tipo, id, p);
         window.repartoActual=cast;window.directoresActuales=dirs;
         const pH=(arr,vn)=>arr.length?arr.map((p,i)=>`<div class="persona-row" onclick="abrirPersonaDesdeDetalle(${vn}[${i}])"><img loading="lazy" class="persona-avatar" src="${p.profile_path?'https://image.tmdb.org/t/p/w92'+p.profile_path:''}" alt="${_escHtml(p.name)}"><div><div class="persona-nombre">${_escHtml(p.name)}</div><div class="persona-rol-tag">${_escHtml(p._rol)}</div></div><span class="persona-arrow">›</span></div>`).join(''):'<span style="color:var(--k-767973);font-size:13px">No disponible</span>';
         document.getElementById('d-directores').innerHTML=pH(dirs,'directoresActuales');

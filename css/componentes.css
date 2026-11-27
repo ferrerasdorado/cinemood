@@ -98,3 +98,9 @@
 #p-detalle #d-logo.detalle-logo{height:46px;max-height:46px;width:auto;max-width:100%}
 /* Fila de IMDb/Metacritic: hueco reservado (invisible) hasta saber si hay notas */
 #p-detalle .notas-ext.reservado{display:flex !important;visibility:hidden;min-height:25px}
+/* Recuadro bajo la nota con «Basada en…» y crítica frente a público (fuera de la tarjeta oscura) */
+.ficha-extra[hidden]{display:none}
+.ficha-extra .detalle-basada{color:var(--ink);margin-top:0;font-size:13.5px}
+.ficha-extra .detalle-basada b{color:var(--ink)}
+.ficha-extra .nota-gap{color:var(--ink);font-size:13.5px;margin-top:0}
+.ficha-extra .detalle-basada:not([style*="none"])+.nota-gap:not([hidden]){margin-top:8px}

@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="css/editorial.css?v=fffa323c">
   <link rel="stylesheet" href="css/fuentes-nas.css?v=9c9c7cda">
   <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
-  <link rel="stylesheet" href="css/componentes.css?v=f4730579">
+  <link rel="stylesheet" href="css/componentes.css?v=3693d3e8">
 </head>
 <body class="sin-sesion">
 <div id="splash" aria-hidden="true">
@@ -609,7 +609,6 @@
           <div class="detalle-calif" id="d-calif" style="display:none"></div>
           <div class="detalle-estreno" id="d-estreno" style="display:none"></div>
           <div class="detalle-poscreditos" id="d-poscreditos" style="display:none"></div>
-          <div class="detalle-basada" id="d-basada" style="display:none"></div>
           <div class="detalle-estado-serie" id="d-estado-serie" style="display:none"></div>
           <div class="detalle-titulo-original" id="d-titulo-original" style="display:none"></div>
           <div class="detalle-tagline" id="d-tagline" style="display:none"></div>
@@ -636,6 +635,11 @@
       <div class="d-puntuacion-row" id="d-puntuacion-row" style="display:none"></div>
       <div class="d-nivel-row" id="d-nivel-row" style="display:none"></div>
       <div class="d-motivos" id="d-motivos" style="display:none"></div>
+      <!-- Lo que llega tarde (Wikidata, OMDb) va aquí, bajo la nota: así no empuja la tarjeta ni los botones -->
+      <div class="detalle-box ficha-extra" id="d-extra" hidden>
+        <div class="detalle-basada" id="d-basada" style="display:none"></div>
+        <div class="nota-gap" id="d-notas-gap" hidden></div>
+      </div>
       <div class="detalle-box saga-en-ficha" id="d-coleccion-box" style="display:none">
         <div class="detalle-box-label" id="d-coleccion-label">Pertenece a una colección</div>
         <div class="scroll-wrap">
@@ -1142,8 +1146,8 @@
   <script src="js/navegacion.js?v=ceab7fc5"></script>
   <script src="js/animo.js?v=4760fb6f"></script>
   <script src="js/descubre.js?v=7eff533c"></script>
-  <script src="js/ficha.js?v=c6e0e783"></script>
-  <script src="js/similares.js?v=857a708a"></script>
+  <script src="js/ficha.js?v=e9a81b89"></script>
+  <script src="js/similares.js?v=d43f55ea"></script>
   <script src="js/especiales.js?v=4b07292f"></script>
   <script src="js/colecciones.js?v=f61821eb"></script>
   <script src="js/rutas.js?v=a4e18701"></script>
