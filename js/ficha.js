@@ -457,19 +457,22 @@
       requestAnimationFrame(()=>{ pista.scrollLeft = i*pista.clientWidth; document.getElementById('galeria-cont').textContent = `${i+1} / ${window._galeria.length}`; });
     }
     function cerrarGaleria(){ const v = document.getElementById('galeria-visor'); if(v) v.style.display = 'none'; document.body.style.overflow = ''; }
-    // Luminosidad media de las partes visibles (no transparentes) de un logo: < 0,35 es un logo oscuro
+    // ¿Se leería el logo sobre la tarjeta oscura de la ficha? Se calcula la luminancia relativa media (WCAG, en
+    // escala lineal) de sus partes visibles: por debajo de 0,1 el contraste con el fondo no llega a 3 y es un logo
+    // oscuro (negro o gris oscuro, pensado para fondo blanco). Un rojo intenso, por ejemplo, sí se lee y se respeta.
     function _logoEsOscuro(img){
       try{
         const ancho = 64, alto = Math.max(1, Math.round(64 * img.naturalHeight / Math.max(1, img.naturalWidth)));
         const c = document.createElement('canvas'); c.width = ancho; c.height = alto;
         const x = c.getContext('2d', {willReadFrequently:true}); x.drawImage(img, 0, 0, ancho, alto);
         const d = x.getImageData(0, 0, ancho, alto).data;
+        const lin = v => { v /= 255; return v <= 0.03928 ? v/12.92 : ((v+0.055)/1.055) ** 2.4; };
         let suma = 0, peso = 0;
         for(let i=0; i<d.length; i+=4){
           const a = d[i+3]/255; if(a < 0.2) continue;
-          suma += a * (0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2]) / 255; peso += a;
+          suma += a * (0.2126*lin(d[i]) + 0.7152*lin(d[i+1]) + 0.0722*lin(d[i+2])); peso += a;
         }
-        return peso > 0 && suma/peso < 0.35;
+        return peso > 0 && suma/peso < 0.1;
       }catch(e){ return false; }   // si no se puede medir, se deja como está
     }
     async function _cargarLogoOficial(id,tipo){
