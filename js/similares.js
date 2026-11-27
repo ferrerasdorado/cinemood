@@ -647,7 +647,7 @@
         _pintarEquipo(data.crew||[], p);
         _pintarPremios(tipo, id, data, p);
         _pintarWikipedia(tipo, id, p);
-        _cargarWikidataFicha(tipo, id, p);
+        _fichaEspera(_cargarWikidataFicha(tipo, id, p));
         window.repartoActual=cast;window.directoresActuales=dirs;
         const pH=(arr,vn)=>arr.length?arr.map((p,i)=>`<div class="persona-row" onclick="abrirPersonaDesdeDetalle(${vn}[${i}])"><img loading="lazy" class="persona-avatar" src="${p.profile_path?'https://image.tmdb.org/t/p/w92'+p.profile_path:''}" alt="${_escHtml(p.name)}"><div><div class="persona-nombre">${_escHtml(p.name)}</div><div class="persona-rol-tag">${_escHtml(p._rol)}</div></div><span class="persona-arrow">›</span></div>`).join(''):'<span style="color:var(--k-767973);font-size:13px">No disponible</span>';
         document.getElementById('d-directores').innerHTML=pH(dirs,'directoresActuales');
