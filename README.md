@@ -19,7 +19,8 @@ css/                  Estilos, en el orden en que se aplican
   fuentes-nas.css     Hoja «Ver», NAS, «Mis descargas», addons y vídeos
   acceso.css          Pantalla de entrada
 js/                   Lógica, un archivo por apartado (nucleo, navegacion, descubre, ficha, fuentes,
-                      reproductor, nas, cuenta…). Se cargan como scripts clásicos y comparten el ámbito global.
+                      reproductor, subtitulos, hosters, nas, cuenta…). Se cargan como scripts clásicos y
+                      comparten el ámbito global.
   app.js              Lo único que se ejecuta al cargar, en orden. Se carga después de los demás,
                       así todas las funciones ya existen cuando arranca.
 sw.js                 Service worker: abre la app al instante y avisa cuando hay versión nueva
@@ -37,22 +38,45 @@ antes de subirlo. Así los móviles descargan la versión nueva en lugar de usar
 
 En la ficha de una película o serie:
 
-- **▶ Ver** pregunta a tus addons (Torrentio, StremThru, etc.) por fuentes de ese título y las lista con
-  filtros de idioma, resolución, subtítulos, proveedor y orden. Cada fuente puede tener:
-  - **Reproducir**: reproductor integrado en la app (HTML5, con hls.js para `.m3u8` y mpegts.js para `.ts`).
-  - **Abrir en VLC**: en Android e iPhone abre la app de VLC; en el ordenador descarga una lista `.m3u`.
-  - **Copiar enlace** y **Descargar**, si es un archivo directo.
-  - **Enviar al NAS**: si la fuente es un torrent (con o sin AllDebrid). En una serie, manda el capítulo elegido.
+- **▶ Ver** pregunta a tus addons (Torrentio, StremThru, etc.) por fuentes de ese título:
+  - Filtros rápidos de **idioma** y **calidad**, búsqueda por nombre, orden (**Recomendado**: primero lo que
+    el debrid tiene listo, luego en español —castellano antes que latino— y buena calidad) y «Más filtros».
+  - Se muestran **20 resultados** y «Mostrar más». Cada tarjeta lleva etiquetas (⚡ Al instante, 1080p, HDR,
+    tamaño, semillas, idioma, «Temporada completa»…), el nombre del torrent y **un botón principal**:
+    **Reproducir** (reproductor integrado, con hls.js y mpegts.js) o **Enviar al NAS** si es un torrent.
+  - El resto de acciones va en **«⋯»**: Abrir en VLC, Copiar enlace, Descargar y Enviar al NAS.
+  - Al final, plegado, **«Buscar también en webs de descargas»** (Cinecalidad + AllDebrid): solo busca al abrirlo.
 - **NAS**:
-  - En una película, abre la misma lista en «modo NAS»: solo torrents, para elegir proveedor y torrent,
-    o «Que elija el NAS automáticamente».
-  - En una serie, un pop-up: **serie completa**, **temporada completa** o **capítulos sueltos**.
-    La serie o la temporada se envían como una solicitud por capítulo (solo los ya emitidos).
+  - En una **película**, la misma lista con solo torrents, o «Que elija el NAS».
+  - En una **serie**, arriba se elige **«Toda la serie»** o una **temporada** (T1, T2…), y dentro de cada
+    temporada hay dos pestañas:
+    - **Temporada completa**: los **packs** con la temporada entera, o «Que elija el NAS» (busca el mejor pack).
+    - **Capítulos**: la lista de capítulos con su nombre. Se marcan varios y el NAS busca un torrent **de cada
+      capítulo** (nunca un pack), o «Elegir torrent» en uno para escogerlo; ahí los packs están ocultos salvo
+      que se pidan.
+    - **Toda la serie**: packs con todas las temporadas, o «Que elija el NAS» (un pack por temporada).
+  - Si en «Ver» de un capítulo eliges un torrent que es un pack, el botón lo dice («Enviar al NAS la
+    temporada 5») y se apunta como temporada completa.
 - No se repite lo que ya está en la cola. Los avisos salen dentro de la app, no en ventanas del navegador.
+
+El reproductor integrado tiene **Subtítulos** (de tus addons de subtítulos, primero en español) y
+**Abrir en VLC** debajo del vídeo.
+
+### Cómo se distingue un capítulo de un pack
+
+Los addons ponen el nombre del torrent en la primera línea y, si es un pack, el archivo del capítulo en la
+segunda. Con eso se clasifica cada torrent (`_fteTipoTorrent` en `js/fuentes.js` y `tipo_torrent` en
+`nas/cinemood_nas.py`, con las mismas reglas):
+
+| Nombre del torrent | Tipo |
+|---|---|
+| `Breaking.Bad.S01E01.Pilot.1080p…`, `…1x01…` | un capítulo |
+| `Breaking.Bad.S01.1080p…`, `Season 1`, `1ª Temporada Completa`, `S01E01-07` | temporada entera |
+| `Breaking Bad Complete S01-S05…`, `Seasons 1-5`, `1ª a 5ª Temporada` | serie entera |
 
 **Tú → 📥 Mis descargas del NAS** muestra todo lo enviado, agrupado por título y con su estado
 (en cola, buscando torrent, descargando, completada, error, sin fuentes o cancelada). Se actualiza sola
-cada 20 segundos. Lo que se está descargando lleva su barra con porcentaje, tamaño, velocidad y tiempo
+cada 15 segundos mientras haya algo en marcha. Lo que se está descargando lleva su barra con porcentaje, tamaño, velocidad y tiempo
 restante, que el NAS copia desde RDT-Client. Desde ahí se puede:
 
 - **Cancelar descarga**: el NAS borra el torrent de RDT-Client (sin borrar lo ya descargado).

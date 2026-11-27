@@ -634,7 +634,6 @@
     document.addEventListener('keydown', e=>{
       if(e.key!=='Escape') return;
       if(document.getElementById('feed-overlay').style.display!=='none'){ cerrarFeedTrailers(); return; }
-      if(document.getElementById('nas-modal').style.display!=='none'){ cerrarNasModal(); return; }
       if(document.getElementById('visor').classList.contains('activo')) cerrarVisor();
       else if(document.getElementById('fuentes-modal').classList.contains('activo')) cerrarFuentes();
     });

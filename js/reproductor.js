@@ -75,6 +75,7 @@
       err.hidden = true;
       document.getElementById('visor-titulo').textContent = ctx.titulo;
       document.getElementById('visor-sub').textContent = subTxt;
+      _subtitulosPreparar(ctx);
       let ultimo = Date.now(), retomoAplicado = false, fallbackHlsIntentado = false;
       const retomar = ()=>{
         if(retomoAplicado) return; retomoAplicado = true;
@@ -84,7 +85,7 @@
       const guardar = ()=>{ if(v.currentTime>1 && (!isFinite(v.duration) || v.duration>10)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){} } };
       const mostrarError = detalle=>{
         if(miTurno !== window._visorTurno) return;
-        err.textContent = 'No se pudo reproducir en el reproductor interno: '+detalle+' Puedes pulsar «Abrir en VLC» arriba o copiar el enlace.';
+        err.textContent = 'No se pudo reproducir en el reproductor interno: '+detalle+' Prueba «Abrir en VLC», debajo del vídeo.';
         err.hidden = false;
       };
       v.onloadedmetadata = retomar;
@@ -167,6 +168,7 @@
       _limpiarMotoresVisor();
       v.pause(); v.removeAttribute('src'); v.load();
       document.getElementById('visor-vlc-link').removeAttribute('href');
+      _subtitulosCerrar();
       ov.classList.remove('activo');
       if(!document.getElementById('fuentes-modal').classList.contains('activo')) document.body.style.overflow = '';
     }

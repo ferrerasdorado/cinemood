@@ -21,7 +21,7 @@
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css?v=e142d82b">
   <link rel="stylesheet" href="css/editorial.css?v=c46a78e2">
-  <link rel="stylesheet" href="css/fuentes-nas.css?v=c841e2c1">
+  <link rel="stylesheet" href="css/fuentes-nas.css?v=c76ac300">
   <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
 </head>
 <body class="sin-sesion">
@@ -1071,22 +1071,22 @@
       <div class="fte-cab"><h3 id="fte-titulo"></h3><button class="fte-x" type="button" aria-label="Cerrar" onclick="cerrarFuentes()">✕</button></div>
       <div class="fte-sel" id="fte-sel"></div>
       <div id="fte-body"></div>
-      <p class="fte-nota">«Reproducir» abre el reproductor interno de CineMood (con Media3 ExoPlayer en la app de Android TV, y soporte HLS/MPEG-TS en web). En Android e iPhone/iPad, «Abrir en VLC» abre la app instalada; en Mac/PC guarda una lista .m3u para abrirla con VLC. «Descargar» guarda o abre el archivo original cuando el servidor lo permite. Las listas y enlaces pueden contener acceso privado: no los compartas.</p>
-    </div>
-  </div>
-  <!-- Descargar serie en el NAS: serie completa, temporada completa o capítulos sueltos -->
-  <div class="fte-modal" id="nas-modal" style="display:none" onclick="if(event.target===this)cerrarNasModal()">
-    <div class="fte-sheet" role="dialog" aria-modal="true" aria-labelledby="nas-titulo">
-      <div class="fte-cab"><h3 id="nas-titulo"></h3><button class="fte-x" type="button" aria-label="Cerrar" onclick="cerrarNasModal()">✕</button></div>
-      <div id="nas-body"></div>
+      <p class="fte-nota">«Abrir en VLC», «Copiar enlace» y «Descargar» usan el enlace del addon, que puede incluir tu acceso privado: no lo compartas.</p>
     </div>
   </div>
   <div class="visor" id="visor" role="dialog" aria-modal="true" aria-label="Reproductor">
-    <div class="visor-cab"><b id="visor-titulo"></b><span id="visor-sub"></span></div>
-    <div class="visor-vlc">
-      <a id="visor-vlc-link" class="fte-accion" onclick="_abrirVLCVisor(event)">Abrir en VLC</a>
-      <small>Requiere VLC instalado. Se abrirá fuera de CineMood.</small>
+    <div class="visor-cab">
+      <button class="visor-cerrar" type="button" onclick="cerrarVisor()" aria-label="Cerrar el reproductor">‹</button>
+      <div class="visor-tit"><b id="visor-titulo"></b><span id="visor-sub"></span></div>
     </div>
+    <video id="visor-video" controls playsinline preload="auto"></video>
+    <div class="visor-error" id="visor-error" hidden></div>
+    <div class="visor-barra">
+      <button class="visor-btn" id="visor-subs-btn" type="button" aria-expanded="false" aria-controls="visor-subs" onclick="_subtitulosAlternar()">Subtítulos</button>
+      <a class="visor-btn" id="visor-vlc-link" onclick="_abrirVLCVisor(event)">Abrir en VLC</a>
+    </div>
+    <div class="visor-subs" id="visor-subs" hidden></div>
+  </div>
     <video id="visor-video" controls playsinline preload="auto"></video>
     <div class="visor-error" id="visor-error" hidden></div>
     <button class="visor-volver" type="button" onclick="cerrarVisor()">‹ Volver</button>
@@ -1100,9 +1100,10 @@
     </div>
     <div class="feed-lista" id="feed-lista"></div>
   </div>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Versión fija: una actualización de la librería no puede cambiar la app sin que lo sepamos -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
   <script src="js/nucleo.js?v=600bb488"></script>
-  <script src="js/navegacion.js?v=2d25bdca"></script>
+  <script src="js/navegacion.js?v=3a7931c6"></script>
   <script src="js/animo.js?v=4760fb6f"></script>
   <script src="js/descubre.js?v=7eff533c"></script>
   <script src="js/ficha.js?v=f87365af"></script>
@@ -1120,16 +1121,16 @@
   <script src="js/esta-noche.js?v=b879e5ab"></script>
   <script src="js/prediccion.js?v=85152efc"></script>
   <script src="js/addons.js?v=cb813685"></script>
-  <script src="js/fuentes.js?v=e8083f7e"></script>
-  <script src="js/reproductor.js?v=36fce8f9"></script>
+  <script src="js/fuentes.js?v=a99ad2df"></script>
+  <script src="js/reproductor.js?v=887df08f"></script>
+  <script src="js/subtitulos.js?v=af5f443a"></script>
   <script src="js/videos.js?v=2fe823c5"></script>
-  <script src="js/nas.js?v=cb3f3f32"></script>
+  <script src="js/hosters.js?v=814f88b9"></script>
+  <script src="js/nas.js?v=4a695660"></script>
   <script src="js/mi-lista.js?v=74f1fd34"></script>
-  <script src="js/app.js?v=f7153888"></script>
+  <script src="js/app.js?v=f519007b"></script>
   <script src="js/mi-lista-arranque.js?v=f60f642c"></script>
-  <script src="js/modo-tv.js?v=77be16bd"></script>
+  <script src="js/modo-tv.js?v=dee43860"></script>
   <script src="js/service-worker.js?v=9c0366c7"></script>
-  <script src="js/diagnostico-addons.js?v=3e663c16"></script>
-  <script src="js/hosters.js?v=4061ed30"></script>
 </body>
 </html>

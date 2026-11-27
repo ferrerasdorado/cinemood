@@ -6,7 +6,7 @@
     if(!document.documentElement.classList.contains('modo-tv')) return;
     const SEL = 'a[href], button, input, select, textarea, [onclick], [role="button"], .desc-card, .similar-card, .especial-tile';
     const HSCROLL_SEL = '.desc-scroll, .similares-scroll, .reparto-scroll, .especiales-scroll, .sem-fila, .hoy-cine-fila, .videos-tira, .galeria-tira, .d-puntuacion-row, .pc-nav, .exp-chips, .sim-filtros, .osc-ediciones, .desc-plataformas, .desc-gen-scroll, .fm-top, .fm-generos, .colab-fila, #continuar-viendo-scroll';
-    const VSCROLL_SEL = '.fte-sheet, #cm-subtitles, .juntos-hoja, #col-overlay, #maraton-overlay, #propina-overlay, #gate';
+    const VSCROLL_SEL = '.fte-sheet, #visor-subs, .juntos-hoja, #col-overlay, #maraton-overlay, #propina-overlay, #gate';
 
     // Comprobación rápida sin recalcular estilos de cada nodo
     function esVisibleRapido(el){
@@ -31,7 +31,7 @@
       if(fte && fte.classList.contains('activo')) return fte.querySelector('.fte-sheet') || fte;
       const lp = document.getElementById('lp-menu');
       if(lp && lp.classList.contains('on')) return lp;
-      for(const id of ['video-visor','juntos-hoja','galeria-visor','feed-overlay','col-overlay','maraton-overlay','propina-overlay','nas-modal']){
+      for(const id of ['video-visor','juntos-hoja','galeria-visor','feed-overlay','col-overlay','maraton-overlay','propina-overlay']){
         const el = document.getElementById(id);
         if(el && el.style.display && el.style.display !== 'none' && esVisibleRapido(el)) return el;
       }

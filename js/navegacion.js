@@ -83,7 +83,7 @@
       if(document.getElementById('visor')?.classList.contains('activo')) return {el:document.getElementById('visor'), cerrar:cerrarVisor};
       if(document.getElementById('fuentes-modal')?.classList.contains('activo')) return {el:document.getElementById('fuentes-modal'), cerrar:cerrarFuentes};
       if(document.getElementById('lp-menu')?.classList.contains('on')) return {el:document.getElementById('lp-menu'), cerrar:cerrarMenuLp};
-      for(const [id,cerrar] of [['video-visor',()=>cerrarVideo()],['juntos-hoja',()=>cerrarJuntos()],['galeria-visor',()=>cerrarGaleria()],['feed-overlay',()=>cerrarFeedTrailers()],['col-overlay',()=>cerrarColOverlay()],['maraton-overlay',()=>cerrarMaraton()],['propina-overlay',()=>cerrarPropina()],['nas-modal',()=>cerrarNasModal()]]){
+      for(const [id,cerrar] of [['video-visor',()=>cerrarVideo()],['juntos-hoja',()=>cerrarJuntos()],['galeria-visor',()=>cerrarGaleria()],['feed-overlay',()=>cerrarFeedTrailers()],['col-overlay',()=>cerrarColOverlay()],['maraton-overlay',()=>cerrarMaraton()],['propina-overlay',()=>cerrarPropina()]]){
         const el = vis(id); if(el) return {el, cerrar};
       }
       return null;

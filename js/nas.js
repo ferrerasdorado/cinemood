@@ -1,4 +1,4 @@
-// CineMood · NAS: enviar descargas (pop-up de series, modo NAS de «Ver», «Enviar al NAS») y «Mis descargas»
+// CineMood · NAS: enviar descargas (películas, series por temporada o capítulo, «Enviar al NAS» en «Ver») y «Mis descargas»
 // (Parte de index.html; se carga como script clásico: todo comparte el mismo ámbito global.)
 
     // ── Hoja de fuentes ──
@@ -24,8 +24,8 @@
       const p = peliculaActual; if(!p) return;
       // Películas: se abre la hoja de fuentes en «modo NAS» para elegir proveedor y torrent
       if(p._tipo!=='tv'){ abrirFuentes({tipo:'movie', tmdbId:p.id, titulo:p.title||p.name||'', nas:true}); return; }
-      // Series: pop-up para elegir serie completa, temporada completa o capítulos sueltos
-      abrirNasModal();
+      // Series: por temporada (packs), capítulo a capítulo o la serie entera
+      abrirNasSerie();
     }
 
     // Clave para comparar solicitudes: mismo título, temporada y capítulo
@@ -33,7 +33,9 @@
 
     // Guarda en la cola del NAS una fila por cada elemento de «partes»:
     //   {}                                  → película (el NAS elige el torrent)
-    //   {temporada, episodio}               → un capítulo (el NAS elige el torrent)
+    //   {temporada, episodio}               → un capítulo (el NAS elige un torrent de ese capítulo)
+    //   {temporada, episodio:null}          → la temporada entera (el NAS elige un pack)
+    //   {temporada:null, episodio:null}     → la serie entera (solo con un pack elegido)
     //   {..., info_hash, fuente}            → con el torrent que has elegido tú
     // Antes de guardar quita lo que ya está en la cola, para no descargar dos veces lo mismo.
     // Devuelve true si todo ha quedado en la cola (aunque fuera porque ya estaba).
@@ -50,11 +52,10 @@
       const vistas = new Set();
       filas = filas.filter(f=>{ const k=_nasClave(tipo,f.tmdb_id,f.temporada,f.episodio); if(vistas.has(k)) return false; vistas.add(k); return true; });
 
-      const btn = document.getElementById('btn-descargar-nas');
-      const btnModal = document.getElementById('nas-enviar');
+      const btn = document.getElementById('btn-descargar-nas'), btnUsado = opciones.boton;
       _nasEnviando = true;
       if(btn) btn.setAttribute('aria-disabled','true');
-      if(btnModal) btnModal.disabled = true;
+      if(btnUsado) btnUsado.disabled = true;
       try{
         // Lo que ya está en marcha para este título no se vuelve a pedir
         let repetidas = 0;
@@ -76,8 +77,10 @@
           const {error} = await sb.from('solicitudes_descarga').insert(filas.slice(i,i+200));
           if(error) throw error;
         }
+        const una = f => f.temporada==null ? 'serie completa' : f.episodio==null ? `temporada ${f.temporada} completa` : `T${f.temporada} · E${f.episodio}`;
         const que = tipo==='movie' ? titulo
-          : filas.length===1 ? `${titulo} · T${filas[0].temporada} · E${filas[0].episodio}`
+          : filas.length===1 ? `${titulo} · ${una(filas[0])}`
+          : filas.every(f=>f.episodio==null) ? `${filas.length} temporadas de ${titulo}`
           : `${filas.length} capítulos de ${titulo}`;
         _nasAviso('Enviado al NAS: '+que+(repetidas ? ` (${repetidas} ya estaban en la cola)` : '')+'. Síguelo en «Mis descargas».');
         if(document.getElementById('p-nas')?.classList.contains('activa')) cargarMisDescargas();
@@ -89,7 +92,7 @@
       }finally{
         _nasEnviando = false;
         if(btn) btn.removeAttribute('aria-disabled');
-        if(btnModal){ btnModal.disabled = false; _actualizarBotonNas(); }
+        if(btnUsado) btnUsado.disabled = false;
       }
     }
     // Explica un error de Supabase con palabras normales
@@ -103,136 +106,123 @@
       return inicio+' '+([e&&e.code, msg].filter(Boolean).join(' · ').slice(0,200) || 'Error desconocido.');
     }
 
-    // Lista de capítulos ya emitidos de una temporada (los que aún no han salido no se piden).
-    // Si TMDB no responde, se usan todos los capítulos que dice la ficha.
-    async function _nasCapitulosEmitidos(serieId, temporada, totalFicha){
+    // ══ NAS de una serie: por temporada (packs), capítulo a capítulo o la serie entera ══
+    // Usa la misma hoja que «Ver» (js/fuentes.js) con ctx.serieNas y ctx.vista:
+    //   'temporada' → packs con la temporada entera · 'capitulos' → lista de capítulos para marcar
+    //   'episodio'  → torrents de un capítulo concreto · 'serie' → packs con todas las temporadas
+    function abrirNasSerie(){
+      const p = peliculaActual; if(!p) return;
+      const ctx = {tipo:'tv', nas:true, serieNas:true, tmdbId:p.id, titulo:p.title||p.name||''};
+      _ctxSerie(ctx, null, null);
+      ctx.vista = 'temporada'; ctx.seleccion = new Set();
+      abrirFuentes(ctx);
+    }
+    // Cabecera: temporadas (y «Toda la serie») y, dentro de una temporada, «Temporada completa» o «Capítulos»
+    function _nasSerieCabecera(ctx, cont){
+      const ir = cambios=>{
+        Object.assign(ctx, cambios); ctx.incluirPacks = false;
+        _fteSelectores(); document.querySelector('#fuentes-modal .fte-sheet').scrollTop = 0; cargarFuentes();
+      };
+      const chip = (txt, on, cambios) => _fEl('button',{type:'button',class:'fte-chip'+(on?' on':''),'aria-pressed':on?'true':'false',onclick:()=>ir(cambios)},txt);
+      const kids = [_fEl('div',{class:'fte-chips nas-temps',role:'group','aria-label':'Qué descargar'},
+        chip('Toda la serie', ctx.vista==='serie', {vista:'serie'}),
+        ...ctx.temporadas.map(t=>chip('T'+t.n, ctx.vista!=='serie' && ctx.season===t.n,
+          {season:t.n, vista: ctx.vista==='capitulos' ? 'capitulos' : 'temporada', seleccion:new Set()})))];
+      if(ctx.vista!=='serie'){
+        const t = ctx.temporadas.find(x=>x.n===ctx.season);
+        const enCaps = ctx.vista==='capitulos' || ctx.vista==='episodio';
+        const seg = (v, txt, on) => _fEl('button',{type:'button',role:'tab','aria-selected':on?'true':'false',class:'nas-seg-btn'+(on?' on':''),onclick:()=>ir({vista:v})},txt);
+        kids.push(_fEl('div',{class:'nas-seg',role:'tablist','aria-label':'Temporada '+ctx.season},
+          seg('temporada','Temporada completa', !enCaps),
+          seg('capitulos','Capítulos'+(t&&t.count>1?' ('+t.count+')':''), enCaps)));
+      }
+      cont.className = 'fte-sel nas-cab-serie';
+      cont.replaceChildren(...kids);
+    }
+    // Explicación y botón «Que elija el NAS» encima de los resultados
+    function _nasSerieIntro(ctx){
+      const enviar = (partes, txt) => _fEl('button',{type:'button',class:'fte-btn',onclick:async e=>{ if(await _enviarSolicitudesNAS(partes,{boton:e.currentTarget})) cerrarFuentes(); }},txt);
+      if(ctx.vista==='serie'){
+        const temps = ctx.temporadas.map(t=>t.n);
+        return _fEl('div',{class:'nas-intro'},
+          _fEl('p',{class:'nas-intro-tit',text:'Toda la serie'}),
+          _fEl('p',{class:'nas-intro-txt',text:'Packs con todas las temporadas. Si no te convence ninguno, el NAS puede buscar el mejor pack de cada temporada por separado.'}),
+          enviar(temps.map(n=>({temporada:n, episodio:null})), `Que elija el NAS · ${temps.length} ${temps.length===1?'temporada':'temporadas'}`));
+      }
+      if(ctx.vista==='episodio'){
+        return _fEl('div',{class:'nas-intro'},
+          _fEl('button',{type:'button',class:'fte-link',onclick:()=>{ ctx.vista='capitulos'; ctx.incluirPacks=false; _fteSelectores(); cargarFuentes(); }},'‹ Volver a los capítulos'),
+          _fEl('p',{class:'nas-intro-tit',text:`T${ctx.season} · Capítulo ${ctx.episode}`+(ctx.nombreEp?' · '+ctx.nombreEp:'')}),
+          _fEl('label',{class:'nas-check'}, _fEl('input',{type:'checkbox',checked:!!ctx.incluirPacks,onchange:e=>{ ctx.incluirPacks=e.target.checked; cargarFuentes(); }}),
+            ' Mostrar también packs de temporada (descargan la temporada entera)'));
+      }
+      return _fEl('div',{class:'nas-intro'},
+        _fEl('p',{class:'nas-intro-tit',text:`Temporada ${ctx.season} completa`}),
+        _fEl('p',{class:'nas-intro-txt',text:'Elige un pack con la temporada entera, o deja que el NAS escoja el mejor (en español y buena calidad si lo hay).'}),
+        enviar([{temporada:ctx.season, episodio:null}], 'Que elija el NAS'));
+    }
+    function _nasSerieSinResultados(ctx){
+      if(ctx.vista==='temporada') return _fEl('span',{}, `Tus addons no tienen packs con la temporada ${ctx.season} completa. `,
+        _fEl('button',{type:'button',class:'fte-link',onclick:()=>{ ctx.vista='capitulos'; _fteSelectores(); cargarFuentes(); }},'Pedirla capítulo a capítulo'));
+      if(ctx.vista==='serie') return 'Tus addons no tienen packs con la serie entera. Usa «Que elija el NAS» para pedir cada temporada por separado.';
+      return ctx.incluirPacks ? 'Tus addons no han devuelto torrents para este capítulo.'
+        : 'No hay torrents de este capítulo suelto. Marca «Mostrar también packs de temporada» si te vale descargar la temporada entera.';
+    }
+    // Lista de capítulos de la temporada para marcar varios (el NAS elige un torrent de cada uno)
+    async function _nasSerieCapitulos(ctx, body, vivo){
+      body.replaceChildren(_fteCargando('Cargando los capítulos…'));
+      const t = ctx.temporadas.find(x=>x.n===ctx.season) || {count:0};
+      const eps = await _nasEpisodiosTemporada(ctx.tmdbId, ctx.season, t.count);
+      if(!vivo()) return;
+      const sel = ctx.seleccion || (ctx.seleccion = new Set());
+      const emitidos = eps.filter(e=>e.emitido);
+      const boton = _fEl('button',{type:'button',class:'fte-btn fte-btn-prim nas-enviar-caps'});
+      const todos = _fEl('button',{type:'button',class:'fte-link'});
+      const actualizar = ()=>{
+        const n = sel.size;
+        boton.textContent = n ? `Enviar ${n} ${n===1?'capítulo':'capítulos'} · el NAS elige` : 'Marca los capítulos que quieras';
+        boton.disabled = !n;
+        todos.textContent = emitidos.length && sel.size===emitidos.length ? 'Desmarcar todos' : 'Marcar todos';
+      };
+      const lista = _fEl('div',{class:'nas-caps'}, ...eps.map(e=>_fEl('div',{class:'nas-cap'+(e.emitido?'':' futuro')},
+        _fEl('label',{class:'nas-cap-check'},
+          _fEl('input',{type:'checkbox',value:e.n,checked:sel.has(e.n),disabled:!e.emitido,'aria-label':'Capítulo '+e.n,
+            onchange:ev=>{ ev.target.checked ? sel.add(e.n) : sel.delete(e.n); actualizar(); }}),
+          _fEl('span',{class:'nas-cap-num',text:'E'+e.n}),
+          _fEl('span',{class:'nas-cap-nom'}, _fEl('b',{text:e.nombre||'Capítulo '+e.n}),
+            e.emitido ? null : _fEl('small',{text:e.fecha ? 'Se emite el '+_nasFechaCorta(e.fecha) : 'Aún no emitido'}))),
+        e.emitido ? _fEl('button',{type:'button',class:'fte-btn fte-btn-sec',onclick:()=>{
+          Object.assign(ctx,{vista:'episodio', episode:e.n, nombreEp:e.nombre||'', incluirPacks:false});
+          _fteSelectores(); document.querySelector('#fuentes-modal .fte-sheet').scrollTop = 0; cargarFuentes();
+        }},'Elegir torrent') : null)));
+      todos.onclick = ()=>{
+        if(sel.size===emitidos.length) sel.clear(); else emitidos.forEach(e=>sel.add(e.n));
+        lista.querySelectorAll('input[type=checkbox]').forEach(c=>{ c.checked = sel.has(+c.value); });
+        actualizar();
+      };
+      boton.onclick = async ()=>{
+        const partes = [...sel].sort((a,b)=>a-b).map(e=>({temporada:ctx.season, episodio:e}));
+        if(await _enviarSolicitudesNAS(partes,{boton})){ sel.clear(); cerrarFuentes(); }
+      };
+      body.replaceChildren(
+        _fEl('div',{class:'nas-intro'},
+          _fEl('p',{class:'nas-intro-txt',text:'Marca capítulos y el NAS buscará un torrent de cada uno (solo del capítulo, nunca la temporada entera). O pulsa «Elegir torrent» para escogerlo tú.'}),
+          emitidos.length ? todos : null),
+        eps.length ? lista : _fEl('p',{class:'fte-msg',text:'No se han podido cargar los capítulos de esta temporada.'}),
+        _fEl('div',{class:'nas-barra-enviar'}, boton));
+      actualizar();
+    }
+    // Capítulos de una temporada con nombre y fecha (los que aún no se han emitido no se pueden pedir)
+    async function _nasEpisodiosTemporada(serieId, temporada, totalFicha){
       const hoy = new Date().toISOString().slice(0,10);
       try{
         const d = await _tmdbCacheado(`/tv/${serieId}/season/${temporada}&language=es-ES`);
         const eps = (d && d.episodes || []).filter(e=>e.episode_number>0);
-        if(eps.length) return {emitidos: eps.filter(e=>e.air_date && e.air_date<=hoy).map(e=>e.episode_number), total: eps.length};
+        if(eps.length) return eps.map(e=>({n:e.episode_number, nombre:e.name||'', fecha:e.air_date||'', emitido:!!(e.air_date && e.air_date<=hoy)}));
       }catch(e){}
-      const n = totalFicha||0;
-      return {emitidos: Array.from({length:n},(_,i)=>i+1), total:n};
+      return Array.from({length:totalFicha||0},(_,i)=>({n:i+1, nombre:'', fecha:'', emitido:true}));
     }
-
-    // ── Pop-up «¿Qué quieres descargar?» (solo series) ──
-    // Estado del pop-up: qué opción está marcada, qué temporada y qué capítulos
-    const _nas = {modo:'serie', temporada:1, episodios:new Set(), preparando:false};
-
-    function abrirNasModal(){
-      const p = peliculaActual; if(!p) return;
-      // La ficha de la serie ya cargó sus temporadas (sin «Especiales»), con cuántos capítulos tiene cada una
-      const temps = (window.temporadasSeriesActual||[]).filter(s=>s.season_number>0);
-      _nas.modo = 'serie';
-      _nas.temporada = temps.length ? temps[0].season_number : 1;
-      _nas.episodios = new Set();
-      document.getElementById('nas-titulo').textContent = 'Descargar en el NAS · '+(p.name||p.title||'');
-      _pintarNasModal();
-      document.getElementById('nas-modal').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-      setTimeout(()=>document.querySelector('#nas-body input[type=radio]:checked')?.focus(), 0);
-    }
-    function cerrarNasModal(){
-      document.getElementById('nas-modal').style.display = 'none';
-      if(!document.getElementById('visor').classList.contains('activo') && !document.getElementById('fuentes-modal').classList.contains('activo')) document.body.style.overflow = '';
-      document.getElementById('btn-descargar-nas')?.focus();
-    }
-
-    function _pintarNasModal(){
-      const temps = (window.temporadasSeriesActual||[]).filter(s=>s.season_number>0);
-      const totalEps = temps.reduce((s,t)=>s+(t.episode_count||0),0);
-      const tActual = temps.find(t=>t.season_number===_nas.temporada) || temps[0];
-      const body = document.getElementById('nas-body');
-
-      // Una fila con su botón de radio por cada opción
-      const opcion = (modo, nombre, desc, disabled) => _fEl('label',{class:'fte-fila nas-opcion'+(_nas.modo===modo?' on':'')+(disabled?' fte-off':'')},
-        _fEl('input',{type:'radio', name:'nas-modo', value:modo, checked:_nas.modo===modo, disabled,
-          onchange:()=>{ _nas.modo = modo; _nas.episodios = new Set(); _pintarNasModal(); document.querySelector('#nas-body input[value="'+modo+'"]')?.focus(); }}),
-        _fEl('span',{class:'fte-cuerpo'}, _fEl('span',{class:'fte-nombre', text:nombre}), _fEl('span',{class:'fte-desc', text:desc})));
-
-      const sinTemps = !temps.length;
-      const kids = [
-        _fEl('p',{class:'fte-msg', text:'¿Qué quieres descargar?'}),
-        opcion('serie', 'Serie completa', sinTemps ? 'Todas las temporadas' : `${temps.length} ${temps.length===1?'temporada':'temporadas'} · ${totalEps} capítulos`),
-        opcion('temporada', 'Temporada completa', 'Todos los capítulos de una temporada', sinTemps),
-        opcion('sueltos', 'Capítulos sueltos', 'Elige uno o varios capítulos', sinTemps),
-      ];
-      if(sinTemps) kids.push(_fEl('p',{class:'fte-aviso', text:'No se han podido cargar las temporadas de esta serie, así que solo puedes pedirla completa.'}));
-
-      // Selector de temporada (para «Temporada completa» y «Capítulos sueltos»)
-      if(_nas.modo!=='serie' && tActual){
-        const extra = _fEl('div',{class:'nas-extra'});
-        extra.append(_fEl('div',{class:'fte-sel'}, _fEl('label',{text:'Temporada'},
-          _fEl('select',{id:'nas-temp', onchange:e=>{ _nas.temporada = +e.target.value; _nas.episodios = new Set(); _pintarNasModal(); document.getElementById('nas-temp')?.focus(); }},
-            ...temps.map(t=>_fEl('option',{value:t.season_number, selected:t.season_number===tActual.season_number,
-              text:`Temporada ${t.season_number}${t.episode_count?' · '+t.episode_count+' capítulos':''}`}))))));
-
-        // Casillas de capítulos (solo «Capítulos sueltos»)
-        if(_nas.modo==='sueltos'){
-          const n = tActual.episode_count||0;
-          if(!n) extra.append(_fEl('p',{class:'fte-aviso', text:'Esta temporada todavía no tiene capítulos.'}));
-          else{
-            const todos = _nas.episodios.size===n;
-            extra.append(_fEl('div',{class:'nas-eps'}, ...Array.from({length:n},(_,i)=>i+1).map(e=>
-              _fEl('label',{class:'nas-ep'}, _fEl('input',{type:'checkbox', value:e, checked:_nas.episodios.has(e), 'aria-label':'Capítulo '+e,
-                onchange:ev=>{ ev.target.checked ? _nas.episodios.add(e) : _nas.episodios.delete(e); _actualizarBotonNas(); }}), document.createTextNode(String(e))))));
-            extra.append(_fEl('button',{type:'button', class:'nas-todos', text:todos?'Quitar todos':'Marcar todos',
-              onclick:()=>{ _nas.episodios = todos ? new Set() : new Set(Array.from({length:n},(_,i)=>i+1)); _pintarNasModal(); }}));
-          }
-        }
-        kids.push(extra);
-      }
-
-      kids.push(_fEl('button',{type:'button', id:'nas-enviar', class:'fte-accion fte-accion-vlc nas-enviar', onclick:_confirmarNas}));
-      body.replaceChildren(...kids);
-      _actualizarBotonNas();
-    }
-
-    // El texto del botón dice exactamente lo que se va a pedir
-    function _actualizarBotonNas(){
-      const b = document.getElementById('nas-enviar'); if(!b) return;
-      const temps = (window.temporadasSeriesActual||[]).filter(s=>s.season_number>0);
-      const total = temps.reduce((s,t)=>s+(t.episode_count||0),0);
-      const tSel = temps.find(t=>t.season_number===_nas.temporada);
-      let txt = 'Solicitar la serie completa'+(total?` (${total} capítulos)`:''), ok = temps.length>0;
-      if(_nas.modo==='temporada') txt = 'Solicitar la temporada '+_nas.temporada+(tSel&&tSel.episode_count?` (${tSel.episode_count} capítulos)`:'');
-      if(_nas.modo==='sueltos'){
-        const n = _nas.episodios.size;
-        ok = n>0;
-        txt = ok ? `Solicitar ${n} ${n===1?'capítulo':'capítulos'} de la T${_nas.temporada}` : 'Marca al menos un capítulo';
-      }
-      if(_nas.preparando){ txt = 'Preparando la lista de capítulos…'; ok = false; }
-      b.textContent = txt;
-      b.disabled = !ok || _nasEnviando;
-    }
-
-    // «Serie completa» y «Temporada completa» se convierten en una solicitud por capítulo:
-    // así el NAS busca y descarga cada capítulo, y en «Mis descargas» se ve el progreso de cada uno.
-    async function _confirmarNas(){
-      const p = peliculaActual; if(!p || _nas.preparando) return;
-      let partes = [], futuros = 0;
-      if(_nas.modo==='sueltos'){
-        partes = [..._nas.episodios].sort((a,b)=>a-b).map(e=>({temporada:_nas.temporada, episodio:e}));
-      }else{
-        const temps = (window.temporadasSeriesActual||[]).filter(s=>s.season_number>0)
-          .filter(t=>_nas.modo==='serie' || t.season_number===_nas.temporada);
-        _nas.preparando = true; _actualizarBotonNas();
-        try{
-          const listas = await _fetchEnLotes(temps, t=>_nasCapitulosEmitidos(p.id, t.season_number, t.episode_count), 4);
-          temps.forEach((t,i)=>{
-            const l = listas[i] || {emitidos:[], total:0};
-            futuros += Math.max(0, l.total - l.emitidos.length);
-            l.emitidos.forEach(e=>partes.push({temporada:t.season_number, episodio:e}));
-          });
-        }finally{ _nas.preparando = false; _actualizarBotonNas(); }
-      }
-      if(!partes.length){ _nasAviso(futuros ? 'Esos capítulos todavía no se han emitido.' : 'No hay capítulos que pedir.', true); return; }
-      if(await _enviarSolicitudesNAS(partes)){
-        cerrarNasModal();
-        if(futuros) setTimeout(()=>_nasAviso(`${futuros} ${futuros===1?'capítulo aún no emitido no se ha pedido':'capítulos aún no emitidos no se han pedido'}.`), 5200);
-      }
-    }
+    const _nasFechaCorta = f => { try{ return new Date(f+'T12:00:00').toLocaleDateString('es-ES',{day:'numeric',month:'short'}); }catch(e){ return f; } };
 
     // ══ MIS DESCARGAS: lo que has enviado al NAS y en qué estado está ══
     // Lee la tabla solicitudes_descarga (solo tus filas). El NAS va cambiando «estado»:
@@ -253,12 +243,18 @@
     async function abrirMisDescargas(){
       irA('p-nas');
       await cargarMisDescargas();
-      // Mientras estés en la pantalla, se actualiza sola cada 20 segundos
-      clearInterval(_nasMis.timer);
-      _nasMis.timer = setInterval(()=>{
-        if(!document.getElementById('p-nas').classList.contains('activa')){ clearInterval(_nasMis.timer); _nasMis.timer = null; return; }
-        if(!document.hidden) cargarMisDescargas(true);
-      }, 20000);
+    }
+    // Se actualiza sola cada 15 s mientras estés en la pantalla y haya algo en marcha;
+    // si todo está terminado no pregunta a Supabase hasta que pulses «Actualizar»
+    function _nasProgramarRefresco(){
+      clearTimeout(_nasMis.timer); _nasMis.timer = null;
+      const enMarcha = _nasMis.filas.some(f=>_NAS_ACTIVOS.includes(f.estado));
+      if(!enMarcha) return;
+      _nasMis.timer = setTimeout(()=>{
+        if(!document.getElementById('p-nas').classList.contains('activa')) return;
+        if(document.hidden){ _nasProgramarRefresco(); return; }
+        cargarMisDescargas(true);
+      }, 15000);
     }
 
     async function cargarMisDescargas(silencioso){
@@ -278,6 +274,7 @@
         _nasMis.filas = data || [];
         estado.textContent = 'Actualizado a las '+new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})+'.';
         pintarMisDescargas();
+        _nasProgramarRefresco();
       }catch(e){
         console.error('Mis descargas:', e);
         estado.textContent = _nasTextoError(e, 'No se pudieron cargar tus descargas.');
@@ -347,7 +344,8 @@
       if(mal.length>1) acciones.append(_fEl('button',{type:'button',class:'btn-limpiar',onclick:e=>_nasReintentar(mal,e.currentTarget)},`↻ Reintentar los ${mal.length} con problemas`));
       return _fEl('div',{class:'addon-card nas-card'},
         _fEl('div',{class:'nas-cab'}, _fEl('div',{class:'nas-cab-txt'}, titulo, _fEl('span',{class:'nas-sub',text:tipoTxt+' · '+resumen}))),
-        _fEl('div',{class:'nas-barra',role:'progressbar','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(pct),'aria-label':'Completado'}, _fEl('i',{style:'width:'+pct+'%'})),
+        _fEl('div',{class:'nas-barra',role:'progressbar','aria-valuemin':'0','aria-valuemax':'100','aria-valuenow':String(pct),'aria-label':'Descargado'}, _fEl('i',{style:'width:'+pct+'%'})),
+        _fEl('span',{class:'nas-barra-txt',text:`${ok} de ${g.length} ${serie?(g.every(f=>f.episodio==null)?'descargadas':'descargados'):'descargadas'} · ${pct} %`}),
         acciones.childNodes.length ? acciones : null, det);
     }
 
@@ -470,42 +468,48 @@
       m = u.match(/\/([a-f0-9]{40})(?=[\/?#]|$)/i);
       return m ? m[1].toLowerCase() : null;
     }
+    // «Que elija el NAS» en una película
     function _nasBloqueAuto(){
-      return _fEl('div',{class:'fte-fila fte-opciones'},
-        _fEl('div',{class:'fte-cuerpo'},
-          _fEl('span',{class:'fte-nombre',text:'Elige el torrent que quieres'}),
-          _fEl('span',{class:'fte-desc',text:'Filtra por proveedor, idioma o resolución y pulsa «Enviar al NAS» en el torrent que prefieras. Si no quieres elegir, el NAS buscará uno automáticamente.'})),
-        _fEl('div',{class:'fte-acciones'},
-          _fEl('button',{class:'fte-accion',type:'button',onclick:async()=>{ if(await _enviarSolicitudesNAS([{}])) cerrarFuentes(); }},'Que elija el NAS automáticamente')));
+      return _fEl('div',{class:'nas-intro'},
+        _fEl('p',{class:'nas-intro-txt',text:'Elige el torrent que quieras, o deja que el NAS busque el mejor (en español y buena calidad si lo hay).'}),
+        _fEl('button',{type:'button',class:'fte-btn',onclick:async e=>{ if(await _enviarSolicitudesNAS([{}],{boton:e.currentTarget})) cerrarFuentes(); }},'Que elija el NAS'));
     }
-    // Texto que se guarda en «fuente»: proveedor y nombre del archivo (nunca el enlace: puede llevar tu clave del debrid)
+    // Texto que se guarda en «fuente»: addon y nombre del torrent (nunca el enlace: puede llevar tu clave del debrid)
     function _nasFuenteTexto(s, a){
-      return (a.nombre+' · '+(s.filename || String(s.description||'').split('\n')[0] || s.name || '')).slice(0,300);
+      return (a.nombre+' · '+(_fteNombreTorrent(s) || s.filename || '')).slice(0,300);
     }
-    // Botón «Enviar al NAS» para la hoja normal de «Ver»: solo en fuentes que son torrents.
-    // En series manda el capítulo que tienes elegido arriba (temporada y episodio).
-    function _nasBotonEnVer(s, a, ctx, estado){
-      const hash = _hashDeFuente(s);
-      if(!hash) return null;
-      return _fEl('button',{class:'fte-accion',type:'button',onclick:async()=>{
-        const parte = {info_hash:hash, fuente:_nasFuenteTexto(s, a)};
-        if(ctx.tipo==='tv'){ parte.temporada = ctx.season; parte.episodio = ctx.episode; }
-        if(await _enviarSolicitudesNAS([parte]) && estado)
-          estado.textContent = 'En la cola del NAS'+(ctx.tipo==='tv'?' (T'+ctx.season+' · E'+ctx.episode+')':'')+'. Cuando termine aparecerá en Plex; síguelo en «Mis descargas».';
-      }},'Enviar al NAS');
+    // Qué se pide al NAS con un torrent: un capítulo, una temporada entera (pack) o la serie entera
+    function _nasParteTorrent(s, a, ctx, tipoT){
+      const base = {info_hash:_hashDeFuente(s), fuente:_nasFuenteTexto(s, a)};
+      if(ctx.tipo!=='tv') return {parte:base, texto:'Enviar al NAS'};
+      const t = tipoT || _fteTipoTorrent(s);
+      if(t.clase==='serie') return {parte:{...base, temporada:null, episodio:null}, texto:'Enviar la serie completa',
+        aviso: ctx.vista==='serie' ? '' : 'Es un pack con toda la serie: se descargarán todas las temporadas.'};
+      if(t.clase==='temporada'){
+        const n = t.temporada || ctx.season;
+        return {parte:{...base, temporada:n, episodio:null}, texto:'Enviar la temporada '+n,
+          aviso: ctx.vista==='temporada' ? '' : `Es un pack con la temporada ${n} entera: se descargará completa.`};
+      }
+      return {parte:{...base, temporada:ctx.season, episodio:ctx.episode}, texto:'Enviar el capítulo'};
     }
-    function _nasFilaTorrent(s, a){
-      const nombre = s.name || a.nombre;
-      const hash = _hashDeFuente(s) || '';
-      const cuerpo = _fEl('div',{class:'fte-cuerpo'}, _fEl('span',{class:'fte-nombre',text:nombre}),
-        s.description && _fEl('span',{class:'fte-desc',text:s.description}),
-        _fEl('span',{class:'fte-aviso',text:'Proveedor: '+a.nombre}));
-      if(!_HASH_TORRENT.test(hash))
-        return _fEl('div',{class:'fte-fila fte-off','aria-disabled':'true'}, cuerpo, _fEl('span',{class:'fte-badge',text:'Hash no válido'}));
-      const fuente = _nasFuenteTexto(s, a);
-      return _fEl('div',{class:'fte-fila fte-opciones'}, cuerpo,
-        _fEl('div',{class:'fte-acciones'},
-          _fEl('button',{class:'fte-accion fte-accion-vlc',type:'button',onclick:async()=>{
-            if(await _enviarSolicitudesNAS([{info_hash:hash, fuente}])) cerrarFuentes();
-          }},'Enviar al NAS')));
+    // Botón de cada tarjeta en el modo NAS
+    function _nasAccionTarjeta(r, ctx, estado){
+      const {parte, texto, aviso} = _nasParteTorrent(r.s, r.a, ctx, r.tipoT);
+      if(!_HASH_TORRENT.test(parte.info_hash||'')) return _fEl('span',{class:'fte-no-compat'},'Sin un hash de torrent válido');
+      return _fEl('div',{class:'fte-card-acc'},
+        _fEl('button',{type:'button',class:'fte-btn fte-btn-prim',onclick:async e=>{ if(await _enviarSolicitudesNAS([parte],{boton:e.currentTarget})) cerrarFuentes(); }}, texto),
+        aviso ? _fEl('span',{class:'fte-card-aviso',text:aviso}) : null);
+    }
+    // «Enviar al NAS» dentro de «Ver»: solo en torrents. En series, el capítulo elegido arriba
+    // (o la temporada / serie entera si el torrent es un pack, avisándolo).
+    function _nasBotonEnVer(s, a, ctx, estado, tipoT){
+      if(!_hashDeFuente(s)) return null;
+      const {parte, texto, aviso} = _nasParteTorrent(s, a, ctx, tipoT);
+      const etiqueta = ctx.tipo==='tv' && parte.episodio==null ? texto.replace(/^Enviar /,'Enviar al NAS ') : 'Enviar al NAS';
+      return _fEl('button',{type:'button',class:'fte-btn',title:aviso||'',onclick:async e=>{
+        if(await _enviarSolicitudesNAS([parte],{boton:e.currentTarget}) && estado){
+          const que = ctx.tipo!=='tv' ? '' : parte.temporada==null ? ' (serie completa)' : parte.episodio==null ? ` (temporada ${parte.temporada} completa)` : ` (T${parte.temporada} · E${parte.episodio})`;
+          estado.textContent = 'En la cola del NAS'+que+'. Cuando termine aparecerá en Plex; síguelo en «Mis descargas».';
+        }
+      }}, etiqueta);
     }

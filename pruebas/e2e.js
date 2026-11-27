@@ -1,8 +1,9 @@
 // CineMood · prueba de extremo a extremo de «Ver», «NAS» y «Mis descargas»
 //
 // Abre la app en un Chrome automático (como un iPhone o como un ordenador) y recorre lo que haría una persona:
-// instalar un addon, elegir un torrent y enviarlo al NAS, pedir una temporada o capítulos sueltos,
-// revisar «Mis descargas» y reproducir un vídeo en el reproductor integrado.
+// instalar un addon; en «Ver», filtrar, ver más resultados, abrir el menú «⋯» y reproducir con subtítulos;
+// enviar al NAS una película y, de una serie, una temporada (pack), capítulos sueltos, un capítulo concreto
+// o la serie entera; y revisar «Mis descargas» (progreso, cancelar, reintentar, quitar).
 //
 // No toca ninguna cuenta real: la sesión y la base de datos se simulan dentro del navegador
 // (con las mismas reglas que supabase/nas.sql) y TMDB devuelve datos fijos. Torrentio sí es el real.
@@ -142,150 +143,182 @@ function instalarDbFalsa() {
   await page.waitForFunction(() => addonsLeer().length > 0, null, { timeout: 20000 }).catch(() => {});
   ok(await page.evaluate(() => addonsLeer().length > 0), 'Instalar el addon Torrentio desde «Mis addons»');
 
-  // 2) Película: ficha → botón NAS → modo NAS (elegir torrent)
+  const hosters = []; page.on('request', r => { if (/cinemood-hosters/.test(r.url())) hosters.push(r.url()); });
+  // Espera a que los addons hayan respondido (la hoja muestra su estado en verde o rojo)
+  const esperarLista = () => page.waitForFunction(() => document.querySelector('#fte-body .fte-addon-est.ok, #fte-body .fte-addon-est.mal'), null, { timeout: 40000 }).catch(() => {});
+  const tarjetas = () => page.locator('#fte-body .fte-card');
+  const textosBotones = () => page.$$eval('#fte-body .fte-card .fte-btn-prim', bs => bs.map(b => b.textContent));
+
+  // 2) «Ver» de una película: resultados compactos, filtros, «Mostrar más» y menú «⋯»
   await page.evaluate(() => abrirDetalle({ id: 603, _tipo: 'movie', title: 'Matrix', poster_path: '' }));
   await esperar(3500);
   ok(await page.isVisible('#btn-descargar-nas'), 'La ficha de la película muestra el botón NAS');
+  await page.evaluate(() => verFuentesFicha());
+  await esperarLista();
+  const n0 = await tarjetas().count();
+  ok(n0 === 20, `«Ver» muestra 20 resultados de entrada (${n0})`);
+  const ver1 = await page.evaluate(() => ({ cuenta: document.querySelector('.fte-cuenta').textContent, addons: document.querySelector('.fte-addons').textContent, nulls: /\bnull\b/.test(document.getElementById('fte-body').textContent), diag: !!document.getElementById('cm-addon-diagnostic') }));
+  ok(/\d+ resultados/.test(ver1.cuenta) && /Torrentio · \d+ resultados/.test(ver1.addons) && !ver1.nulls && !ver1.diag, `Resumen en una línea: «${ver1.cuenta}» · «${ver1.addons}», sin el bloque de diagnóstico`);
+  ok(await page.isVisible('#fte-body .fte-plegable.hst') && !(await page.$('#fte-body .fte-plegable.hst[open]')) && hosters.length === 0, 'Cinecalidad está plegado al final y no busca hasta abrirlo');
+  await foto('1-ver-pelicula');
+  await page.click('.fte-mostrar-mas');
+  ok(await tarjetas().count() === 40, '«Mostrar más» añade 20 resultados');
+  await page.click('.fte-chip:has-text("Castellano")');
+  const tagsCast = await page.$$eval('#fte-body .fte-card', cs => cs.map(c => c.querySelector('.fte-tags').textContent));
+  ok(tagsCast.length > 0 && tagsCast.every(t => /Castellano/.test(t)), `Filtro «Castellano»: ${tagsCast.length} resultados, todos en castellano`);
+  await page.click('.fte-resumen .fte-link:has-text("Quitar filtros")');
+  ok(await page.$eval('.fte-chip.on', b => b.textContent) === 'Todos', '«Quitar filtros» vuelve a todos');
+  // Resultado con enlace directo (como Torrentio con AllDebrid): «Reproducir» y el resto en «⋯»
+  await page.evaluate(() => {
+    const s = _fuenteLimpia({ url: location.origin + '/_prueba.webm', name: 'Torrentio\nAD+ 1080p', title: 'The.Matrix.1999.1080p.BluRay.x264-SPARKS\n👤 812 💾 9.8 GB ⚙️ RARBG\n🇬🇧 / 🇪🇸' });
+    document.querySelector('#fte-body .fte-lista').prepend(_fteFila(s, { nombre: 'Torrentio' }, window._fte));
+  });
+  const prim = await page.$eval('#fte-body .fte-card .fte-btn-prim', b => b.textContent);
+  await page.click('#fte-body .fte-card .fte-btn-mas');
+  const menu = await page.$$eval('#fte-body .fte-card:first-child .fte-menu-item', xs => xs.map(x => x.textContent.trim()));
+  ok(prim === '▶ Reproducir' && menu.some(t => /VLC/.test(t)) && menu.some(t => /Copiar enlace/.test(t)) && menu.some(t => /Descargar/.test(t)), `Con enlace directo: «${prim}» y en «⋯»: ${menu.join(', ')}`);
+  ok(await page.$eval('#fte-body .fte-card:first-child .fte-tags', t => /Al instante/.test(t.textContent)), 'Los resultados que el debrid ya tiene llevan «⚡ Al instante»');
+  await foto('2-ver-menu');
+  // Reproductor integrado con subtítulos
+  await page.click('#fte-body .fte-card .fte-btn-prim');
+  await esperar(4000);
+  const rep = await page.evaluate(() => { const v = document.querySelector('#visor video'); return { activo: document.getElementById('visor').classList.contains('activo'), t: v ? v.currentTime : -1, err: v && v.error ? v.error.code : null }; });
+  ok(rep.activo && !rep.err && rep.t > 0.5, 'Reproductor integrado reproduce el vídeo: ' + JSON.stringify(rep));
+  await page.click('#visor-subs-btn'); await esperar(800);
+  const subs = await page.textContent('#visor-subs');
+  ok(/addon de subtítulos/.test(subs), 'Botón «Subtítulos» del reproductor: «' + subs.slice(0, 70) + '…»');
+  await foto('3-reproductor');
+  await page.click('.visor-cerrar');
+  ok(!(await page.isVisible('#visor')), 'El reproductor se cierra con «‹»');
+  await page.evaluate(() => cerrarFuentes());
+
+  // 3) NAS de una película: solo torrents, «Que elija el NAS» y sin duplicados
   await page.click('#btn-descargar-nas');
   await page.waitForSelector('#fuentes-modal.activo', { timeout: 5000 });
   ok((await page.textContent('#fte-titulo')).startsWith('Enviar al NAS'), 'NAS en película abre la hoja en modo NAS');
-  await page.waitForFunction(() => /Búsqueda terminada/.test(document.getElementById('fte-body').textContent), null, { timeout: 30000 }).catch(() => {});
-  const nTorrents = await page.locator('#fte-body button:has-text("Enviar al NAS")').count();
-  ok(nTorrents > 0, `Modo NAS lista torrents con «Enviar al NAS» (${nTorrents})`);
-  ok(await page.isVisible('text=Que elija el NAS automáticamente'), 'Modo NAS ofrece «Que elija el NAS automáticamente»');
-  await foto('1-nas-pelicula');
-  await page.locator('#fte-body button:has-text("Enviar al NAS")').first().click();
+  await esperarLista();
+  const botonesNas = await textosBotones();
+  ok(botonesNas.length === 20 && botonesNas.every(t => t === 'Enviar al NAS'), `Modo NAS: ${botonesNas.length} torrents con «Enviar al NAS»`);
+  ok(await page.isVisible('text=Que elija el NAS') && !(await page.$('#fte-body .fte-plegable.hst')), 'Modo NAS: «Que elija el NAS» y sin Cinecalidad');
+  await foto('4-nas-pelicula');
+  await page.locator('#fte-body .fte-card .fte-btn-prim').first().click();
   await esperar(800);
   let filas = await db();
-  ok(filas.length === 1 && filas[0].tipo === 'movie' && /^[a-f0-9]{40}$/.test(filas[0].info_hash) && filas[0].fuente && filas[0].temporada === null,
-    'Enviar al NAS guarda la película con info_hash y fuente: ' + JSON.stringify(filas.map(f => ({ h: (f.info_hash || '').slice(0, 8), fuente: (f.fuente || '').slice(0, 40) }))));
-  ok(!(await page.isVisible('#fuentes-modal.activo')), 'La hoja se cierra tras enviar');
-  ok(/Enviado al NAS/.test(await aviso()), 'Aviso propio (no alert): «' + (await aviso()).slice(0, 80) + '»');
-  await foto('2-aviso');
-  // Repetir la misma película → no se duplica
-  await page.click('#btn-descargar-nas');
-  await page.waitForFunction(() => /Búsqueda terminada/.test(document.getElementById('fte-body').textContent), null, { timeout: 30000 }).catch(() => {});
-  await page.locator('#fte-body button:has-text("Enviar al NAS")').first().click();
-  await esperar(800);
-  ok((await db()).length === 1 && /Ya está en la cola/.test(await aviso()), 'Pedir otra vez la misma película no la duplica: «' + (await aviso()).slice(0, 60) + '»');
+  ok(filas.length === 1 && filas[0].tipo === 'movie' && /^[a-f0-9]{40}$/.test(filas[0].info_hash) && filas[0].fuente && filas[0].temporada === null, 'Guarda la película con info_hash y fuente: ' + (filas[0] && filas[0].fuente || '').slice(0, 60));
+  ok(!(await page.isVisible('#fuentes-modal.activo')) && /Enviado al NAS/.test(await aviso()), 'La hoja se cierra y sale el aviso: «' + (await aviso()).slice(0, 60) + '»');
+  await page.click('#btn-descargar-nas'); await esperarLista();
+  await page.locator('#fte-body .fte-card .fte-btn-prim').first().click(); await esperar(800);
+  ok((await db()).length === 1 && /Ya está en la cola/.test(await aviso()), 'Pedirla otra vez no la duplica');
   if (await page.isVisible('#fuentes-modal.activo')) await page.evaluate(() => cerrarFuentes());
 
-  // 3) «Ver» de la película: Enviar al NAS junto al resto de acciones
-  await page.evaluate(() => verFuentesFicha());
-  await page.waitForFunction(() => /Búsqueda terminada/.test(document.getElementById('fte-body').textContent), null, { timeout: 30000 }).catch(() => {});
-  const nVer = await page.locator('#fte-body button:has-text("Enviar al NAS")').count();
-  ok(nVer > 0 && (await page.textContent('#fte-titulo')) === 'Matrix', `«Ver» muestra «Enviar al NAS» en los torrents (${nVer})`);
-  await foto('3-ver-pelicula');
-  await page.evaluate(() => cerrarFuentes());
-
-  // 4) Serie: pop-up con las tres opciones
+  // 4) NAS de una serie: temporada completa (packs), capítulos, un capítulo concreto y toda la serie
   await page.evaluate(() => abrirDetalle({ id: 1396, _tipo: 'tv', name: 'Breaking Bad', title: 'Breaking Bad', poster_path: '' }));
   await page.waitForFunction(() => (window.temporadasSeriesActual || []).length > 0, null, { timeout: 15000 }).catch(() => {});
   await page.click('#btn-descargar-nas');
-  await page.waitForSelector('#nas-modal', { state: 'visible' });
-  ok(await page.locator('#nas-body input[name=nas-modo]').count() === 3, 'El pop-up de series tiene las tres opciones');
-  const txtSerie = await page.textContent('#nas-enviar');
-  ok(/62 capítulos/.test(txtSerie), 'El botón dice cuántos capítulos se piden: «' + txtSerie + '»');
-  await page.check('#nas-body input[value=temporada]');
-  await page.selectOption('#nas-temp', '2');
-  await foto('4-popup-temporada');
-  await page.click('#nas-enviar');
-  await page.waitForFunction(() => document.getElementById('nas-modal').style.display === 'none', null, { timeout: 15000 }).catch(() => {});
+  await esperarLista();
+  const chipsSerie = await page.$$eval('#fte-sel .nas-temps .fte-chip', bs => bs.map(b => b.textContent));
+  ok(chipsSerie.join(',') === 'Toda la serie,T1,T2,T3,T4,T5', 'Arriba: ' + chipsSerie.join(' · '));
+  const segs = await page.$$eval('#fte-sel .nas-seg-btn', bs => bs.map(b => b.textContent + (b.classList.contains('on') ? '*' : '')));
+  ok(segs[0] === 'Temporada completa*' && /^Capítulos \(7\)$/.test(segs[1]), 'Pestañas: ' + segs.join(' · '));
+  const packsT1 = await textosBotones();
+  const tagsT1 = await page.$$eval('#fte-body .fte-card .fte-tags', ts => ts.map(t => t.textContent));
+  ok(packsT1.length > 0 && packsT1.every(t => t === 'Enviar la temporada 1') && tagsT1.every(t => /Temporada( 1)? completa/.test(t)), `Temporada 1: ${packsT1.length} packs de la temporada entera, sin capítulos sueltos`);
+  await foto('5-nas-serie-temporada');
+  await page.locator('#fte-body .fte-card .fte-btn-prim').first().click(); await esperar(800);
   filas = (await db()).filter(f => f.tipo === 'tv');
-  ok(filas.length === 13 && filas.every(f => f.temporada === 2 && f.episodio >= 1), `Temporada completa (T2) → ${filas.length} capítulos, uno por fila`);
-  // Capítulos sueltos
-  await page.click('#btn-descargar-nas');
-  await page.check('#nas-body input[value=sueltos]');
-  await page.selectOption('#nas-temp', '1');
-  await page.check('#nas-body .nas-ep input[value="1"]');
-  await page.check('#nas-body .nas-ep input[value="3"]');
-  ok((await page.textContent('#nas-enviar')) === 'Solicitar 2 capítulos de la T1', 'Capítulos sueltos: el botón cuenta los marcados');
-  await foto('5-popup-sueltos');
-  await page.click('#nas-enviar');
-  await esperar(1000);
+  ok(filas.length === 1 && filas[0].temporada === 1 && filas[0].episodio === null && /^[a-f0-9]{40}$/.test(filas[0].info_hash), 'Pack elegido → «temporada 1 completa» con su torrent');
+  // «Que elija el NAS» en la temporada 2
+  await page.click('#btn-descargar-nas'); await esperarLista();
+  await page.click('#fte-sel .fte-chip:has-text("T2")'); await esperarLista();
+  ok((await textosBotones()).every(t => t === 'Enviar la temporada 2'), 'Cambiar a T2 muestra los packs de la temporada 2');
+  await page.click('#fte-body .nas-intro button:has-text("Que elija el NAS")'); await esperar(800);
   filas = (await db()).filter(f => f.tipo === 'tv');
-  ok(filas.length === 15 && filas.some(f => f.temporada === 1 && f.episodio === 3), 'Capítulos sueltos → 2 filas más (T1E1, T1E3)');
-  // Serie completa: no repite lo que ya está en cola
-  await page.click('#btn-descargar-nas');
-  await page.check('#nas-body input[value=serie]');
-  await page.click('#nas-enviar');
-  await page.waitForFunction(() => document.getElementById('nas-modal').style.display === 'none', null, { timeout: 20000 }).catch(() => {});
+  ok(filas.some(f => f.temporada === 2 && f.episodio === null && !f.info_hash), '«Que elija el NAS» → una petición de la temporada 2 (el NAS busca el pack)');
+  // Capítulos sueltos: marcar varios
+  await page.click('#btn-descargar-nas'); await esperarLista();
+  await page.click('#fte-sel .nas-seg-btn:has-text("Capítulos")');
+  await page.waitForSelector('#fte-body .nas-cap');
+  ok(await page.locator('#fte-body .nas-cap').count() === 7, 'Pestaña «Capítulos»: los 7 capítulos de la T1 con su nombre');
+  await page.check('#fte-body .nas-cap input[value="2"]'); await page.check('#fte-body .nas-cap input[value="3"]');
+  ok((await page.textContent('.nas-enviar-caps')) === 'Enviar 2 capítulos · el NAS elige', 'El botón cuenta los capítulos marcados');
+  await foto('6-nas-serie-capitulos');
+  await page.click('.nas-enviar-caps'); await esperar(800);
   filas = (await db()).filter(f => f.tipo === 'tv');
+  ok(filas.some(f => f.temporada === 1 && f.episodio === 2 && !f.info_hash) && filas.some(f => f.temporada === 1 && f.episodio === 3), 'Capítulos marcados → T1E2 y T1E3 (el NAS elige un torrent de cada uno)');
+  // Elegir el torrent de un capítulo concreto
+  await page.click('#btn-descargar-nas'); await esperarLista();
+  await page.click('#fte-sel .nas-seg-btn:has-text("Capítulos")');
+  await page.waitForSelector('#fte-body .nas-cap');
+  await page.locator('#fte-body .nas-cap').nth(3).locator('button:has-text("Elegir torrent")').click();
+  await esperarLista();
+  const botonesEp = await textosBotones();
+  const sinPacks = await page.$$eval('#fte-body .fte-card .fte-tags', ts => ts.every(t => !/completa/.test(t.textContent)));
+  ok(botonesEp.length > 0 && botonesEp.every(t => t === 'Enviar el capítulo') && sinPacks, `Capítulo 4: ${botonesEp.length} torrents del capítulo suelto, sin packs`);
+  const nSin = await page.$eval('.fte-cuenta', e => parseInt(e.textContent));
+  await page.check('#fte-body .nas-check input'); await esperarLista();
+  const nCon = await page.$eval('.fte-cuenta', e => parseInt(e.textContent));
+  ok(nCon > nSin, `«Mostrar también packs» añade los packs (${nSin} → ${nCon})`);
+  await page.uncheck('#fte-body .nas-check input'); await esperarLista();
+  await foto('7-nas-serie-episodio');
+  await page.locator('#fte-body .fte-card .fte-btn-prim').first().click(); await esperar(800);
+  filas = (await db()).filter(f => f.tipo === 'tv');
+  ok(filas.some(f => f.temporada === 1 && f.episodio === 4 && /^[a-f0-9]{40}$/.test(f.info_hash)), 'Torrent elegido → T1E4 con su torrent');
+  // Toda la serie
+  await page.click('#btn-descargar-nas'); await esperarLista();
+  await page.click('#fte-sel .fte-chip:has-text("Toda la serie")'); await esperarLista();
+  const botonesSerie = await textosBotones();
+  ok(botonesSerie.length > 0 && botonesSerie.every(t => t === 'Enviar la serie completa') && !(await page.$('#fte-sel .nas-seg')), `Toda la serie: ${botonesSerie.length} packs con todas las temporadas`);
+  await foto('8-nas-serie-entera');
+  await page.click('#fte-body .nas-intro button:has-text("Que elija el NAS")'); await esperar(800);
+  filas = (await db()).filter(f => f.tipo === 'tv' && f.episodio === null);
   const av = await aviso();
-  ok(filas.length === 62 && /47 capítulos/.test(av) && /15 ya estaban/.test(av), `Serie completa → ${filas.length} en total, sin duplicar: «${av.slice(0, 90)}»`);
+  ok([1, 2, 3, 4, 5].every(n => filas.some(f => f.temporada === n)) && /3 temporadas/.test(av) && /2 ya estaban/.test(av), `«Que elija el NAS» en toda la serie → una petición por temporada sin repetir: «${av.slice(0, 80)}»`);
 
-  // 5) «Ver» en un capítulo: Enviar al NAS manda ese capítulo
+  // 5) «Ver» de un capítulo: un pack se envía como temporada entera, avisándolo
   await page.evaluate(() => abrirFuentesEpisodio(5, 2));
-  await page.waitForFunction(() => /Búsqueda terminada/.test(document.getElementById('fte-body').textContent), null, { timeout: 30000 }).catch(() => {});
-  const nEp = await page.locator('#fte-body button:has-text("Enviar al NAS")').count();
-  ok(nEp > 0, `«Ver» de un capítulo (T5E2) muestra «Enviar al NAS» (${nEp})`);
-  await foto('6-ver-capitulo');
-  if (nEp) {
-    await page.locator('#fte-body button:has-text("Enviar al NAS")').first().click();
-    await esperar(800);
-    const t5e2 = (await db()).filter(f => f.temporada === 5 && f.episodio === 2);
-    ok(t5e2.length === 1, 'T5E2 ya estaba (serie completa) y no se duplica: «' + (await aviso()).slice(0, 60) + '»');
-    const est = await page.locator('#fte-body .fte-vlc-ayuda').first().textContent();
-    ok(/En la cola del NAS \(T5 · E2\)/.test(est), 'La fila indica que está en la cola: «' + est.slice(0, 50) + '»');
-  }
+  await esperarLista();
+  const verCap = await page.$$eval('#fte-body .fte-card', cs => cs.map(c => ({ tags: c.querySelector('.fte-tags').textContent, btn: (c.querySelector('.fte-btn-prim') || {}).textContent })));
+  const unPack = verCap.find(c => /completa/.test(c.tags)), unEp = verCap.find(c => !/completa/.test(c.tags));
+  ok(unPack && /^Enviar al NAS la (temporada 5|serie completa)$/.test(unPack.btn) && unEp && unEp.btn === 'Enviar al NAS', `En «Ver», un pack dice «${unPack && unPack.btn}» y un capítulo «${unEp && unEp.btn}»`);
+  const idxEp = verCap.findIndex(c => !/completa/.test(c.tags));
+  await page.locator('#fte-body .fte-card').nth(idxEp).locator('.fte-btn-prim').click(); await esperar(800);
+  ok((await db()).some(f => f.temporada === 5 && f.episodio === 2 && f.info_hash), '«Enviar al NAS» de un capítulo en «Ver» → T5E2');
+  ok(/En la cola del NAS \(T5 · E2\)/.test(await page.locator('#fte-body .fte-card').nth(idxEp).locator('.fte-estado').textContent()), 'La tarjeta confirma que está en la cola');
   await page.evaluate(() => cerrarFuentes());
 
-  // 6) Mis descargas
+  // 6) Mis descargas: progreso, cancelar, reintentar y quitar
   await page.evaluate(() => {
     const t = window.__db.solicitudes_descarga;
     t.find(f => f.tipo === 'movie').estado = 'completada';
-    const e = t.find(f => f.temporada === 1 && f.episodio === 1); e.estado = 'error'; e.error_mensaje = 'RDT-Client respondió 500';
-    Object.assign(t.find(f => f.temporada === 2 && f.episodio === 1), { estado: 'descargando', progreso: 42.5, velocidad: 3355443, eta: 720, tamano: 2147483648 });
-    t.find(f => f.temporada === 3 && f.episodio === 1).estado = 'sin_fuentes';
+    Object.assign(t.find(f => f.temporada === 1 && f.episodio === 2), { estado: 'error', error_mensaje: 'RDT-Client respondió 500' });
+    Object.assign(t.find(f => f.temporada === 1 && f.episodio === 3), { estado: 'sin_fuentes', error_mensaje: 'Solo hay packs con la temporada entera' });
+    Object.assign(t.find(f => f.temporada === 1 && f.episodio === null), { estado: 'descargando', progreso: 42.5, velocidad: 3355443, eta: 720, tamano: 2147483648 });
   });
-  await page.evaluate(() => irA('p-cuenta'));
-  await esperar(500);
+  const total = (await db()).length;
+  await page.evaluate(() => irA('p-cuenta')); await esperar(400);
   await page.click('text=Mis descargas del NAS');
   await page.waitForFunction(() => document.querySelectorAll('#nas-lista .nas-card').length > 0, null, { timeout: 5000 }).catch(() => {});
   ok(await page.locator('#nas-lista .nas-card').count() === 2, 'Mis descargas agrupa por título (película + serie)');
   const chips = (await page.locator('.nas-chip').allTextContents()).join(' | ');
-  ok(/Todas 63/.test(chips) && /Completadas 1/.test(chips) && /Con problemas 2/.test(chips), 'Resumen por estado: ' + chips);
-  await foto('7-mis-descargas');
-  await page.click('.nas-det summary');
-  await esperar(300);
-  ok(await page.isVisible('text=Motivo: RDT-Client respondió 500'), 'Se ve el motivo del error');
+  ok(new RegExp('Todas ' + total).test(chips) && /Completadas 1/.test(chips) && /Con problemas 2/.test(chips), 'Resumen por estado: ' + chips);
+  ok(/\d+ de \d+ descarga/.test(await page.locator('.nas-barra-txt').first().textContent()), 'La barra dice qué mide: «' + await page.locator('.nas-barra-txt').first().textContent() + '»');
+  await page.click('.nas-det summary'); await esperar(300);
+  ok(await page.isVisible('text=Temporada 1 completa') && await page.isVisible('text=Motivo: RDT-Client respondió 500'), 'Se ven la temporada completa y el motivo de los errores');
   const prog = await page.locator('.nas-prog-txt').first().textContent();
-  ok(/42,5 %/.test(prog) && /3,2 MB\/s/.test(prog) && /quedan 12 min/.test(prog) && /de 2 GB/.test(prog), 'Progreso de la descarga: «' + prog + '»');
-  ok(await page.locator('.nas-item:has(.nas-prog) button:has-text("Quitar de la lista")').count() === 0, 'Lo que se está descargando no se puede quitar (se cancela)');
+  ok(/42,5 %/.test(prog) && /3,2 MB\/s/.test(prog) && /quedan 12 min/.test(prog), 'Progreso de la descarga: «' + prog + '»');
+  await foto('9-mis-descargas');
   const cancelar = await page.$('button:has-text("Cancelar descarga")');
   await cancelar.click(); await esperar(200);
   ok((await cancelar.textContent()).includes('¿Seguro?'), 'Cancelar pide confirmación');
   await cancelar.click(); await esperar(800);
-  ok((await db()).find(f => f.temporada === 2 && f.episodio === 1).cancelar === true, 'Cancelar marca la solicitud para que el NAS la borre de RDT-Client');
-  ok(await page.isVisible('text=Cancelando: el NAS la borrará'), 'Se indica que se está cancelando');
-  await foto('8b-cancelando');
-  await foto('8-mis-descargas-detalle');
-  // El NAS la da por cancelada (o se borró a mano en RDT-Client): se puede volver a pedir o quitar
-  await page.evaluate(() => { const r = window.__db.solicitudes_descarga.find(f => f.temporada === 2 && f.episodio === 1); Object.assign(r, { estado: 'cancelada', cancelar: false, error_mensaje: 'Se borró en RDT-Client' }); });
-  await page.click('button:has-text("Actualizar")'); await esperar(600);
-  ok(await page.isVisible('text=Se borró en RDT-Client') && await page.isVisible('button:has-text("Volver a pedir")'), 'Una descarga borrada en RDT-Client sale como cancelada y se puede volver a pedir');
-  await page.click('button:has-text("Reintentar los 2 con problemas")');
-  await esperar(1000);
+  ok((await db()).find(f => f.temporada === 1 && f.episodio === null).cancelar === true, 'Cancelar marca la solicitud para que el NAS la borre de RDT-Client');
+  await page.click('button:has-text("Reintentar los 2 con problemas")'); await esperar(1000);
   filas = await db();
-  ok(filas.filter(f => f.estado === 'error' || f.estado === 'sin_fuentes').length === 0 && filas.length === 63, 'Reintentar vuelve a poner en cola los fallidos');
-  await page.click('.nas-chip:has-text("Con problemas")'); await esperar(300);
-  const quitarCancelada = await page.$('button:has-text("Quitar de la lista")');
-  await quitarCancelada.click(); await esperar(200); await quitarCancelada.click(); await esperar(800);
-  ok((await db()).length === 62 && !(await db()).some(f => f.estado === 'cancelada'), 'La cancelada se quita de la lista');
-  await page.click('.nas-chip:has-text("Completadas")');
-  await esperar(300);
+  ok(filas.filter(f => f.estado === 'error' || f.estado === 'sin_fuentes').length === 0 && filas.length === total, 'Reintentar vuelve a poner en cola los fallidos');
+  await page.click('.nas-chip:has-text("Completadas")'); await esperar(300);
   const quitar = await page.$('button:has-text("Quitar de la lista")');
-  await quitar.click(); await esperar(200);
-  ok((await quitar.textContent()).includes('¿Seguro?'), 'Quitar pide confirmación');
-  await quitar.click(); await esperar(800);
-  ok((await db()).length === 61, 'Quitar borra la fila tras confirmar');
-
-  // 7) Reproductor embebido con un vídeo directo (webm de prueba)
-  await page.evaluate(() => reproducirFuente({ url: location.origin + '/_prueba.webm', name: 'Prueba', description: '' }, { tipo: 'movie', tmdbId: 603, titulo: 'Prueba', fuente: 'Prueba' }));
-  await esperar(5000);
-  const rep = await page.evaluate(() => { const v = document.querySelector('#visor video'); return { activo: document.getElementById('visor').classList.contains('activo'), t: v ? v.currentTime : -1, err: v && v.error ? v.error.code : null }; });
-  ok(rep.activo && !rep.err && rep.t > 0.5, 'Reproductor embebido abre el vídeo: ' + JSON.stringify(rep));
-  await foto('9-reproductor');
+  await quitar.click(); await esperar(200); await quitar.click(); await esperar(800);
+  ok((await db()).length === total - 1, 'Quitar borra la fila tras confirmar');
 
   console.log(`\n=== ${DISP} ===\n` + resultados.join('\n'));
   console.log('Errores de JavaScript en la página:', errores.length ? '\n  ' + errores.join('\n  ') : 'ninguno');

@@ -11,7 +11,9 @@ Si pides cancelar desde la app, borra el torrent de RDT-Client; si lo borras a m
 la solicitud pasa a «cancelada».
 
 - Si en la app elegiste un torrent, la fila trae info_hash y se usa ese.
-- Si no, busca el mejor torrent en tus addons (ADDON_HINTS) según calidad, idioma y semillas.
+- Si no, busca el mejor torrent en tus addons (ADDON_HINTS) según calidad, idioma y semillas:
+  un capítulo solo con torrents de ese capítulo (nunca un pack, que bajaría la temporada entera),
+  una temporada con un pack de esa temporada y la serie con un pack de la serie.
 
 Configuración: variables de entorno (ver nas/.env.example). Ninguna clave va en el código.
 Uso:  pip install -r nas/requirements.txt  &&  python3 nas/cinemood_nas.py
@@ -50,6 +52,12 @@ def sb_patch(table, id_, data):
     r = requests.patch(f"{SB}/rest/v1/{table}", headers={**H, "Prefer": "return=minimal"},
                        params={"id": f"eq.{id_}"}, data=json.dumps(data), timeout=30)
     r.raise_for_status()
+
+class SesionCaducada(Exception):
+    """RDT-Client ha cerrado la sesión: se vuelve a entrar en el siguiente ciclo."""
+
+def sesion_valida(r):
+    if r.status_code in (401, 403): raise SesionCaducada()
 
 def rdt_session():
     s = requests.Session()
@@ -110,22 +118,65 @@ def get_hash(st):
         if re.fullmatch(r"[0-9a-fA-F]{40}", seg): return seg.lower()
     return None
 
+# ── ¿Qué es cada torrent de una serie? Un capítulo, una temporada entera (pack) o varias temporadas ──
+# Los addons ponen el nombre del torrent en la primera línea del título y, si es un pack, el archivo
+# del capítulo en la segunda. Son las mismas reglas que usa la app (js/fuentes.js, _fteTipoTorrent).
+_META_LINEA = re.compile(r"^(?:👤|💾|⚙️|⚙|🌱|📦|🔗|[\U0001F1E6-\U0001F1FF]|Multi|Dual)")
+RE_EP = re.compile(r"\bS\d{1,2}[ ._-]?E\d{1,3}\b|\b\d{1,2}x\d{2}\b", re.I)
+RE_RANGO_EP = re.compile(r"\bS?\d{0,2}[ ._-]?E\d{1,3}[ ._]?[-–][ ._]?E?\d{1,3}\b", re.I)
+RE_VARIAS_TEMP = re.compile(
+    r"\bS\d{1,2}[ ._]?[-–][ ._]?S?\d{1,2}\b|\bS\d{1,2}(?:[ ._-]S\d{1,2})+\b|\bseasons?[ ._]?\d{1,2}[ ._]?[-–][ ._]?\d{1,2}\b"
+    r"|\btemporadas?[ ._]?\d{1,2}[ ._]?(?:[-–]|a|al)[ ._]?\d{1,2}\b|\bseason[ ._]1[ ._]2[ ._]3|\bcomplete[ ._]series\b"
+    r"|\bserie[ ._]completa\b|\btodas[ ._]las[ ._]temporadas\b|\[S\d{2}[-–]\d{2}\]|\bseasons\b|\btemporadas\b"
+    r"|\bint[eé]grale\b|\d{1,2}ª[ ._]*(?:a|al|-|y)?[ ._]*\d{1,2}ª", re.I)
+RE_UNA_TEMP = re.compile(r"\bS(\d{1,2})\b(?![ ._-]?E\d)|\bseason[ ._]?(\d{1,2})\b|\btemporada[ ._]?(\d{1,2})\b"
+                         r"|\b(\d{1,2})ª[ ._]temporada|сезон:?\s?(\d{1,2})", re.I)
+
+def _lineas(st):
+    return [l.strip() for l in str(st.get("title") or st.get("description") or "").split("\n") if l.strip()]
+
+def nombre_torrent(st):
+    utiles = [l for l in _lineas(st) if not _META_LINEA.match(l)]
+    return utiles[0] if utiles else ((st.get("behaviorHints") or {}).get("filename") or str(st.get("name") or "").replace("\n", " "))
+
+def tipo_torrent(st):
+    """Devuelve (clase, temporada): clase es 'episodio', 'temporada' o 'serie'."""
+    n = nombre_torrent(st)
+    utiles = [l for l in _lineas(st) if not _META_LINEA.match(l)]
+    arch = utiles[1] if len(utiles) > 1 and re.search(r"\.(mkv|mp4|m4v|avi|ts|webm)$|S\d{1,2}[ ._-]?E\d{1,3}", utiles[1], re.I) else ""
+    if RE_VARIAS_TEMP.search(n): return "serie", None
+    m = RE_UNA_TEMP.search(n)
+    temp = int(next(g for g in m.groups() if g)) if m else None
+    if RE_RANGO_EP.search(n): return "temporada", temp
+    if RE_EP.search(n): return "episodio", None
+    if m: return "temporada", temp
+    if re.search(r"\bfull\b(?![ ._-]?hd)", n, re.I): return "serie", None
+    if re.search(r"\b(complete|completa|pack)\b", n, re.I):
+        return ("temporada" if re.search(r"\bseason\b|\btemporada\b", n, re.I) else "serie"), None
+    if arch and RE_EP.search(arch): return "temporada", None
+    return "episodio", None
+
 def find_stream(sol, imdb, bases):
+    """Busca el mejor torrent para lo pedido. Devuelve (torrent, motivo si no hay ninguno).
+       Película → cualquier torrent. Capítulo → solo torrents de ese capítulo (nunca un pack, que bajaría
+       la temporada entera). Temporada sin capítulo → solo packs de esa temporada. Serie → solo packs de la serie."""
+    t, e = sol.get("temporada"), sol.get("episodio")
     if sol["tipo"] == "movie":
-        kind, sid = "movie", imdb
+        kind, sid, quiere = "movie", imdb, None
+    elif t is not None and e:
+        kind, sid, quiere = "series", f"{imdb}:{t}:{e}", "episodio"
+    elif t is not None:
+        kind, sid, quiere = "series", f"{imdb}:{t}:1", "temporada"      # los packs salen al pedir el primer capítulo
     else:
-        if sol.get("temporada") is None or not sol.get("episodio"):
-            # Peticiones antiguas de «serie/temporada completa»: la app actual las manda capítulo a capítulo
-            raise RuntimeError("Falta el capítulo: vuelve a pedirla desde la app, que ahora la envía capítulo a capítulo")
-        kind, sid = "series", f"{imdb}:{sol['temporada']}:{sol['episodio']}"
-    best, best_s = None, -1
+        kind, sid, quiere = "series", f"{imdb}:1:1", "serie"
+    best, best_s, descartados = None, -1, 0
     for name, base in bases:
         try:
             r = requests.get(f"{base}/stream/{kind}/{quote(sid)}.json", timeout=25)
             r.raise_for_status()
             streams = r.json().get("streams", [])
-        except Exception as e:
-            log("addon falló", name, type(e).__name__); continue
+        except Exception as ex:
+            log("addon falló", name, type(ex).__name__); continue
         con_hash = []
         for x in streams:
             h = get_hash(x)
@@ -134,9 +185,20 @@ def find_stream(sol, imdb, bases):
                 con_hash.append(x)
         log("addon", name, "->", len(streams), "streams,", len(con_hash), "con torrent")
         for st in con_hash:
-            sc = score(st, sol["preferencias"])
+            if quiere:
+                clase, temp = tipo_torrent(st)
+                if clase != quiere or (quiere == "temporada" and temp and temp != t):
+                    descartados += 1; continue
+            sc = score(st, sol.get("preferencias") or {})
             if sc is not None and sc > best_s: best, best_s = st, sc
-    return best
+    if best: return best, None
+    motivo = {
+        None: "Ningún addon devolvió torrents válidos",
+        "episodio": "Solo hay packs con la temporada entera: pídela como «Temporada completa»" if descartados else "Ningún addon devolvió torrents de este capítulo",
+        "temporada": "No hay ningún pack con la temporada completa: pídela capítulo a capítulo",
+        "serie": "No hay ningún pack con la serie entera: pídela por temporadas",
+    }[quiere]
+    return None, motivo
 
 # Trackers públicos para cuando el torrent no trae ninguno (por ejemplo, cuando se
 # eligió en la app y solo se guardó el hash). Sin trackers, Real-Debrid puede no
@@ -171,16 +233,20 @@ def process(sol, sess):
             imdb = resolver_imdb(sol)
             bases = addon_bases(sol["user_id"])
             if not bases: raise RuntimeError("Sin addons compatibles")
-            st = find_stream(sol, imdb, bases)
-        if not st:
-            sb_patch("solicitudes_descarga", sol["id"], {"estado": "sin_fuentes", "error_mensaje": "Ningún addon devolvió torrents válidos"})
-            log("sin fuentes:", sol["titulo"]); return
+            st, motivo = find_stream(sol, imdb, bases)
+            if not st:
+                sb_patch("solicitudes_descarga", sol["id"], {"estado": "sin_fuentes", "error_mensaje": motivo})
+                log("sin fuentes:", sol["titulo"], "·", motivo); return
         cat = CAT_MOVIES if sol["tipo"] == "movie" else CAT_SERIES
         r = sess.post(f"{RDT}/api/v2/torrents/add", data={"urls": magnet(st, sol["titulo"]), "category": cat}, timeout=30)
+        sesion_valida(r)
         if r.status_code != 200: raise RuntimeError(f"RDT-Client respondió {r.status_code}")
         sb_patch("solicitudes_descarga", sol["id"], {"estado": "descargando", "cliente_id": st["infoHash"].lower(), "error_mensaje": None,
                                                    **({"progreso": 0} if CON_PROGRESO else {})})
         log("enviada a RDT-Client:", sol["titulo"], "categoría", cat)
+    except SesionCaducada:
+        sb_patch("solicitudes_descarga", sol["id"], {"estado": "pendiente"})   # se reintenta con sesión nueva
+        raise
     except Exception as e:
         fin = sol["intentos"] + 1 >= MAX_INTENTOS
         sb_patch("solicitudes_descarga", sol["id"], {"estado": "error" if fin else "pendiente", "error_mensaje": str(e)[:300]})
@@ -203,14 +269,26 @@ ESTADOS_ERROR = {"error", "missingFiles"}
 ESTADOS_TERMINADO = {"uploading", "stalledUP", "pausedUP", "stoppedUP", "queuedUP", "forcedUP", "checkingUP"}
 _ausencias = {}                 # id → revisiones seguidas en las que el torrent no aparece en RDT-Client
 
+def _cambia(antes, ahora):
+    """¿Merece la pena escribir el progreso? (si no, se evita una escritura cada 30 s por descarga)"""
+    if abs((antes.get("progreso") or 0) - (ahora["progreso"] or 0)) >= 1: return True
+    if (antes.get("eta") is None) != (ahora["eta"] is None) or abs((antes.get("eta") or 0) - (ahora["eta"] or 0)) >= 60: return True
+    v0, v1 = antes.get("velocidad") or 0, ahora["velocidad"] or 0
+    if (v0 == 0) != (v1 == 0) or abs(v1 - v0) > 0.25 * max(v0, 1): return True
+    return antes.get("tamano") != ahora["tamano"]
+
 def comprobar_descargas(sess, con_progreso):
-    campos = "id,cliente_id" + (",progreso" if con_progreso else "")
-    for sol in sb_get("solicitudes_descarga", {"estado": "eq.descargando", "select": campos}):
+    campos = "id,cliente_id" + (",progreso,velocidad,eta,tamano" if con_progreso else "")
+    filas = sb_get("solicitudes_descarga", {"estado": "eq.descargando", "select": campos})
+    if not filas: return
+    # Una sola petición con todos los torrents de RDT-Client (antes, una por descarga)
+    r = sess.get(f"{RDT}/api/v2/torrents/info", timeout=20)
+    sesion_valida(r); r.raise_for_status()
+    en_rdt = {str(t.get("hash", "")).lower(): t for t in (r.json() or [])}
+    for sol in filas:
         try:
-            r = sess.get(f"{RDT}/api/v2/torrents/info", params={"hashes": sol["cliente_id"]}, timeout=20)
-            r.raise_for_status()
-            info = r.json()
-            if not info:
+            t = en_rdt.get(str(sol.get("cliente_id") or "").lower())
+            if not t:
                 # Ya no está en RDT-Client. Se espera a no verlo dos veces seguidas, por si RDT-Client
                 # aún no lo había registrado justo después de añadirlo. Después:
                 #  - RDT-Client suele quitar el torrent al terminar: si iba por el 95 % o más, está terminada.
@@ -231,7 +309,6 @@ def comprobar_descargas(sess, con_progreso):
                         log("borrada en RDT-Client:", sol["id"])
                 continue
             _ausencias.pop(sol["id"], None)
-            t = info[0]
             progreso = max(0.0, min(100.0, float(t.get("progress", 0)) * 100))
             if progreso >= 100 or t.get("state") in ESTADOS_TERMINADO:
                 sb_patch("solicitudes_descarga", sol["id"], {"estado": "completada",
@@ -240,12 +317,13 @@ def comprobar_descargas(sess, con_progreso):
                 sb_patch("solicitudes_descarga", sol["id"], {"estado": "error", "error_mensaje": f"RDT-Client: {t.get('state')}"})
             elif con_progreso:
                 eta = t.get("eta")
-                sb_patch("solicitudes_descarga", sol["id"], {
+                ahora = {
                     "progreso": round(progreso, 1),
                     "velocidad": max(0, int(t.get("dlspeed") or 0)),
                     "eta": int(eta) if isinstance(eta, (int, float)) and 0 <= eta < ETA_INFINITA else None,
                     "tamano": int(t["size"]) if t.get("size") else None,
-                })
+                }
+                if _cambia(sol, ahora): sb_patch("solicitudes_descarga", sol["id"], ahora)
         except Exception as e:
             log("comprobación falló", type(e).__name__)
 
@@ -257,10 +335,13 @@ def atender_cancelaciones(sess):
         try:
             if sol.get("cliente_id"):
                 r = sess.post(f"{RDT}/api/v2/torrents/delete", data={"hashes": sol["cliente_id"], "deleteFiles": "false"}, timeout=30)
+                sesion_valida(r)
                 if r.status_code != 200: raise RuntimeError(f"RDT-Client respondió {r.status_code}")
             sb_patch("solicitudes_descarga", sol["id"], {"estado": "cancelada", "cancelar": False, "velocidad": None, "eta": None,
                                                        "error_mensaje": "Cancelada desde la app"})
             log("cancelada:", sol["titulo"])
+        except SesionCaducada:
+            raise
         except Exception as e:
             log("no se pudo cancelar", sol.get("titulo"), e)
 
@@ -276,17 +357,20 @@ def main():
             log("vuelve a la cola:", sol["titulo"])
     except Exception as e:
         log("no se pudo revisar lo que quedó a medias:", e)
+    sess = None
     while True:
         try:
-            sess = rdt_session()
+            if sess is None: sess = rdt_session()      # se entra una vez y se reutiliza la sesión
             if con_progreso: atender_cancelaciones(sess)
             filtro = {"estado": "eq.pendiente", "order": "creada_en.asc", "limit": "5", "select": "*"}
             if con_progreso: filtro["cancelar"] = "is.false"
             for sol in sb_get("solicitudes_descarga", filtro):
                 process(sol, sess)
             comprobar_descargas(sess, con_progreso)
+        except SesionCaducada:
+            log("la sesión de RDT-Client ha caducado: se vuelve a entrar"); sess = None; continue
         except Exception as e:
-            log("ciclo falló:", e)
+            log("ciclo falló:", e); sess = None      # por si RDT-Client se ha reiniciado
         time.sleep(INTERVAL)
 
 if __name__ == "__main__":
