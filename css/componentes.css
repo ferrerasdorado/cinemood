@@ -88,7 +88,8 @@
 
 /* Ficha: mientras llegan sus datos, solo se ve lo esencial (póster, título y año); el resto aparece de una vez
    con un fundido, para que nada salte hacia abajo mientras se carga (js/ficha.js · _fichaAsentar) */
-#p-detalle .detalle-info>*,#p-detalle>.wrap>*{transition:opacity .2s ease}
+#p-detalle .detalle-info>*,#p-detalle>.wrap>*{transition:opacity .35s ease,transform .35s cubic-bezier(.2,.7,.2,1)}
+#p-detalle.ficha-cargando>.wrap>:not(.pantalla-header):not(.detalle-poster-row){transform:translateY(8px)}
 #p-detalle.ficha-cargando .detalle-info>:not(#d-titulo):not(#d-meta),
 #p-detalle.ficha-cargando>.wrap>:not(.pantalla-header):not(.detalle-poster-row){opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){#p-detalle .detalle-info>*,#p-detalle>.wrap>*{transition:none}}
@@ -104,3 +105,9 @@
 .ficha-extra .detalle-basada b{color:var(--ink)}
 .ficha-extra .nota-gap{color:var(--ink);font-size:13.5px;margin-top:0}
 .ficha-extra .detalle-basada:not([style*="none"])+.nota-gap:not([hidden]){margin-top:8px}
+
+/* Lo que aparece en la tarjeta o en el recuadro bajo la nota después de mostrarse la ficha: entra con un fundido */
+@keyframes fichaAparece{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+#p-detalle .ficha-aparece{animation:fichaAparece .4s ease both}
+#p-detalle #d-logo{animation:fichaAparece .4s ease both}
+@media (prefers-reduced-motion:reduce){#p-detalle .ficha-aparece,#p-detalle #d-logo{animation:none}#p-detalle.ficha-cargando>.wrap>*{transform:none}}

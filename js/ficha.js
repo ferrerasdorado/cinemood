@@ -471,13 +471,57 @@
     //  · lo que llega más tarde no empuja la tarjeta: el título y el logo ocupan lo mismo, la fila de
     //    IMDb/Metacritic tiene su hueco reservado, y «Basada en…» y la frase de crítica frente a público
     //    van en un recuadro bajo la nota (#d-extra).
-    const _ficha = {tope:0, calma:0};
+    const _ficha = {tope:0, calma:0, ro:null, mo:null, alto:0};
+    const _fichaSinMovimiento = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
     function _fichaMostrar(){
       clearTimeout(_ficha.tope); clearTimeout(_ficha.calma);
-      document.getElementById('p-detalle').classList.remove('ficha-cargando');
+      const pag = document.getElementById('p-detalle');
+      if(!pag.classList.contains('ficha-cargando')) return;
+      pag.classList.remove('ficha-cargando');
+      _fichaSuavizar(pag);
+    }
+    // Si después de mostrarse algo llega tarde y la tarjeta de arriba crece, lo de debajo baja deslizándose en vez de
+    // saltar: el aviso de cambio de tamaño llega antes de pintar, así que se coloca donde estaba y se anima a su sitio.
+    // Y lo que aparece dentro de la tarjeta (clasificación, lema, notas…) entra con un fundido.
+    function _fichaSuavizar(pag){
+      _fichaSoltar();
+      if(_fichaSinMovimiento() || !('ResizeObserver' in window)) return;
+      const fila = pag.querySelector('.detalle-poster-row');
+      _ficha.alto = fila.getBoundingClientRect().height;
+      _ficha.ro = new ResizeObserver(()=>{
+        const alto = fila.getBoundingClientRect().height, d = alto - _ficha.alto;
+        _ficha.alto = alto;
+        if(Math.abs(d) < 2) return;
+        for(let el = fila.nextElementSibling; el; el = el.nextElementSibling){
+          el.style.transition = 'none'; el.style.transform = `translateY(${-d}px)`;
+        }
+        void fila.offsetHeight;   // aplica la posición de partida antes de animar
+        for(let el = fila.nextElementSibling; el; el = el.nextElementSibling){
+          el.style.transition = 'transform .35s cubic-bezier(.2,.7,.2,1)'; el.style.transform = '';
+        }
+      });
+      _ficha.ro.observe(fila);
+      _ficha.mo = new MutationObserver(cambios=>{
+        for(const c of cambios){
+          const el = c.target;
+          if(el.nodeType===1 && el.parentElement && el.parentElement.closest('.detalle-poster-row, #d-extra') && el.offsetParent!==null && !el.classList.contains('ficha-aparece')){
+            el.classList.add('ficha-aparece'); setTimeout(()=>el.classList.remove('ficha-aparece'), 450);
+          }
+        }
+      });
+      _ficha.mo.observe(fila, {attributes:true, attributeFilter:['style','hidden'], subtree:true});
+      const extra = document.getElementById('d-extra'); if(extra) _ficha.mo.observe(extra, {attributes:true, attributeFilter:['hidden']});
+      setTimeout(_fichaSoltar, 8000);   // pasado el rato de carga, ya no hace falta vigilar
+    }
+    function _fichaSoltar(){
+      if(_ficha.ro){ _ficha.ro.disconnect(); _ficha.ro = null; }
+      if(_ficha.mo){ _ficha.mo.disconnect(); _ficha.mo = null; }
+      const fila = document.querySelector('#p-detalle .detalle-poster-row');
+      for(let el = fila && fila.nextElementSibling; el; el = el.nextElementSibling){ el.style.transition = ''; el.style.transform = ''; }
     }
     function _fichaAsentar(){
-      _fichaMostrar();
+      clearTimeout(_ficha.tope); clearTimeout(_ficha.calma);
+      _fichaSoltar();
       document.getElementById('p-detalle').classList.add('ficha-cargando');
       const notas = document.getElementById('d-notas-ext'), p = peliculaActual;
       notas.classList.add('reservado');
