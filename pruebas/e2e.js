@@ -135,6 +135,10 @@ function instalarDbFalsa() {
   await page.goto(URL_APP, { waitUntil: 'load' });
   await esperar(3000);
   await page.evaluate(instalarDbFalsa);
+  const repetidos = await page.evaluate(() => { const v = {}; document.querySelectorAll('[id]').forEach(e => v[e.id] = (v[e.id] || 0) + 1); return Object.keys(v).filter(k => v[k] > 1); });
+  ok(!repetidos.length, 'Sin id repetidos en la página' + (repetidos.length ? ': ' + repetidos.join(', ') : ''));
+  ok(await page.$$eval('video', vs => vs.every(v => v.closest('#visor, .pantalla, #feed-overlay, #video-visor'))) && await page.$$eval('#visor video', vs => vs.length) === 1,
+    'Ningún vídeo suelto fuera de su sitio y un único vídeo en el reproductor');
 
   // 1) Addon público de Torrentio (sin debrid), instalado desde la pantalla «Mis addons»
   await page.evaluate(() => abrirAddons());
