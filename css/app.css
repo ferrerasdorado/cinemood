@@ -821,7 +821,7 @@
     .modo-tv .pc-nav::-webkit-scrollbar { display: none; }
     .modo-tv .pc-nav-busqueda { max-width: 300px; margin: 0; }
     .modo-tv .pc-nav-actions { gap: 6px; margin-left: auto; }
-    .modo-tv .pc-nav-btn[title="Empezar de cero"] { display: none; }
+    .modo-tv .pc-nav-btn[data-reiniciar] { display: none; }
     /* filas que se desplazan: sin scroll-snap ni smooth competidor para respuesta inmediata al mando */
     .modo-tv .desc-scroll, .modo-tv .similares-scroll, .modo-tv .especiales-scroll, .modo-tv .sem-fila, .modo-tv #continuar-viendo-scroll { padding: 14px 14px 18px !important; margin: -14px -14px -18px !important; scroll-padding-inline: 28px; }
     .modo-tv .scroll-wrap { overflow: visible; }

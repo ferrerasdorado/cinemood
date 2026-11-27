@@ -20,11 +20,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=e142d82b">
+  <link rel="stylesheet" href="css/app.css?v=29762913">
   <link rel="stylesheet" href="css/editorial.css?v=fffa323c">
   <link rel="stylesheet" href="css/fuentes-nas.css?v=9c9c7cda">
   <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
-  <link rel="stylesheet" href="css/componentes.css?v=5bdb0964">
+  <link rel="stylesheet" href="css/componentes.css?v=ed00e26a">
 </head>
 <body class="sin-sesion">
 <div id="splash" aria-hidden="true">
@@ -80,13 +80,13 @@
       <button type="button" onclick="buscarDesdeNav()">Buscar</button>
     </div>
     <div class="pc-nav-actions">
-      <div class="pc-nav-btn" onclick="irA('p-inicio')">Inicio</div>
-      <button class="pc-nav-btn" type="button" onclick="abrirDescubre()">🧭 Descubre</button>
-      <button class="pc-nav-btn" type="button" onclick="abrirBiblioteca()">Mi lista</button>
-      <button class="pc-nav-btn" type="button" onclick="abrirFeedTrailers()">▶️ Tráilers</button>
+      <button class="pc-nav-btn" type="button" onclick="irA('p-inicio')" title="Inicio"><span class="pc-ico pc-ico-solo" aria-hidden="true">🏠</span><span class="pc-txt">Inicio</span></button>
+      <button class="pc-nav-btn" type="button" onclick="abrirDescubre()" title="Descubre"><span class="pc-ico" aria-hidden="true">🧭</span><span class="pc-txt">Descubre</span></button>
+      <button class="pc-nav-btn" type="button" onclick="abrirBiblioteca()" title="Mi lista"><span class="pc-ico pc-ico-solo" aria-hidden="true">🔖</span><span class="pc-txt">Mi lista</span></button>
+      <button class="pc-nav-btn" type="button" onclick="abrirFeedTrailers()" title="Tráilers"><span class="pc-ico" aria-hidden="true">▶️</span><span class="pc-txt">Tráilers</span></button>
       <button class="pc-nav-btn btn-tema" type="button" onclick="alternarTema()" aria-label="Cambiar entre modo claro y oscuro">🌙</button>
-      <div class="pc-nav-btn" onclick="location.reload()" title="Empezar de cero">🔄 Reiniciar</div>
-      <div class="pc-nav-btn" id="pc-cuenta-btn" onclick="mostrarCuenta()">👤 Tú</div>
+      <button class="pc-nav-btn" type="button" onclick="location.reload()" title="Empezar de cero" data-reiniciar><span class="pc-ico" aria-hidden="true">🔄</span><span class="pc-txt">Reiniciar</span></button>
+      <button class="pc-nav-btn" type="button" id="pc-cuenta-btn" onclick="mostrarCuenta()" title="Tú"><span class="pc-ico" aria-hidden="true">👤</span><span class="pc-txt">Tú</span></button>
     </div>
   </nav>
 
@@ -390,7 +390,7 @@
 
   <div class="pantalla" id="p-descubre">
     <div class="wrap">
-      <div class="desc-cab" style="display:flex;align-items:center;gap:10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-bueno" onclick="descAlternarBueno()" aria-pressed="false" style="display:none">✨ Solo lo bueno</button><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none;margin-left:0">🔮 Ordenar para mí</button></div>
+      <div class="desc-cab" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px"><h2>Descubre</h2><button type="button" class="desc-orden" id="desc-bueno" onclick="descAlternarBueno()" aria-pressed="false" style="display:none">✨ Solo lo bueno</button><button type="button" class="desc-orden" id="desc-orden" onclick="descAlternarOrden()" aria-pressed="false" style="display:none;margin-left:0">🔮 Ordenar para mí</button></div>
       <div class="desc-plataformas" id="desc-plataformas"></div>
       <div id="desc-hero"></div>
       <button type="button" class="inicio-trailers qv-entrada exp-entrada" onclick="abrirExplorador()">
@@ -1150,7 +1150,7 @@
   <script src="js/similares.js?v=d43f55ea"></script>
   <script src="js/especiales.js?v=4b07292f"></script>
   <script src="js/colecciones.js?v=f61821eb"></script>
-  <script src="js/rutas.js?v=a4e18701"></script>
+  <script src="js/rutas.js?v=595bc8f2"></script>
   <script src="js/mi-actividad.js?v=a6d6134e"></script>
   <script src="js/juegos.js?v=974e0aa7"></script>
   <script src="js/estadisticas.js?v=d4b25b7b"></script>

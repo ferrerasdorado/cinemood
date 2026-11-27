@@ -111,3 +111,25 @@
 #p-detalle .ficha-aparece{animation:fichaAparece .4s ease both}
 #p-detalle #d-logo{animation:fichaAparece .4s ease both}
 @media (prefers-reduced-motion:reduce){#p-detalle .ficha-aparece,#p-detalle #d-logo{animation:none}#p-detalle.ficha-cargando>.wrap>*{transform:none}}
+
+/* Barra superior del ordenador: se adapta al ancho de la ventana (y al zoom del navegador) en vez de salirse por la derecha.
+   Primero se quita el saludo, luego los botones se quedan solo con su icono (el nombre sigue en el título y para el lector de pantalla). */
+.pc-nav-btn{display:inline-flex;align-items:center;gap:6px;font-family:inherit;line-height:1.2}
+.pc-ico-solo{display:none}
+.pc-nav-logo,.pc-nav-actions{flex:none}
+.pc-nav-busqueda{min-width:0}
+.pc-nav-busqueda input{min-width:0;width:100%}
+@media (max-width:1240px){
+  .pc-nav{padding:12px 24px;gap:14px}
+  .pc-nav-logo .saludo{display:none}
+}
+@media (max-width:1080px){
+  .pc-nav-btn .pc-txt{display:none}
+  .pc-ico-solo{display:inline}
+  .pc-nav-btn{padding:8px 10px;font-size:17px;justify-content:center;min-width:40px;min-height:40px}
+  .pc-nav-actions{gap:6px}
+}
+@media (max-width:860px){
+  .pc-nav{padding:10px 14px;gap:10px}
+  .pc-nav-busqueda button{padding:10px 12px}
+}

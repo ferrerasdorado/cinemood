@@ -456,7 +456,7 @@
       const logged = !!sesionActual;
       document.getElementById('cuenta-btn-mobile').classList.toggle('logged', logged);
       const pcBtn = document.getElementById('pc-cuenta-btn');
-      if(pcBtn) pcBtn.textContent = logged ? '👤 Tú' : '👤 Entrar';
+      if(pcBtn){ pcBtn.querySelector('.pc-txt').textContent = pcBtn.title = logged ? 'Tú' : 'Entrar'; }
       document.getElementById('cuenta-logged-out').style.display = logged ? 'none' : 'block';
       document.getElementById('cuenta-logged-in').style.display = logged ? 'block' : 'none';
       if(logged) document.getElementById('cuenta-email').textContent = sesionActual.user.email;

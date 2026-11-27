@@ -144,6 +144,15 @@ function instalarDbFalsa() {
   ok(a11y.zoom, 'Se puede hacer zoom (sin user-scalable=no)');
   ok(a11y.sinRol === 0, `Todo lo que se pulsa es un botón para el teclado y el lector de pantalla (${a11y.sinRol} sin rol)`);
   ok(a11y.camposSinEtiqueta === 0, `Todos los campos de texto tienen etiqueta (${a11y.camposSinEtiqueta} sin ella)`);
+  // Nada se sale por la derecha a ningún ancho (como al hacer zoom en el navegador o en una tableta)
+  const tam0 = page.viewportSize(), seSale = [];
+  for (const w of [320, 768, 900, 1024, 1100, 1240, 1440]) {
+    await page.setViewportSize({ width: w, height: 800 }); await esperar(150);
+    const d = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (d > 0) seSale.push(w + 'px (' + d + ')');
+  }
+  await page.setViewportSize(tam0);
+  ok(!seSale.length, 'La página y la barra de arriba caben a cualquier ancho o zoom, sin ir a la derecha' + (seSale.length ? ': se sale en ' + seSale.join(', ') : ''));
   const repetidos = await page.evaluate(() => { const v = {}; document.querySelectorAll('[id]').forEach(e => v[e.id] = (v[e.id] || 0) + 1); return Object.keys(v).filter(k => v[k] > 1); });
   ok(!repetidos.length, 'Sin id repetidos en la página' + (repetidos.length ? ': ' + repetidos.join(', ') : ''));
   ok(await page.$$eval('video', vs => vs.every(v => v.closest('#visor, .pantalla, #feed-overlay, #video-visor'))) && await page.$$eval('#visor video', vs => vs.length) === 1,
