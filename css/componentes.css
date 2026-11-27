@@ -82,3 +82,6 @@
 .mb-0{margin-bottom:0}
 .mb-10{margin-bottom:10px}
 .mb-12{margin-bottom:12px}
+
+/* Ficha: logo del título oscuro (pensado para fondo blanco) → en blanco para que se lea sobre la tarjeta oscura */
+.detalle-logo.logo-oscuro{filter:brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,.85))}

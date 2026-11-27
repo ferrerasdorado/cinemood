@@ -457,6 +457,21 @@
       requestAnimationFrame(()=>{ pista.scrollLeft = i*pista.clientWidth; document.getElementById('galeria-cont').textContent = `${i+1} / ${window._galeria.length}`; });
     }
     function cerrarGaleria(){ const v = document.getElementById('galeria-visor'); if(v) v.style.display = 'none'; document.body.style.overflow = ''; }
+    // Luminosidad media de las partes visibles (no transparentes) de un logo: < 0,35 es un logo oscuro
+    function _logoEsOscuro(img){
+      try{
+        const ancho = 64, alto = Math.max(1, Math.round(64 * img.naturalHeight / Math.max(1, img.naturalWidth)));
+        const c = document.createElement('canvas'); c.width = ancho; c.height = alto;
+        const x = c.getContext('2d', {willReadFrequently:true}); x.drawImage(img, 0, 0, ancho, alto);
+        const d = x.getImageData(0, 0, ancho, alto).data;
+        let suma = 0, peso = 0;
+        for(let i=0; i<d.length; i+=4){
+          const a = d[i+3]/255; if(a < 0.2) continue;
+          suma += a * (0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2]) / 255; peso += a;
+        }
+        return peso > 0 && suma/peso < 0.35;
+      }catch(e){ return false; }   // si no se puede medir, se deja como está
+    }
     async function _cargarLogoOficial(id,tipo){
       const p=peliculaActual;
       try{
@@ -467,9 +482,19 @@
         const elegido = logos.find(l=>l.iso_639_1==='es') || logos.find(l=>l.iso_639_1===null) || logos.find(l=>l.iso_639_1==='en') || logos[0];
         if(!elegido) return; // sin logo disponible: se queda el título en texto de siempre
         const img = document.getElementById('d-logo');
-        img.onload = ()=>{ if(peliculaActual!==p)return; img.style.display='block'; document.getElementById('d-titulo').style.display='none'; };
-        img.onerror = ()=>{};
-        img.src = `https://image.tmdb.org/t/p/w500${elegido.file_path}`;
+        img.classList.remove('logo-oscuro');
+        img.crossOrigin = 'anonymous';   // TMDB lo permite: así se puede medir si el logo es oscuro
+        img.onload = ()=>{
+          if(peliculaActual!==p)return;
+          // Algunos logos son negros (pensados para fondo blanco) y sobre la tarjeta oscura no se verían: se pasan a blanco
+          img.classList.toggle('logo-oscuro', _logoEsOscuro(img));
+          img.style.display='block'; document.getElementById('d-titulo').style.display='none';
+        };
+        const src = `https://image.tmdb.org/t/p/w500${elegido.file_path}`;
+        // Si la carga con permiso para medirla falla, se carga normal (sin medir): el logo se ve igual
+        img.onerror = ()=>{ if(img.crossOrigin && peliculaActual===p){ img.removeAttribute('crossorigin'); img.src = src; } };
+        // «?cors=1»: el navegador podría tener ya esta imagen guardada sin permiso para leerla, y la reutilizaría
+        img.src = src + '?cors=1';
       }catch(e){ /* se queda el título en texto, comportamiento de siempre */ }
     }
     async function _cargarColeccion(d,tipo){

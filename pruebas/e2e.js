@@ -185,6 +185,12 @@ function instalarDbFalsa() {
   ok(!ficha.cortados.length, 'Ficha: ningún texto de las acciones sale cortado' + (ficha.cortados.length ? ' (' + ficha.cortados.join(', ') + ')' : ''));
   ok(ficha.notas === 10 && ficha.tituloNota === 'Tu nota', `Ficha: «Tu nota» con los 10 números a la vista (${ficha.notas})`);
   ok(ficha.sinPoster, 'Ficha sin póster: hueco limpio en lugar de imagen rota');
+  const logos = await page.evaluate(async () => {
+    const logo = color => new Promise(res => { const c = document.createElement('canvas'); c.width = 300; c.height = 60; const x = c.getContext('2d');
+      x.fillStyle = color; x.font = 'bold 48px sans-serif'; x.fillText('LOGO', 10, 50); const i = new Image(); i.onload = () => res(_logoEsOscuro(i)); i.src = c.toDataURL(); });
+    return { negro: await logo('#111'), blanco: await logo('#fff'), rojo: await logo('#e50914') };
+  });
+  ok(logos.negro && !logos.blanco && !logos.rojo, 'Logo del título: el negro se detecta como oscuro (se pasa a blanco); el blanco y el rojo se quedan igual');
   await foto('1-ficha');
   await page.evaluate(() => verFuentesFicha());
   await esperarLista();
