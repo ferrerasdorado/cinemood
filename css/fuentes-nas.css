@@ -203,3 +203,7 @@
 .visor-sub{text-align:left;min-height:40px;padding:8px 12px;border:1px solid #2c2f2d;border-radius:8px;background:#1b1d1c;color:#fff;font-family:inherit;font-size:13px;cursor:pointer}
 .visor-sub.on{border-color:#fff;background:#2a2d2b}
 .addon-card .nas-barra-txt{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-variant-numeric:tabular-nums}
+.fte-tag.vlc{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.visor-error p{margin:0 0 12px;line-height:1.45}
+.visor-error-acc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.visor-btn.prim{background:#fff;color:#111;border-color:#fff}

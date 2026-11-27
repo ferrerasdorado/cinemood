@@ -203,7 +203,7 @@ function instalarDbFalsa() {
   ok(await page.$eval('.fte-chip.on', b => b.textContent) === 'Todos', '«Quitar filtros» vuelve a todos');
   // Resultado con enlace directo (como Torrentio con AllDebrid): «Reproducir» y el resto en «⋯»
   await page.evaluate(() => {
-    const s = _fuenteLimpia({ url: location.origin + '/_prueba.webm', name: 'Torrentio\nAD+ 1080p', title: 'The.Matrix.1999.1080p.BluRay.x264-SPARKS\n👤 812 💾 9.8 GB ⚙️ RARBG\n🇬🇧 / 🇪🇸' });
+    const s = _fuenteLimpia({ url: location.origin + '/_prueba.webm', name: 'Torrentio\nAD+ 1080p', title: 'The.Matrix.1999.1080p.WEB.VP9.Opus-SPARKS\n👤 812 💾 9.8 GB ⚙️ RARBG\n🇬🇧 / 🇪🇸' });
     document.querySelector('#fte-body .fte-lista').prepend(_fteFila(s, { nombre: 'Torrentio' }, window._fte));
   });
   const prim = await page.$eval('#fte-body .fte-card .fte-btn-prim', b => b.textContent);
@@ -223,6 +223,37 @@ function instalarDbFalsa() {
   await foto('3-reproductor');
   await page.click('.visor-cerrar');
   ok(!(await page.isVisible('#visor')), 'El reproductor se cierra con «‹»');
+  // ¿Se ve en este navegador? Se decide por el nombre del archivo y lo que admite el navegador
+  const compat = await page.evaluate(() => {
+    const prueba = n => { const s = _fuenteLimpia({ url: 'https://ejemplo.test/dl/' + n, name: 'Torrentio\nAD+', title: n }); return _fteCompat(s, _fteMetaLimpia(s)); };
+    return { mp4: prueba('Peli.2010.1080p.WEB-DL.x264.AAC.mp4'), remux: prueba('Peli.2010.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos.mkv'),
+      dts: prueba('Peli.2010.1080p.BluRay.x264.DTS.mkv'), ddp: prueba('Peli.2010.1080p.WEB.H264.DDP5.1.mkv'), mkv: prueba('Peli.2010.1080p.BluRay.x264.mkv'), avi: prueba('Peli.avi') };
+  });
+  ok(compat.mp4.nivel === 'si' && compat.remux.nivel === 'no' && /TrueHD/.test(compat.remux.motivo) && compat.dts.nivel === 'no' && compat.avi.nivel === 'no',
+    'Compatibilidad: MP4 H.264/AAC sí · Remux TrueHD no · DTS no · AVI no');
+  ok(compat.mkv.nivel === 'quizas' || compat.mkv.nivel === 'si', 'MKV H.264 con audio sin identificar: ' + compat.mkv.nivel + ' (Chrome abre MKV)');
+  console.log('   (DD+ en este navegador: ' + compat.ddp.nivel + (compat.ddp.motivo ? ' · ' + compat.ddp.motivo : '') + ')');
+  await page.evaluate(() => {
+    const lista = document.querySelector('#fte-body .fte-lista');
+    const poner = (n, t) => lista.prepend(_fteFila(_fuenteLimpia({ url: 'https://ejemplo.test/dl/' + n, name: 'Torrentio\n' + t, title: n }), { nombre: 'Torrentio' }, window._fte));
+    poner('Peli.2160p.BluRay.REMUX.HEVC.TrueHD.Atmos.mkv', 'AD+ 4k'); poner('Peli.1080p.WEB-DL.x264.AAC.mp4', 'AD+ 1080p');
+  });
+  const tarjetasCompat = await page.$$eval('#fte-body .fte-card', cs => cs.slice(0, 2).map(c => ({ tags: c.querySelector('.fte-tags').textContent, btn: c.querySelector('.fte-btn-prim').textContent })));
+  ok(/Se ve aquí/.test(tarjetasCompat[0].tags) && tarjetasCompat[0].btn === '▶ Reproducir' && /Mejor en VLC/.test(tarjetasCompat[1].tags) && /Abrir en VLC/.test(tarjetasCompat[1].btn),
+    `Tarjetas: «${tarjetasCompat[0].btn}» en la compatible y «${tarjetasCompat[1].btn}» en la 4K Remux`);
+  await foto('2b-compatibilidad');
+  // Si una fuente no arranca, el reproductor lo dice y ofrece otra que sí se vea
+  await page.route('**/no-arranca.mkv', () => {});   // nunca responde
+  await page.evaluate(() => { window._fteReproducibles = [{ s: { url: location.origin + '/no-arranca.mkv', name: 'Mala' }, a: { nombre: 'T' } }, { s: { url: location.origin + '/_prueba.webm', name: 'Buena' }, a: { nombre: 'T' } }];
+    reproducirFuente(window._fteReproducibles[0].s, { ...window._fte, fuente: 'Mala' }); });
+  await page.waitForSelector('#visor-error:not([hidden])', { timeout: 20000 }).catch(() => {});
+  const aviso12 = await page.textContent('#visor-error');
+  ok(/no arranca/.test(aviso12) && await page.isVisible('#visor-error button:has-text("Probar otra que se ve aquí")'), 'Si una fuente no arranca, aviso con «Probar otra que se ve aquí»');
+  await foto('3a-no-arranca');
+  await page.click('#visor-error button:has-text("Probar otra que se ve aquí")'); await esperar(3500);
+  ok(await page.evaluate(() => document.querySelector('#visor video').currentTime > 0.5 && document.getElementById('visor-error').hidden), '«Probar otra» reproduce la siguiente compatible');
+  await page.click('.visor-cerrar');
+
   await page.evaluate(() => cerrarFuentes());
 
   // 3) NAS de una película: solo torrents, «Que elija el NAS» y sin duplicados

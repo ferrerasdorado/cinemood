@@ -85,10 +85,25 @@
       const guardar = ()=>{ if(v.currentTime>1 && (!isFinite(v.duration) || v.duration>10)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){} } };
       const mostrarError = detalle=>{
         if(miTurno !== window._visorTurno) return;
-        err.textContent = 'No se pudo reproducir en el reproductor interno: '+detalle+' Prueba «Abrir en VLC», debajo del vídeo.';
-        err.hidden = false;
+        _visorProblema('No se puede reproducir aquí: '+detalle, s, ctx);
       };
-      v.onloadedmetadata = retomar;
+      // Vigilancia: si a los 12 s no ha empezado, o se ve pero sin sonido (audio que el navegador no descodifica,
+      // como DTS o AC-3), se ofrece otra fuente que sí se vea aquí, o VLC, en vez de quedarse cargando sin fin
+      clearTimeout(window._visorVigia);
+      window._visorVigia = setTimeout(()=>{
+        if(miTurno === window._visorTurno && v.readyState < 1 && err.hidden)
+          _visorProblema('Esta fuente no arranca: probablemente su formato no se puede ver en el navegador.', s, ctx, true);
+      }, 12000);
+      v.onplaying = ()=>{
+        if(miTurno !== window._visorTurno) return;
+        err.hidden = true;
+        if(!('webkitAudioDecodedByteCount' in v)) return;
+        setTimeout(()=>{
+          if(miTurno === window._visorTurno && !v.paused && !v.muted && v.currentTime > 1.5 && v.webkitAudioDecodedByteCount === 0 && err.hidden)
+            _visorProblema('Se ve pero sin sonido: el audio de esta fuente no se puede reproducir en el navegador.', s, ctx, true);
+        }, 5000);
+      };
+      v.onloadedmetadata = ()=>{ clearTimeout(window._visorVigia); retomar(); };
       v.ontimeupdate = ()=>{ if(Date.now()-ultimo>10000){ ultimo = Date.now(); guardar(); } };
       v.onpause = guardar;
       v.onended = ()=>{ try{ localStorage.removeItem(key); }catch(e){} };
@@ -158,13 +173,28 @@
       v.src = src;
       iniciarPlay();
     }
+    // Aviso dentro del reproductor con salidas: otra fuente que se vea aquí, VLC o seguir esperando
+    function _visorProblema(texto, s, ctx, puedeEsperar){
+      const err = document.getElementById('visor-error');
+      const lista = window._fteReproducibles || [];
+      const i = lista.findIndex(x=>x.s.url===s.url);
+      const otra = lista.slice(i+1).find(x=>x.s.url!==s.url) || (i<0 ? lista[0] : null);
+      err.replaceChildren(
+        _fEl('p',{text:texto}),
+        _fEl('div',{class:'visor-error-acc'},
+          otra ? _fEl('button',{type:'button',class:'visor-btn prim',onclick:()=>reproducirFuente(otra.s,{...ctx,fuente:otra.s.name||otra.a.nombre})},'Probar otra que se ve aquí') : null,
+          _fEl('button',{type:'button',class:'visor-btn',onclick:ev=>{ _abrirVLCVisor(ev); if(_esVLCiOS() && !_esAndroid()) location.href = document.getElementById('visor-vlc-link').href; }},'Abrir en VLC'),
+          puedeEsperar ? _fEl('button',{type:'button',class:'visor-btn',onclick:()=>{ err.hidden = true; }},'Seguir esperando') : null));
+      err.hidden = false;
+    }
     function cerrarVisor(){
       const ov = document.getElementById('visor'), v = document.getElementById('visor-video');
       if(!ov.classList.contains('activo')) return;
       window._visorTurno = (window._visorTurno||0) + 1;
       window._visorSrcActual = '';
       if(window._visorGuardar) window._visorGuardar();
-      v.onpause = v.ontimeupdate = v.onerror = v.onended = v.onloadedmetadata = null;
+      v.onpause = v.ontimeupdate = v.onerror = v.onended = v.onloadedmetadata = v.onplaying = null;
+      clearTimeout(window._visorVigia);
       _limpiarMotoresVisor();
       v.pause(); v.removeAttribute('src'); v.load();
       document.getElementById('visor-vlc-link').removeAttribute('href');

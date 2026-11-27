@@ -46,6 +46,12 @@ En la ficha de una película o serie:
     tamaño, semillas, idioma, «Temporada completa»…), el nombre del torrent y **un botón principal**:
     **Reproducir** (reproductor integrado, con hls.js y mpegts.js) o **Enviar al NAS** si es un torrent.
   - El resto de acciones va en **«⋯»**: Abrir en VLC, Copiar enlace, Descargar y Enviar al NAS.
+  - **¿Se ve aquí?** Un navegador no reproduce cualquier archivo (Safari no abre MKV; ninguno descodifica audio
+    DTS ni TrueHD; HEVC y AC-3 dependen del equipo). Del nombre del archivo se sacan contenedor y códecs y se
+    pregunta al navegador (`canPlayType`): las compatibles llevan «▶ Se ve aquí» y van primero; las demás,
+    «Mejor en VLC», con VLC como botón principal. Hay un chip para ver solo las que se ven aquí.
+  - Si una fuente no arranca en 12 s, o se ve sin sonido, el reproductor lo dice y ofrece **«Probar otra que se
+    ve aquí»**, «Abrir en VLC» o seguir esperando.
   - Al final, plegado, **«Buscar también en webs de descargas»** (Cinecalidad + AllDebrid): solo busca al abrirlo.
 - **NAS**:
   - En una **película**, la misma lista con solo torrents, o «Que elija el NAS».

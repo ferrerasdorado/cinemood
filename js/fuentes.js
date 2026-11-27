@@ -115,6 +115,48 @@
     // Lo mismo para un resultado ya limpiado con _fuenteLimpia (por ejemplo, los de Cinecalidad)
     const _fteMetaLimpia = s => _fteMetadatos({...s, behaviorHints:{filename:s.filename}});
 
+    // ── ¿Se puede ver en este navegador? ──
+    // Un navegador no reproduce cualquier archivo: Safari no abre MKV, ninguno descodifica audio DTS o TrueHD,
+    // y el HEVC o el AC-3 dependen del equipo. Del nombre del archivo se sacan el contenedor y los códecs
+    // y se le pregunta al propio navegador (canPlayType) si puede con esa combinación.
+    //   si → «Se ve aquí» · quizas → puede que sí (faltan datos) · no → «Mejor en VLC», con el motivo
+    const _fteVideoPrueba = document.createElement('video');
+    const _ftePuede = t => { try{ return _fteVideoPrueba.canPlayType(t); }catch(e){ return ''; } };
+    const _FTE_VCODEC = {h264:'avc1.640028', hevc:'hvc1.1.6.L93.B0', av1:'av01.0.05M.08', vp9:'vp09.00.10.08'};
+    const _FTE_ACODEC = {aac:'mp4a.40.2', ac3:'ac-3', eac3:'ec-3', opus:'opus', flac:'flac', mp3:'mp4a.6B'};
+    const _FTE_NOMBRE_AUDIO = {dts:'DTS', truehd:'TrueHD', ac3:'Dolby Digital (AC-3)', eac3:'Dolby Digital Plus', flac:'FLAC', opus:'Opus', mp3:'MP3', aac:'AAC'};
+    function _fteFormato(s, meta){
+      const t = meta.texto, u = String(s.url||'').split(/[?#]/)[0];
+      const ext = ((s.filename||'').match(/\.(\w{2,4})$/) || u.match(/\.(\w{2,4})$/) || t.match(/\.(mkv|mp4|m4v|webm|avi|ts|m2ts|m3u8)\b/i) || [])[1];
+      const cont = ext ? ext.toLowerCase().replace('m4v','mp4').replace('m2ts','ts') : '';
+      const video = /\b(?:x\.?265|h\.?265|hevc)\b/i.test(t) ? 'hevc' : /\b(?:x\.?264|h\.?264|avc)\b/i.test(t) ? 'h264' : /\bav1\b/i.test(t) ? 'av1'
+        : /\bvp9\b/i.test(t) ? 'vp9' : /\b(?:xvid|divx)\b/i.test(t) ? 'xvid' : '';
+      const audio = /\b(?:ddp|dd\+|e-?ac-?3)/i.test(t) ? 'eac3' : /truehd|\batmos\b/i.test(t) ? 'truehd' : /\bdts/i.test(t) ? 'dts'
+        : /\b(?:ac-?3|dd[ ._]?[257]\.[01]|dolby[ ._]digital)\b/i.test(t) ? 'ac3' : /\baac\b|\b(?:yts|yify)\b/i.test(t) ? 'aac'
+        : /\bopus\b/i.test(t) ? 'opus' : /\bflac\b/i.test(t) ? 'flac' : /\bmp3\b/i.test(t) ? 'mp3' : '';
+      return {cont, video, audio, remux:/\bremux\b/i.test(t)};
+    }
+    function _fteCompat(s, meta){
+      if(s.ytId || s.externalUrl) return {nivel:'no', motivo:'enlace externo'};
+      if(!s.url) return {nivel:'tor', motivo:'torrent'};
+      if(_tieneExoNativo()) return {nivel:'si'};                    // la app de la tele usa su propio reproductor
+      const f = _fteFormato(s, meta);
+      if(f.cont==='m3u8') return {nivel:'si'};                      // HLS: nativo en Safari, hls.js en el resto
+      if(f.cont==='avi') return {nivel:'no', motivo:'formato AVI'};
+      if(f.video==='xvid') return {nivel:'no', motivo:'vídeo XviD/DivX'};
+      if(f.audio==='dts' || f.audio==='truehd') return {nivel:'no', motivo:'audio '+_FTE_NOMBRE_AUDIO[f.audio]};
+      if(!f.audio && f.remux) return {nivel:'no', motivo:'audio sin pérdida (Remux)'};
+      const mime = {mp4:'video/mp4', mkv:'video/x-matroska', webm:'video/webm', ts:'video/mp2t'}[f.cont];
+      if(f.cont==='mkv' && !_ftePuede('video/x-matroska')) return {nivel:'no', motivo:'formato MKV en este navegador'};
+      if(f.video && !_ftePuede(`video/mp4; codecs="${_FTE_VCODEC[f.video]}"`)) return {nivel:'no', motivo:'vídeo '+f.video.toUpperCase()+' en este navegador'};
+      if(f.audio && _FTE_ACODEC[f.audio] && !_ftePuede(`audio/mp4; codecs="${_FTE_ACODEC[f.audio]}"`)) return {nivel:'no', motivo:'audio '+_FTE_NOMBRE_AUDIO[f.audio]+' en este navegador'};
+      if(!mime) return {nivel:'quizas'};
+      const combo = _ftePuede(`${mime}; codecs="${[_FTE_VCODEC[f.video||'h264'], f.audio ? _FTE_ACODEC[f.audio] : 'mp4a.40.2'].join(',')}"`);
+      if(!combo && f.cont!=='ts') return {nivel:'no', motivo:'formato '+f.cont.toUpperCase()+' en este navegador'};
+      // Con el audio sin identificar no se puede asegurar (salvo MP4/WebM, que casi siempre llevan AAC u Opus)
+      return {nivel: f.audio || f.cont==='mp4' || f.cont==='webm' ? 'si' : 'quizas'};
+    }
+
     // ── Carga y lista de resultados ──
     function _fteFiltrosGuardados(){
       try{ const f = JSON.parse(localStorage.getItem(FTE_FILTROS_LS)||'{}'); return {idioma:f.idioma||'todos', resolucion:f.resolucion||'todas', orden:f.orden||'recomendado'}; }
@@ -162,7 +204,7 @@
 
       const resultados = [], estados = new Map(cands.map(a=>[a, {txt:'buscando…', ok:null}]));
       let pend = cands.length, mostrar = FTE_PAGINA, tmBuscar = null;
-      const filtros = {..._fteFiltrosGuardados(), subtitulos:'todos', proveedor:'todos', buscar:''};
+      const filtros = {..._fteFiltrosGuardados(), subtitulos:'todos', proveedor:'todos', buscar:'', aqui:'todo'};
 
       // Controles: chips rápidos de idioma y calidad, orden, búsqueda y «Más filtros»
       const chips = (clave, titulo, opciones) => {
@@ -184,6 +226,7 @@
       const controles = _fEl('div',{class:'fte-controles'},
         chips('idioma','Idioma',[['todos','Todos'],['es','Español'],['cast','Castellano'],['lat','Latino'],['en','Inglés']]),
         chips('resolucion','Calidad',[['todas','Todas'],['2160','4K'],['1080','1080p'],['720','720p']]),
+        ctx.nas ? null : chips('aqui','Ver',[['todo','Todo'],['aqui','▶ Se ve aquí']]),
         _fEl('div',{class:'fte-fila-orden'}, buscar, selOrden), mas);
       const resumen = _fEl('div',{class:'fte-resumen',role:'status','aria-live':'polite'});
       const listaUI = _fEl('div',{class:'fte-lista'});
@@ -191,7 +234,7 @@
       body.replaceChildren(...[intro, controles, resumen, listaUI, pie,
         !ctx.nas && typeof _hostersSeccion==='function' ? _hostersSeccion(ctx) : null].filter(Boolean));
 
-      const quitarFiltros = ()=>{ Object.assign(filtros,{idioma:'todos',resolucion:'todas',subtitulos:'todos',proveedor:'todos',buscar:''}); buscar.value=''; mas.querySelectorAll('select').forEach(s=>s.selectedIndex=0); _fteGuardarFiltros(filtros); mostrar=FTE_PAGINA; controles.querySelectorAll('.fte-chips').forEach(c=>c.querySelectorAll('.fte-chip').forEach((b,i)=>{ b.classList.toggle('on',i===0); b.setAttribute('aria-pressed',i===0?'true':'false'); })); pintar(); };
+      const quitarFiltros = ()=>{ Object.assign(filtros,{idioma:'todos',resolucion:'todas',subtitulos:'todos',proveedor:'todos',buscar:'',aqui:'todo'}); buscar.value=''; mas.querySelectorAll('select').forEach(s=>s.selectedIndex=0); _fteGuardarFiltros(filtros); mostrar=FTE_PAGINA; controles.querySelectorAll('.fte-chips').forEach(c=>c.querySelectorAll('.fte-chip').forEach((b,i)=>{ b.classList.toggle('on',i===0); b.setAttribute('aria-pressed',i===0?'true':'false'); })); pintar(); };
 
       function pasa(r){
         const m=r.meta,f=filtros;
@@ -209,9 +252,10 @@
         if(f.subtitulos==='es'&&!m.subEs)return false;
         if(f.subtitulos==='en'&&!m.subEn)return false;
         if(f.subtitulos==='desconocidos'&&m.subs)return false;
+        if(f.aqui==='aqui'&&!(r.compat&&(r.compat.nivel==='si'||r.compat.nivel==='quizas')))return false;
         return true;
       }
-      // «Recomendado»: primero lo que se puede ver al momento, luego en español (castellano antes que latino),
+      // «Recomendado»: en «Ver», primero lo que se reproduce en este navegador; luego lo que se puede ver al momento, luego en español (castellano antes que latino),
       // luego 1080p/4K y más semillas
       const calidadRec = q => ({1080:5, 2160:4, 1440:4, 720:3}[q] || (q ? 1 : 2));
       function ordenar(lista){
@@ -219,7 +263,7 @@
         lista.sort((a,b)=>{
           if(o==='original') return a.proveedor-b.proveedor||a.pos-b.pos;
           let d = 0;
-          if(o==='recomendado') d = (b.meta.alInstante-a.meta.alInstante) || (b.meta.es-a.meta.es) || (b.meta.cast-a.meta.cast) || (calidadRec(b.meta.calidad)-calidadRec(a.meta.calidad)) || (b.meta.semillas-a.meta.semillas);
+          if(o==='recomendado') d = (ctx.nas ? 0 : _fteRangoCompat(b)-_fteRangoCompat(a)) || (b.meta.alInstante-a.meta.alInstante) || (b.meta.es-a.meta.es) || (b.meta.cast-a.meta.cast) || (calidadRec(b.meta.calidad)-calidadRec(a.meta.calidad)) || (b.meta.semillas-a.meta.semillas);
           else if(o==='calidad') d = (b.meta.calidad-a.meta.calidad) || (b.meta.semillas-a.meta.semillas);
           else if(o==='semillas') d = (b.meta.semillas-a.meta.semillas) || (b.meta.calidad-a.meta.calidad);
           else if(o==='tamano') d = ((a.meta.tamano||Infinity)-(b.meta.tamano||Infinity)) || (b.meta.semillas-a.meta.semillas);
@@ -231,7 +275,7 @@
         if(!vivo()) return;
         const entran = resultados.filter(r=>_fteEntra(r, ctx));
         const lista = ordenar(resultados.filter(pasa));
-        const hayFiltro = filtros.idioma!=='todos'||filtros.resolucion!=='todas'||filtros.subtitulos!=='todos'||filtros.proveedor!=='todos'||!!filtros.buscar;
+        const hayFiltro = filtros.idioma!=='todos'||filtros.resolucion!=='todas'||filtros.subtitulos!=='todos'||filtros.proveedor!=='todos'||!!filtros.buscar||filtros.aqui!=='todo';
         // Resumen: cuántos hay y cómo ha ido cada addon, en una línea
         const estadoAddons = [...estados.entries()].map(([a,e])=>_fEl('span',{class:'fte-addon-est'+(e.ok===false?' mal':e.ok?' ok':''),title:e.txt}, a.nombre+' · '+e.txt));
         resumen.replaceChildren(...[
@@ -239,6 +283,7 @@
           hayFiltro ? _fEl('button',{type:'button',class:'fte-link',onclick:quitarFiltros},'Quitar filtros') : null,
           _fEl('div',{class:'fte-addons'}, ...estadoAddons)].filter(Boolean));
         const vistos = lista.slice(0, mostrar);
+        if(!ctx.nas) window._fteReproducibles = lista.filter(r=>r.clase.tipo==='play' && r.compat && r.compat.nivel!=='no').map(r=>({s:r.s, a:r.a}));
         listaUI.replaceChildren(...vistos.map(r=>_fteTarjeta(r, ctx)));
         if(!lista.length) listaUI.append(_fEl('p',{class:'fte-msg fte-vacio'},
           pend ? 'Esperando a los addons…' :
@@ -257,13 +302,17 @@
           const raw=Array.isArray(d&&d.streams)?d.streams:[];
           raw.slice(0,500).forEach((original,pos)=>{
             const s=_fuenteLimpia(original); if(!s) return;
-            resultados.push({s,a,proveedor,pos,meta:_fteMetadatos(original),tipoT:ctx.tipo==='tv'?_fteTipoTorrent(s):{clase:'pelicula'},clase:_clasificarFuente(s)});
+            const meta=_fteMetadatos(original);
+            resultados.push({s,a,proveedor,pos,meta,tipoT:ctx.tipo==='tv'?_fteTipoTorrent(s):{clase:'pelicula'},clase:_clasificarFuente(s),compat:_fteCompat(s,meta)});
           });
           estados.set(a, {txt: raw.length ? raw.length+(raw.length>500?'+':'')+' resultados' : 'sin resultados', ok: raw.length>0});
         }).catch(e=>{ if(vivo()) estados.set(a, {txt: e.message.replace(/\.$/,''), ok:false}); })
           .finally(()=>{ if(vivo()){ pend--; pintar(); } });
       });
     }
+    const _fteRangoCompat = r => ({si:3, quizas:2, no:1, tor:0})[r.compat ? r.compat.nivel : 'tor'] ?? 0;
+    // Lista de lo que se puede reproducir aquí, en el orden en que se ve: el reproductor la usa para «Probar otra»
+    window._fteReproducibles = [];
     function _fteCargando(txt){ return _fEl('div',{class:'fte-cargando',role:'status'}, _fEl('span',{class:'fte-spin','aria-hidden':'true'}), _fEl('span',{text:txt})); }
 
     // ── Tarjeta de un resultado ──
@@ -271,6 +320,8 @@
     function _fteEtiquetas(r, ctx){
       const m = r.meta, t = [];
       const add = (txt, cls) => t.push(_fEl('span',{class:'fte-tag'+(cls?' '+cls:''),text:txt}));
+      if(!ctx.nas && r.compat && r.compat.nivel==='si') add('▶ Se ve aquí','ok');
+      if(!ctx.nas && r.compat && r.compat.nivel==='no' && r.s.url) t.push(_fEl('span',{class:'fte-tag vlc',text:'Mejor en VLC',title:'No se puede ver en este navegador: '+r.compat.motivo}));
       if(m.alInstante) add('⚡ Al instante','ok');
       if(m.calidad) add(m.calidad>=2160?'4K':m.calidad+'p','q');
       if(m.dv) add('Dolby Vision'); else if(m.hdr) add('HDR');
@@ -302,7 +353,8 @@
     }
     // Compatibilidad: otras partes de la app (Cinecalidad) pintan un resultado suelto
     function _fteFila(s, a, ctx){
-      return _fteTarjeta({s, a, meta:_fteMetaLimpia(s), tipoT: ctx.tipo==='tv' ? _fteTipoTorrent(s) : {clase:'pelicula'}, clase:_clasificarFuente(s)}, ctx);
+      const meta = _fteMetaLimpia(s);
+      return _fteTarjeta({s, a, meta, tipoT: ctx.tipo==='tv' ? _fteTipoTorrent(s) : {clase:'pelicula'}, clase:_clasificarFuente(s), compat:_fteCompat(s, meta)}, ctx);
     }
 
     // Acciones en «Ver»: la principal visible y las demás en un menú «⋯»
@@ -311,7 +363,9 @@
       const fila = _fEl('div',{class:'fte-card-acc'}), menu = _fEl('div',{class:'fte-menu',hidden:true});
       const itemMenu = (txt, ico, props) => _fEl(props && props.href ? 'a' : 'button', {class:'fte-menu-item', type: props && props.href ? null : 'button', ...props}, _fEl('span',{class:'fte-menu-ico','aria-hidden':'true',text:ico}), txt);
       let principal = null;
-      if(c.tipo==='play') principal = _fEl('button',{type:'button',class:'fte-btn fte-btn-prim',onclick:()=>reproducirFuente(s,{...ctx,fuente:nombre})},'▶ Reproducir');
+      const noAqui = r.compat && r.compat.nivel==='no';
+      const reproducir = ()=>reproducirFuente(s,{...ctx,fuente:nombre});
+      if(c.tipo==='play' && !noAqui) principal = _fEl('button',{type:'button',class:'fte-btn fte-btn-prim',onclick:reproducir},'▶ Reproducir');
       else if(c.tipo==='externa') principal = _fEl('a',{class:'fte-btn fte-btn-prim',href:c.href,target:'_blank',rel:'noopener noreferrer'},'Abrir ↗');
       const nas = _nasBotonEnVer(s, r.a, ctx, estado, r.tipoT);
       if(!principal && nas){ nas.className = 'fte-btn fte-btn-prim'; principal = nas; }
@@ -319,9 +373,16 @@
       // VLC, copiar y descargar (solo si hay un enlace directo)
       const vlc = !s.proxyHeaders && s.url && _vlcHref(s.url, 'stream', ctx.titulo);
       if(vlc){
-        if(_esVLCiOS() || _esAndroid()) menu.append(itemMenu('Abrir en VLC','◉',{href:vlc,onclick:()=>{ _pausarParaVLC(); estado.textContent='Abriendo VLC… Si no se abre, comprueba que esté instalado o copia el enlace.'; }}));
-        else menu.append(itemMenu('Abrir en VLC (.m3u)','◉',{onclick:()=>_guardarListaVLC(s.url,ctx.titulo,estado)}));
+        const movil = _esVLCiOS() || _esAndroid();
+        const abrirVLC = ()=>{ if(movil){ _pausarParaVLC(); estado.textContent='Abriendo VLC… Si no se abre, comprueba que esté instalado o copia el enlace.'; } else _guardarListaVLC(s.url,ctx.titulo,estado); };
+        if(noAqui && !principal){
+          // No se puede ver en el navegador: la acción principal es VLC (y se avisa del motivo)
+          principal = movil ? _fEl('a',{class:'fte-btn fte-btn-prim',href:vlc,onclick:abrirVLC},'Abrir en VLC') : _fEl('button',{type:'button',class:'fte-btn fte-btn-prim',onclick:abrirVLC},'Abrir en VLC');
+          menu.append(_fEl('p',{class:'fte-menu-nota',text:'No se puede ver en este navegador ('+r.compat.motivo+'). En VLC sí.'}));
+        }else if(movil) menu.append(itemMenu('Abrir en VLC','◉',{href:vlc,onclick:abrirVLC}));
+        else menu.append(itemMenu('Abrir en VLC (.m3u)','◉',{onclick:abrirVLC}));
       }
+      if(c.tipo==='play' && noAqui) menu.append(itemMenu('Intentar reproducir aquí','▶',{onclick:reproducir}));
       if(s.url && _urlStreamValida(s.url)){
         menu.append(itemMenu('Copiar enlace','⧉',{onclick:()=>_copiarFuenteVLC(s.url,estado)}));
         if(_esArchivoDescargable(s.url)) menu.append(_esVLCiOS()
