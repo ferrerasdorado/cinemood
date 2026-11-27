@@ -85,3 +85,10 @@
 
 /* Ficha: logo del título oscuro (pensado para fondo blanco) → en blanco para que se lea sobre la tarjeta oscura */
 .detalle-logo.logo-oscuro{filter:brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,.85))}
+
+/* Ficha: mientras llegan sus datos, solo se ve lo esencial (póster, título y año); el resto aparece de una vez
+   con un fundido, para que nada salte hacia abajo mientras se carga (js/ficha.js · _fichaAsentar) */
+#p-detalle .detalle-info>*,#p-detalle>.wrap>*{transition:opacity .2s ease}
+#p-detalle.ficha-cargando .detalle-info>:not(#d-titulo):not(#d-meta),
+#p-detalle.ficha-cargando>.wrap>:not(.pantalla-header):not(.detalle-poster-row){opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){#p-detalle .detalle-info>*,#p-detalle>.wrap>*{transition:none}}

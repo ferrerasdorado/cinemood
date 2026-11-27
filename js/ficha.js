@@ -341,6 +341,7 @@
       const origenPrevio=document.querySelector('.pantalla.activa')?.id;
       if(origenPrevio && origenPrevio!=='p-detalle') window.origenDetalle=origenPrevio;
       peliculaActual=p;
+      _fichaAsentar();
       setTimeout(colActualizarBotonFicha, 0);
       _pintarBotonAbandonada();
       _pintarBotonOcultar(false);
@@ -457,6 +458,28 @@
       requestAnimationFrame(()=>{ pista.scrollLeft = i*pista.clientWidth; document.getElementById('galeria-cont').textContent = `${i+1} / ${window._galeria.length}`; });
     }
     function cerrarGaleria(){ const v = document.getElementById('galeria-visor'); if(v) v.style.display = 'none'; document.body.style.overflow = ''; }
+    // ── Entrada en la ficha sin saltos ──
+    // Al abrir una ficha, sus datos llegan por partes (clasificación, lema, IMDb, «Le pondrías un…», el logo…) y la
+    // tarjeta de arriba crecía a trozos durante casi un segundo, empujando hacia abajo todo lo demás.
+    // Ahora se ve al instante lo esencial (póster, título y año) y el resto aparece de una vez, con un fundido,
+    // cuando el logo ya está decidido y la tarjeta lleva un momento sin cambiar de tamaño (como mucho, 1 s).
+    const _ficha = {ro:null, tope:0, calma:0, logo:false};
+    function _fichaMostrar(){
+      clearTimeout(_ficha.tope); clearTimeout(_ficha.calma);
+      if(_ficha.ro){ _ficha.ro.disconnect(); _ficha.ro = null; }
+      document.getElementById('p-detalle').classList.remove('ficha-cargando');
+    }
+    function _fichaQuieta(){ clearTimeout(_ficha.calma); if(_ficha.logo) _ficha.calma = setTimeout(_fichaMostrar, 200); }
+    function _fichaAsentar(){
+      const pag = document.getElementById('p-detalle');
+      _fichaMostrar();
+      _ficha.logo = false;
+      pag.classList.add('ficha-cargando');
+      if('ResizeObserver' in window){ _ficha.ro = new ResizeObserver(_fichaQuieta); _ficha.ro.observe(pag.querySelector('.detalle-poster-row')); }
+      _ficha.tope = setTimeout(_fichaMostrar, 1000);
+    }
+    function _fichaLogoListo(){ _ficha.logo = true; _fichaQuieta(); }
+
     // ¿Se leería el logo sobre la tarjeta oscura de la ficha? Se calcula la luminancia relativa media (WCAG, en
     // escala lineal) de sus partes visibles: por debajo de 0,1 el contraste con el fondo no llega a 3 y es un logo
     // oscuro (negro o gris oscuro, pensado para fondo blanco). Un rojo intenso, por ejemplo, sí se lee y se respeta.
@@ -483,7 +506,7 @@
         _pintarGaleria(data.backdrops||[], p);
         const logos = data.logos||[];
         const elegido = logos.find(l=>l.iso_639_1==='es') || logos.find(l=>l.iso_639_1===null) || logos.find(l=>l.iso_639_1==='en') || logos[0];
-        if(!elegido) return; // sin logo disponible: se queda el título en texto de siempre
+        if(!elegido){ _fichaLogoListo(); return; } // sin logo disponible: se queda el título en texto de siempre
         const img = document.getElementById('d-logo');
         img.classList.remove('logo-oscuro');
         img.crossOrigin = 'anonymous';   // TMDB lo permite: así se puede medir si el logo es oscuro
@@ -492,13 +515,14 @@
           // Algunos logos son negros (pensados para fondo blanco) y sobre la tarjeta oscura no se verían: se pasan a blanco
           img.classList.toggle('logo-oscuro', _logoEsOscuro(img));
           img.style.display='block'; document.getElementById('d-titulo').style.display='none';
+          _fichaLogoListo();
         };
         const src = `https://image.tmdb.org/t/p/w500${elegido.file_path}`;
         // Si la carga con permiso para medirla falla, se carga normal (sin medir): el logo se ve igual
-        img.onerror = ()=>{ if(img.crossOrigin && peliculaActual===p){ img.removeAttribute('crossorigin'); img.src = src; } };
+        img.onerror = ()=>{ if(img.crossOrigin && peliculaActual===p){ img.removeAttribute('crossorigin'); img.src = src; } else _fichaLogoListo(); };
         // «?cors=1»: el navegador podría tener ya esta imagen guardada sin permiso para leerla, y la reutilizaría
         img.src = src + '?cors=1';
-      }catch(e){ /* se queda el título en texto, comportamiento de siempre */ }
+      }catch(e){ _fichaLogoListo(); /* se queda el título en texto, comportamiento de siempre */ }
     }
     async function _cargarColeccion(d,tipo){
       const box = document.getElementById('d-coleccion-box');
