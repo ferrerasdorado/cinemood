@@ -292,18 +292,20 @@
     async function _pintarNotasExternas(tipo, id, p){
       const el = document.getElementById('d-notas-ext'); if(!el) return;
       el.innerHTML = ''; el.style.display = 'none';
-      if(!OMDB_KEY) return;
+      const sinNotas = ()=>{ if(peliculaActual===p) el.classList.remove('reservado'); };   // su hueco reservado se recoge
+      if(!OMDB_KEY){ sinNotas(); return; }
       try{
         const imdb = await _imdbIdDe(tipo, id);
         const d = window._omdbCache[imdb] || await _omdbDatos(imdb);
         if(d && d.Response==='True') window._omdbCache[imdb] = d;
-        if(peliculaActual!==p || !d || d.Response!=='True') return;
+        if(peliculaActual!==p) return;
+        if(!d || d.Response!=='True'){ sinNotas(); return; }
         const fuente = n => ((d.Ratings||[]).find(r=>r.Source===n)||{}).Value;
         const notas = [];
         if(d.imdbRating && d.imdbRating!=='N/A') notas.push(`<a class="nota-ext" href="https://www.imdb.com/title/${encodeURIComponent(imdb)}/" target="_blank" rel="noopener"><b>IMDb</b> ${_escHtml(d.imdbRating)}</a>`);
         const rt = fuente('Rotten Tomatoes'); if(rt) notas.push(`<span class="nota-ext"><b>Rotten</b> ${_escHtml(rt)}</span>`);
         const mc = fuente('Metacritic'); if(mc) notas.push(`<span class="nota-ext"><b>Metacritic</b> ${_escHtml(mc.replace('/100',''))}</span>`);
-        if(!notas.length) return;
+        if(!notas.length){ sinNotas(); return; }
         // crítica (Metacritic o Rotten) frente a público (IMDb): si se separan mucho, se dice
         const critica = mc ? Number(mc.replace('/100','')) : rt ? Number(rt.replace('%','')) : null, publico = d.imdbRating && d.imdbRating!=='N/A' ? Number(d.imdbRating)*10 : null;
         if(critica!=null && publico!=null){
@@ -312,7 +314,8 @@
           else if(dif <= -15) notas.push(`<div class="nota-gap">🍿 Al público le gustó mucho más que a la crítica (${pn} · ${cn}).</div>`);
         }
         el.innerHTML = notas.join(''); el.style.display = 'flex'; el.style.flexWrap = 'wrap';
-      }catch(e){ /* sin notas externas: la ficha sigue igual */ }
+        el.classList.remove('reservado');
+      }catch(e){ sinNotas(); /* sin notas externas: la ficha sigue igual */ }
     }
     function _omdbDatos(imdb){
       window._omdbProm = window._omdbProm || {};

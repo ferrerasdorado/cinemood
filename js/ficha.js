@@ -385,12 +385,15 @@
       irA('p-detalle', false, desdeHistorial);
       cargarEstadoBiblioteca();
       _pintarNotaPrevista(p);
+      // La ficha se enseña entera en cuanto llegan los datos principales y la clasificación por edad
+      const _pDetalles = cargarDetallesCompletos(p.id,p._tipo), _pCalif = cargarCalificacion(p.id,p._tipo);
+      Promise.allSettled([_pDetalles, _pCalif]).then(()=>{ if(peliculaActual===p) _fichaDatosListos(); });
       await Promise.all([
-        cargarDetallesCompletos(p.id,p._tipo),
+        _pDetalles,
         cargarCreditos(p.id,p._tipo),
         cargarPlataformas(p.id,p._tipo),
         cargarTemas(p.id,p._tipo),
-        cargarCalificacion(p.id,p._tipo),
+        _pCalif,
         cargarSimilares(p),
         cargarTrailer(p.id,p._tipo),
         p._tipo==='tv'?cargarTemporadas(p.id):Promise.resolve()
@@ -460,25 +463,28 @@
     function cerrarGaleria(){ const v = document.getElementById('galeria-visor'); if(v) v.style.display = 'none'; document.body.style.overflow = ''; }
     // ── Entrada en la ficha sin saltos ──
     // Al abrir una ficha, sus datos llegan por partes (clasificación, lema, IMDb, «Le pondrías un…», el logo…) y la
-    // tarjeta de arriba crecía a trozos durante casi un segundo, empujando hacia abajo todo lo demás.
-    // Ahora se ve al instante lo esencial (póster, título y año) y el resto aparece de una vez, con un fundido,
-    // cuando el logo ya está decidido y la tarjeta lleva un momento sin cambiar de tamaño (como mucho, 1 s).
-    const _ficha = {ro:null, tope:0, calma:0, logo:false};
+    // tarjeta de arriba crecía a trozos, empujando hacia abajo todo lo demás. Ahora:
+    //  · se ve al instante lo esencial (póster, título y año);
+    //  · el resto aparece de una vez, con un fundido, en cuanto llegan los datos principales y la clasificación
+    //    (como mucho, 0,7 s);
+    //  · lo que llega más tarde tiene su hueco reservado: el título y el logo ocupan lo mismo, y la fila de
+    //    IMDb/Metacritic se reserva hasta saber si hay notas.
+    const _ficha = {tope:0, calma:0};
     function _fichaMostrar(){
       clearTimeout(_ficha.tope); clearTimeout(_ficha.calma);
-      if(_ficha.ro){ _ficha.ro.disconnect(); _ficha.ro = null; }
       document.getElementById('p-detalle').classList.remove('ficha-cargando');
     }
-    function _fichaQuieta(){ clearTimeout(_ficha.calma); if(_ficha.logo) _ficha.calma = setTimeout(_fichaMostrar, 200); }
     function _fichaAsentar(){
-      const pag = document.getElementById('p-detalle');
       _fichaMostrar();
-      _ficha.logo = false;
-      pag.classList.add('ficha-cargando');
-      if('ResizeObserver' in window){ _ficha.ro = new ResizeObserver(_fichaQuieta); _ficha.ro.observe(pag.querySelector('.detalle-poster-row')); }
-      _ficha.tope = setTimeout(_fichaMostrar, 1000);
+      document.getElementById('p-detalle').classList.add('ficha-cargando');
+      const notas = document.getElementById('d-notas-ext'), p = peliculaActual;
+      notas.classList.add('reservado');
+      setTimeout(()=>{ if(peliculaActual===p && !notas.childElementCount) notas.classList.remove('reservado'); }, 6000);   // por si nunca llegan
+      _ficha.tope = setTimeout(_fichaMostrar, 700);
     }
-    function _fichaLogoListo(){ _ficha.logo = true; _fichaQuieta(); }
+    // Un instante de margen para que se pinte lo que ha llegado a la vez
+    function _fichaDatosListos(){ clearTimeout(_ficha.calma); _ficha.calma = setTimeout(_fichaMostrar, 80); }
+    function _fichaLogoListo(){}   // el logo ya no retrasa la ficha (tiene su hueco reservado)
 
     // ¿Se leería el logo sobre la tarjeta oscura de la ficha? Se calcula la luminancia relativa media (WCAG, en
     // escala lineal) de sus partes visibles: por debajo de 0,1 el contraste con el fondo no llega a 3 y es un logo
