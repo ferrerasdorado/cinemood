@@ -519,7 +519,10 @@
         };
         const src = `https://image.tmdb.org/t/p/w500${elegido.file_path}`;
         // Si la carga con permiso para medirla falla, se carga normal (sin medir): el logo se ve igual
-        img.onerror = ()=>{ if(img.crossOrigin && peliculaActual===p){ img.removeAttribute('crossorigin'); img.src = src; } else _fichaLogoListo(); };
+        img.onerror = ()=>{
+          if(peliculaActual!==p || !img.getAttribute('src')) return;   // el aviso es de otra ficha (al vaciar la imagen)
+          if(img.crossOrigin){ img.removeAttribute('crossorigin'); img.src = src; } else _fichaLogoListo();
+        };
         // «?cors=1»: el navegador podría tener ya esta imagen guardada sin permiso para leerla, y la reutilizaría
         img.src = src + '?cors=1';
       }catch(e){ _fichaLogoListo(); /* se queda el título en texto, comportamiento de siempre */ }
