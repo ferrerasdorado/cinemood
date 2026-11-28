@@ -52,6 +52,7 @@ object App {
     /** Se incrementa cuando cambia la lista (para refrescar Inicio y Mi lista) */
     var versionLista by mutableStateOf(0)
     var ultimaBusqueda = ""
+    var versionBusqueda by mutableStateOf(0)   // sube cuando la búsqueda llega desde fuera (enlace)
     var cacheLista: List<es.cinemood.tv.datos.EnLista>? = null
 
     /** Al cerrar sesión o caducar: nada de la cuenta anterior se queda en memoria */

@@ -80,6 +80,11 @@ class MainActivity : ComponentActivity() {
     /** cinemood://ficha/tv/1234 (desde «Seguir viendo» de la pantalla de inicio de la tele) */
     private fun abrirEnlace(i: android.content.Intent?) {
         val u = i?.data ?: return
+        if (u.scheme == "cinemood" && u.host == "buscar" && Sesion.iniciada) {   // cinemood://buscar/tom hanks
+            App.menu = null; App.fuentes = null
+            App.ultimaBusqueda = u.pathSegments.joinToString(" "); App.versionBusqueda++
+            App.irA(Pestana.BUSCAR); return
+        }
         if (u.scheme != "cinemood" || u.host != "ficha") return
         val partes = u.pathSegments
         val tipo = partes.getOrNull(0)?.takeIf { it == "tv" || it == "movie" } ?: return

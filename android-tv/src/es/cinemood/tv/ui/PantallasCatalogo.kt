@@ -395,7 +395,7 @@ fun PantallaCategoria(c: Pantalla.Categoria) {
 /** Buscar: teclado propio a la izquierda (pensado para el mando) y resultados a la derecha, al momento */
 @Composable
 fun PantallaBuscar() {
-    var texto by remember { mutableStateOf(App.ultimaBusqueda) }
+    var texto by remember(App.versionBusqueda) { mutableStateOf(App.ultimaBusqueda) }
     var resultados by remember { mutableStateOf<List<Titulo>>(emptyList()) }
     var personas by remember { mutableStateOf<List<Catalogo.PersonaBuscada>>(emptyList()) }
     var hoy by remember { mutableStateOf<List<Titulo>>(emptyList()) }
@@ -450,8 +450,8 @@ private fun TarjetaPersona(p: Catalogo.PersonaBuscada) {
                 Imagen(Tmdb.img(p.foto, "w185"), Modifier.fillMaxSize(), descripcion = p.nombre)
             }
             Spacer(Modifier.height(6.dp))
-            Texto(p.nombre, tam = 13, peso = FontWeight.Bold, lineas = 2, color = C.tinta)
-            Texto(p.oficio, tam = 12, lineas = 1, color = C.suave)
+            Texto(p.nombre, tam = 13, peso = FontWeight.Bold, lineas = 2, color = C.tinta, centrado = true, alto = 17)
+            Texto(p.oficio, tam = 12, lineas = 1, color = C.suave, centrado = true)
         }
     }
 }

@@ -104,11 +104,12 @@ fun Modifier.focoRecordado(clave: String, pedirSiNada: Boolean = false): Modifie
 @Composable
 fun Texto(
     texto: String, modifier: Modifier = Modifier, tam: Int = 15, peso: FontWeight = FontWeight.Normal,
-    color: Color = Color.Unspecified, lineas: Int = Int.MAX_VALUE, titulo: Boolean = false, alto: Int = 0,
+    color: Color = Color.Unspecified, lineas: Int = Int.MAX_VALUE, titulo: Boolean = false, alto: Int = 0, centrado: Boolean = false,
 ) = Text(
     texto, modifier = modifier, fontSize = tam.sp, fontWeight = peso, color = color, maxLines = lineas,
     overflow = TextOverflow.Ellipsis, fontFamily = if (titulo) Cabinet else Satoshi,
     lineHeight = if (alto > 0) alto.sp else androidx.compose.ui.unit.TextUnit.Unspecified,
+    textAlign = if (centrado) androidx.compose.ui.text.style.TextAlign.Center else null,
 )
 
 @Composable

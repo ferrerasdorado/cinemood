@@ -137,8 +137,19 @@ object Catalogo {
             val oficio = when (dep) { "Directing" -> "Dirección"; "Writing" -> "Guion"; "Acting" -> if (o.optInt("gender") == 1) "Actriz" else "Actor"; else -> dep }
             Triple(PersonaBuscada(o.optInt("id"), o.optString("name"), o.optString("profile_path").takeIf { it.startsWith("/") }, oficio, dep == "Directing"),
                 nivel(o.optString("name")), o.optDouble("popularity", 0.0))
-        }.filter { it.second <= 2 }.sortedWith(compareBy<Triple<PersonaBuscada, Int, Double>> { it.second }.thenByDescending { it.third }).map { it.first }.take(8)
-        Busqueda(titulos, personas)
+        }.filter { it.second <= 2 }.sortedWith(compareBy<Triple<PersonaBuscada, Int, Double>> { it.second }.thenByDescending { it.third })
+        // Si lo escrito es el nombre de una persona conocida, primero sus películas y series más famosas
+        val estrella = personas.firstOrNull { it.second == 0 && it.third >= 3 }?.first
+        val suyas = if (estrella == null) emptyList() else try {
+            val cc = Tmdb.json("/person/${estrella.id}/combined_credits")
+            val arr = cc.optJSONArray(if (estrella.director) "crew" else "cast") ?: JSONArray()
+            (0 until arr.length()).mapNotNull { arr.optJSONObject(it) }
+                .filter { !estrella.director || it.optString("job") == "Director" }
+                .filter { it.optInt("vote_count") >= 50 && !(it.optString("media_type") == "tv" && it.optInt("episode_count") < 3) }
+                .sortedByDescending { it.optInt("vote_count") }
+                .mapNotNull { titulo(it) }.filter { it.poster != null }.distinctBy { it.clave }.take(20)
+        } catch (e: Exception) { emptyList() }
+        Busqueda((suyas + titulos).distinctBy { it.clave }, personas.map { it.first }.take(8))
     }
 
     /** Estados de ánimo: los mismos criterios que la web (géneros que valen y géneros que no) */

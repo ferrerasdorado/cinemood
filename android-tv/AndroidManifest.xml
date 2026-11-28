@@ -48,6 +48,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="cinemood" android:host="ficha" />
+                <data android:scheme="cinemood" android:host="buscar" />
             </intent-filter>
         </activity>
 
