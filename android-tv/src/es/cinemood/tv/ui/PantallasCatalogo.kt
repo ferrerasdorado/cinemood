@@ -47,6 +47,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
@@ -211,16 +212,18 @@ fun etiquetaPortada(t: Titulo, posicion: Int): Pair<String, Boolean>? {
 fun Portada(lista: List<Pair<Titulo, String?>>) {
     var i by remember { mutableIntStateOf(0) }
     var enfocada by remember { mutableStateOf(false) }
-    LaunchedEffect(i, lista.size) { delay(9000); if (lista.isNotEmpty()) i = (i + 1) % lista.size }
+    val (t, logo) = lista[i.coerceIn(0, lista.lastIndex)]
+    // Tráiler mudo: con la portada enfocada y quieta 2,5 s (mientras suena, la portada no rota)
+    val trailer = trailerActivo(Catalogo.fichas.get(t.clave)?.trailer, enfocada)
+    LaunchedEffect(i, lista.size, trailer) { if (trailer != null) return@LaunchedEffect; delay(9000); if (lista.isNotEmpty()) i = (i + 1) % lista.size }
     var fichasListas by remember { mutableIntStateOf(0) }
     LaunchedEffect(lista) { lista.forEach { (t, _) -> try { Catalogo.detalle(t.tipo, t.id); fichasListas++ } catch (e: Exception) { } } }
-    val (t, logo) = lista[i.coerceIn(0, lista.lastIndex)]
     val forma = RoundedCornerShape(10.dp)
     Surface(
         onClick = { App.ficha(t) },
         modifier = Modifier.padding(horizontal = MARGEN.dp).padding(top = 6.dp).fillMaxWidth().height(310.dp)
             .focoRecordado("portada", pedirSiNada = true)
-            .onFocusChanged { enfocada = it.isFocused }
+            .onFocusChanged { enfocada = it.hasFocus }
             .onPreviewKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (e.key) {
@@ -238,6 +241,7 @@ fun Portada(lista: List<Pair<Titulo, String?>>) {
         AnimatedContent(targetState = t to logo, transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) }, label = "portada") { (x, lg) ->
             Box(Modifier.fillMaxSize()) {
                 Imagen(Tmdb.img(x.fondo, "w1280"), Modifier.fillMaxSize(), descripcion = x.nombre, alineacion = Alignment.TopCenter, fundido = true)
+                if (trailer != null && x.clave == t.clave) TrailerPortada(trailer)
                 Box(Modifier.fillMaxSize().velo())
                 Column(Modifier.align(Alignment.BottomStart).padding(28.dp).fillMaxWidth(0.55f)) {
                     if (lg != null) Imagen(Tmdb.img(lg, "w500"), Modifier.heightIn(max = 90.dp).fillMaxWidth(0.8f), ajuste = ContentScale.Fit, descripcion = x.nombre, alineacion = Alignment.BottomStart)
@@ -393,15 +397,17 @@ fun PantallaCategoria(c: Pantalla.Categoria) {
 fun PantallaBuscar() {
     var texto by remember { mutableStateOf(App.ultimaBusqueda) }
     var resultados by remember { mutableStateOf<List<Titulo>>(emptyList()) }
+    var personas by remember { mutableStateOf<List<Catalogo.PersonaBuscada>>(emptyList()) }
     var hoy by remember { mutableStateOf<List<Titulo>>(emptyList()) }
     var buscando by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { hoy = try { Catalogo.masVistoHoy() } catch (e: Exception) { emptyList() } }
     LaunchedEffect(texto) {
         App.ultimaBusqueda = texto
-        if (texto.isBlank()) { resultados = emptyList(); return@LaunchedEffect }
+        if (texto.isBlank()) { resultados = emptyList(); personas = emptyList(); return@LaunchedEffect }
         delay(350)
         buscando = true
-        resultados = try { Catalogo.buscar(texto) } catch (e: Exception) { App.error(e); emptyList() }
+        val b = try { Catalogo.buscar(texto) } catch (e: Exception) { App.error(e); Catalogo.Busqueda(emptyList(), emptyList()) }
+        resultados = b.titulos; personas = b.personas
         buscando = false
     }
     val lista = if (texto.isBlank()) hoy else resultados
@@ -410,14 +416,42 @@ fun PantallaBuscar() {
         val frA = remember { androidx.compose.ui.focus.FocusRequester() }
         Row(Modifier.fillMaxSize().focusProperties { enter = { frA } }.focusGroup()) {
             Teclado(texto, { texto = it }, Modifier.padding(start = MARGEN.dp, top = 8.dp).width(342.dp), frA)
-            Rejilla(lista, "buscar", Modifier.weight(1f), pedirPrimero = false, cabecera = {
+            Rejilla(lista, "buscar", Modifier.weight(1f), pedirPrimero = false, cabecera = { Column {
+                if (personas.isNotEmpty() && texto.isNotBlank()) {
+                    Texto("Personas", Modifier.padding(top = 14.dp, bottom = 8.dp), tam = 20, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta)
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp), contentPadding = PaddingValues(vertical = 6.dp)) {
+                        items(personas, key = { it.id }) { p -> TarjetaPersona(p) }
+                    }
+                }
                 Texto(when {
                     texto.isBlank() -> "Lo más visto hoy"
                     buscando && resultados.isEmpty() -> "Buscando «$texto»…"
                     resultados.isEmpty() -> "Sin resultados para «$texto»"
                     else -> "Resultados para «$texto»"
                 }, Modifier.padding(top = 14.dp, bottom = 4.dp), tam = 20, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta)
-            })
+            } })
+        }
+    }
+}
+
+/** Actor, actriz o director: al pulsar, sus películas y series */
+@Composable
+private fun TarjetaPersona(p: Catalogo.PersonaBuscada) {
+    Surface(
+        onClick = { App.abrir(Pantalla.Categoria("Con ${p.nombre}", listOf("movie", "tv")) { tp, pag -> Catalogo.dePersona(p.id, tp, pag, p.director) }) },
+        modifier = Modifier.width(118.dp).focoRecordado("persona-${p.id}"),
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
+        colors = ClickableSurfaceDefaults.colors(containerColor = Color.Transparent, focusedContainerColor = C.superficie2),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.06f),
+    ) {
+        Column(Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(84.dp).clip(CircleShape).background(C.superficie2), contentAlignment = Alignment.Center) {
+                if (p.foto == null) Texto(p.nombre.take(1), tam = 28, peso = FontWeight.Bold, color = C.suave)
+                Imagen(Tmdb.img(p.foto, "w185"), Modifier.fillMaxSize(), descripcion = p.nombre)
+            }
+            Spacer(Modifier.height(6.dp))
+            Texto(p.nombre, tam = 13, peso = FontWeight.Bold, lineas = 2, color = C.tinta)
+            Texto(p.oficio, tam = 12, lineas = 1, color = C.suave)
         }
     }
 }

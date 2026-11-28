@@ -97,13 +97,48 @@ object Catalogo {
         descubrir(tipo, "watch_region=ES&with_watch_providers=$proveedor&with_watch_monetization_types=flatrate", pagina)
 
     /** Películas y series en las que sale una persona, de más a menos popular */
-    suspend fun dePersona(id: Int, tipo: String, pagina: Int) =
-        if (tipo == "tv") if (pagina > 1) emptyList() else lista(JSONObject().put("results", Tmdb.json("/person/$id/tv_credits").optJSONArray("cast") ?: JSONArray()), "tv")
-        else descubrir("movie", "with_cast=$id", pagina)
+    suspend fun dePersona(id: Int, tipo: String, pagina: Int, director: Boolean = false) =
+        if (tipo == "tv") if (pagina > 1) emptyList() else lista(JSONObject().put("results", Tmdb.json("/person/$id/tv_credits").optJSONArray(if (director) "crew" else "cast") ?: JSONArray()), "tv")
+        else descubrir("movie", (if (director) "with_crew=$id" else "with_cast=$id") + "&sort_by=popularity.desc", pagina)
 
-    suspend fun buscar(texto: String): List<Titulo> {
-        if (texto.isBlank()) return emptyList()
-        return lista(Tmdb.json("/search/multi", "query=${Red.cod(texto.trim())}&include_adult=false"))
+    data class PersonaBuscada(val id: Int, val nombre: String, val foto: String?, val oficio: String, val director: Boolean)
+    data class Busqueda(val titulos: List<Titulo>, val personas: List<PersonaBuscada>)
+
+    /** Sin tildes, en minúsculas y sin signos: «Acción: El Regreso!» → «accion el regreso» */
+    fun normalizar(s: String): String = java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
+        .replace(Regex("\\p{Mn}+"), "").replace(Regex("[^a-z0-9ñ ]"), " ").replace(Regex("\\s+"), " ").trim()
+
+    /**
+     * Buscar como las plataformas grandes:
+     *  1) primero lo que coincide con lo escrito (exacto → empieza por → alguna palabra empieza por → lo contiene),
+     *  2) dentro de cada nivel, lo más popular y votado (no por fecha),
+     *  3) fuera lo que no aporta (sin cartel o casi sin votos),
+     * y aparte, las personas (actores, actrices, directores) para ver sus películas y series.
+     */
+    suspend fun buscar(texto: String): Busqueda = coroutineScope {
+        val q = normalizar(texto)
+        if (q.isEmpty()) return@coroutineScope Busqueda(emptyList(), emptyList())
+        val pags = (1..2).map { p -> async { try { Tmdb.json("/search/multi", "query=${Red.cod(texto.trim())}&include_adult=false&page=$p").optJSONArray("results") } catch (e: Exception) { if (p == 1) throw e else null } } }.map { it.await() }
+        val todos = pags.filterNotNull().flatMap { a -> (0 until a.length()).mapNotNull { a.optJSONObject(it) } }
+        fun nivel(vararg nombres: String): Int = nombres.map { normalizar(it) }.filter { it.isNotEmpty() }.minOfOrNull { n ->
+            when { n == q -> 0; n.startsWith(q) -> 1; n.split(' ').any { it.startsWith(q) } -> 2; q in n -> 3; else -> 4 }
+        } ?: 4
+        val titulos = todos.filter { it.optString("media_type") != "person" }.mapNotNull { o ->
+            val t = titulo(o) ?: return@mapNotNull null
+            if (t.poster == null || t.nombre.isBlank()) return@mapNotNull null
+            val n = nivel(t.nombre, o.optString("original_title"), o.optString("original_name"))
+            val votos = o.optInt("vote_count"); val pop = o.optDouble("popularity", 0.0)
+            if (n >= 3 && votos < 30 && pop < 4) return@mapNotNull null          // coincidencia floja y casi nadie la ha visto
+            if (votos < 3 && pop < 1.5) return@mapNotNull null
+            Triple(t, n, kotlin.math.ln(votos + 1.0) * 2 + kotlin.math.ln(pop + 1.0) * 3)
+        }.sortedWith(compareBy<Triple<Titulo, Int, Double>> { it.second }.thenByDescending { it.third }).map { it.first }.distinctBy { it.clave }
+        val personas = todos.filter { it.optString("media_type") == "person" && it.optDouble("popularity", 0.0) >= 1.0 }.map { o ->
+            val dep = o.optString("known_for_department")
+            val oficio = when (dep) { "Directing" -> "Dirección"; "Writing" -> "Guion"; "Acting" -> if (o.optInt("gender") == 1) "Actriz" else "Actor"; else -> dep }
+            Triple(PersonaBuscada(o.optInt("id"), o.optString("name"), o.optString("profile_path").takeIf { it.startsWith("/") }, oficio, dep == "Directing"),
+                nivel(o.optString("name")), o.optDouble("popularity", 0.0))
+        }.filter { it.second <= 2 }.sortedWith(compareBy<Triple<PersonaBuscada, Int, Double>> { it.second }.thenByDescending { it.third }).map { it.first }.take(8)
+        Busqueda(titulos, personas)
     }
 
     /** Estados de ánimo: los mismos criterios que la web (géneros que valen y géneros que no) */
