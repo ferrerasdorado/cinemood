@@ -17,6 +17,7 @@ data class Titulo(
     val nota: Double,
     val sinopsis: String,
     val generos: List<Int> = emptyList(),
+    val fecha: String = "",        // estreno (AAAA-MM-DD), para «Recién llegada»
 ) {
     val clave get() = "$tipo-$id"
     val esSerie get() = tipo == "tv"
@@ -68,6 +69,7 @@ object Catalogo {
             nota = o.optDouble("vote_average", 0.0).let { if (it.isNaN()) 0.0 else it },
             sinopsis = o.optString("overview"),
             generos = gen,
+            fecha = o.optString(if (tipo == "tv") "first_air_date" else "release_date"),
         )
     }
 

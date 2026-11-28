@@ -190,12 +190,27 @@ fun PantallaPestana(p: Pestana) {
     }
 }
 
+/** Etiqueta de la portada, como en las plataformas: «Nº 1», «Recién llegada», «Próximamente»… (texto, destacada) */
+fun etiquetaPortada(t: Titulo, posicion: Int): Pair<String, Boolean>? {
+    val dias = try { java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.parse(t.fecha), java.time.LocalDate.now()) } catch (e: Exception) { null }
+    return when {
+        posicion == 0 -> "Nº 1 esta semana" to true
+        dias != null && dias < 0 -> "Próximamente" to false
+        dias != null && dias <= 45 -> (if (t.esSerie) "🔥 Serie nueva" else "🔥 Recién llegada") to true
+        posicion in 1..2 -> "Top ${posicion + 1} esta semana" to false
+        t.nota >= 7.8 -> "⭐ Muy valorada" to false
+        else -> null
+    }
+}
+
 /** Portada grande de arriba: va cambiando sola; con ← y → se pasa a mano; OK abre la ficha */
 @Composable
 fun Portada(lista: List<Pair<Titulo, String?>>) {
     var i by remember { mutableIntStateOf(0) }
     var enfocada by remember { mutableStateOf(false) }
     LaunchedEffect(i, lista.size) { delay(9000); if (lista.isNotEmpty()) i = (i + 1) % lista.size }
+    var fichasListas by remember { mutableIntStateOf(0) }
+    LaunchedEffect(lista) { lista.forEach { (t, _) -> try { Catalogo.detalle(t.tipo, t.id); fichasListas++ } catch (e: Exception) { } } }
     val (t, logo) = lista[i.coerceIn(0, lista.lastIndex)]
     val forma = RoundedCornerShape(10.dp)
     Surface(
@@ -216,6 +231,7 @@ fun Portada(lista: List<Pair<Titulo, String?>>) {
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f),
         border = ClickableSurfaceDefaults.border(focusedBorder = Border(BorderStroke(3.dp, C.tinta), shape = forma)),
     ) {
+        @Suppress("UNUSED_EXPRESSION") fichasListas   // repinta cuando llegan las edades
         AnimatedContent(targetState = t to logo, transitionSpec = { fadeIn(tween(500)) togetherWith fadeOut(tween(500)) }, label = "portada") { (x, lg) ->
             Box(Modifier.fillMaxSize()) {
                 Imagen(Tmdb.img(x.fondo, "w1280"), Modifier.fillMaxSize(), descripcion = x.nombre, alineacion = Alignment.TopCenter, fundido = true)
@@ -224,10 +240,18 @@ fun Portada(lista: List<Pair<Titulo, String?>>) {
                     if (lg != null) Imagen(Tmdb.img(lg, "w500"), Modifier.heightIn(max = 90.dp).fillMaxWidth(0.8f), ajuste = ContentScale.Fit, descripcion = x.nombre, alineacion = Alignment.BottomStart)
                     else Texto(x.nombre, tam = 34, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta, lineas = 2)
                     Spacer(Modifier.height(12.dp))
+                    etiquetaPortada(x, lista.indexOfFirst { it.first.clave == x.clave })?.let { (txt, destacada) ->
+                        Etiqueta(txt, if (destacada) Color.White else C.tinta, if (destacada) C.acento else C.superficie3)
+                        Spacer(Modifier.height(10.dp))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         val gen = x.generos.firstNotNullOfOrNull { (if (x.esSerie) Catalogo.GENEROS_SERIE else Catalogo.GENEROS_PELI)[it] }
-                        Texto(listOfNotNull(if (x.esSerie) "Serie" else "Película", gen, x.anio.ifEmpty { null }).joinToString("  ·  "), tam = 15, peso = FontWeight.Bold, color = C.tinta)
-                        if (x.nota > 0) { Spacer(Modifier.width(12.dp)); Texto("★ " + String.format("%.1f", x.nota).replace('.', ','), tam = 15, peso = FontWeight.Bold, color = C.ambar) }
+                        Texto(listOfNotNull(if (x.esSerie) "Serie" else "Película", gen, x.anio.ifEmpty { null }).joinToString("  ·  "), tam = 15, peso = FontWeight.Bold, color = C.tinta, lineas = 1)
+                        if (x.nota > 0) { Spacer(Modifier.width(12.dp)); Texto("${(x.nota * 10).toInt()} %", tam = 15, lineas = 1, peso = FontWeight.Bold, color = if (x.nota >= 7) C.verde else C.ambar) }
+                        // Edad recomendada, si la ficha ya está cargada (se precarga al pasar por la portada)
+                        Catalogo.fichas.get(x.clave)?.edad?.takeIf { it.isNotEmpty() }?.let { e ->
+                            Spacer(Modifier.width(12.dp)); Etiqueta(if (e == "TP") "TP" else "$e+", C.tinta, Color.Transparent, C.suave)
+                        }
                     }
                     if (x.sinopsis.isNotEmpty()) { Spacer(Modifier.height(8.dp)); Texto(x.sinopsis, tam = 14, color = C.suave, lineas = 2, alto = 20) }
                 }

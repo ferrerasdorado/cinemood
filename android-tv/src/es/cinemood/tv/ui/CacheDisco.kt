@@ -43,7 +43,7 @@ object CacheDisco {
     fun borrarTodo() { memoria.clear(); dir.listFiles()?.forEach { it.delete() } }
 
     private fun jsonT(t: Titulo) = JSONObject().put("id", t.id).put("tipo", t.tipo).put("n", t.nombre).put("p", t.poster ?: "").put("f", t.fondo ?: "")
-        .put("a", t.anio).put("v", t.nota).put("s", t.sinopsis).put("g", JSONArray(t.generos))
+        .put("a", t.anio).put("v", t.nota).put("s", t.sinopsis).put("g", JSONArray(t.generos)).put("fe", t.fecha)
     private fun tJson(o: JSONObject) = Titulo(o.getInt("id"), o.getString("tipo"), o.getString("n"), o.optString("p").ifEmpty { null }, o.optString("f").ifEmpty { null },
-        o.optString("a"), o.optDouble("v", 0.0), o.optString("s"), o.optJSONArray("g")?.let { g -> List(g.length()) { g.getInt(it) } } ?: emptyList())
+        o.optString("a"), o.optDouble("v", 0.0), o.optString("s"), o.optJSONArray("g")?.let { g -> List(g.length()) { g.getInt(it) } } ?: emptyList(), o.optString("fe"))
 }
