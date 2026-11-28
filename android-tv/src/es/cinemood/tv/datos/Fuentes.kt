@@ -47,6 +47,7 @@ data class Subtitulo(val url: String, val idioma: String, val etiqueta: String)
 
 object Fuentes {
     @Volatile private var cacheAddons: Pair<Long, List<Addon>>? = null
+    fun olvidar() { cacheAddons = null }   // al cerrar sesión (los addons llevan claves en la dirección)
 
     suspend fun addons(forzar: Boolean = false): List<Addon> {
         cacheAddons?.let { (t, l) -> if (!forzar && System.currentTimeMillis() - t < 5 * 60_000) return l }
@@ -105,6 +106,7 @@ object Fuentes {
         }
         // primero en español, luego en inglés
         return todos.sortedBy { if (RE_SUB_ES.matches(it.idioma)) 0 else if (RE_SUB_EN.matches(it.idioma)) 1 else 2 }
+            .distinctBy { it.url }   // el mismo subtítulo de dos addons iguales no se repite
             .take(40)
     }
 

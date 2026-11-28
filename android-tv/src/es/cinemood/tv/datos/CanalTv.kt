@@ -14,11 +14,14 @@ import org.json.JSONObject
 // Algunos lanzadores de fabricante no muestran esta fila: entonces simplemente no se ve, sin fallar.
 object CanalTv {
     private const val PREFS = "canal-tv"
+    // Un solo hilo para todo: así dos guardados casi a la vez no crean dos entradas iguales
+    private val hilo = java.util.concurrent.Executors.newSingleThreadExecutor()
 
     @SuppressLint("RestrictedApi")
-    fun publicar(ctx: Context, o: JSONObject, posSeg: Long, durSeg: Long) {
+    fun publicar(contexto: Context, o: JSONObject, posSeg: Long, durSeg: Long) {
         if (Build.VERSION.SDK_INT < 26) return
-        Thread {
+        val ctx = contexto.applicationContext
+        hilo.execute {
             try {
                 val tipo = o.optString("tipo"); val id = o.optInt("id")
                 val clave = "$tipo-$id"
@@ -42,22 +45,23 @@ object CanalTv {
                 val previo = prefs.getLong(clave, -1L)
                 val actualizado = previo > 0 && ctx.contentResolver.update(TvContractCompat.buildWatchNextProgramUri(previo), valores, null, null) > 0
                 if (!actualizado) {
-                    val uri = ctx.contentResolver.insert(TvContractCompat.WatchNextPrograms.CONTENT_URI, valores) ?: return@Thread
+                    val uri = ctx.contentResolver.insert(TvContractCompat.WatchNextPrograms.CONTENT_URI, valores) ?: return@execute
                     prefs.edit().putLong(clave, ContentUris.parseId(uri)).apply()
                 }
             } catch (e: Exception) { android.util.Log.w("CineMoodCanal", "No se pudo publicar en «A continuación»: $e") }   // lanzadores que no admiten la fila: no pasa nada
-        }.start()
+        }
     }
 
-    fun quitar(ctx: Context, tipo: String, id: Int) {
+    fun quitar(contexto: Context, tipo: String, id: Int) {
         if (Build.VERSION.SDK_INT < 26) return
-        Thread {
+        val ctx = contexto.applicationContext
+        hilo.execute {
             try {
                 val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 val previo = prefs.getLong("$tipo-$id", -1L)
                 if (previo > 0) ctx.contentResolver.delete(TvContractCompat.buildWatchNextProgramUri(previo), null, null)
                 prefs.edit().remove("$tipo-$id").apply()
             } catch (e: Exception) { }
-        }.start()
+        }
     }
 }

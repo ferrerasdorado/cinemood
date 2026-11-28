@@ -131,7 +131,9 @@ object Catalogo {
 
     suspend fun detalle(tipo: String, id: Int): Detalle = fichas.get("$tipo-$id") ?: detalleRed(tipo, id).also { fichas.put("$tipo-$id", it) }
 
-    private suspend fun detalleRed(tipo: String, id: Int): Detalle {
+    private suspend fun detalleRed(tipo: String, id: Int): Detalle = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) { detalleLeer(tipo, id) }
+
+    private suspend fun detalleLeer(tipo: String, id: Int): Detalle {
         val extra = if (tipo == "tv") "external_ids,images,videos,credits,recommendations,content_ratings"
         else "external_ids,images,videos,credits,recommendations,release_dates"
         val o = Tmdb.json("/$tipo/$id", "append_to_response=$extra&include_image_language=es,en,null&include_video_language=es,en")

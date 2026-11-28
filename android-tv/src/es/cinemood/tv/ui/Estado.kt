@@ -24,7 +24,7 @@ sealed class Pantalla(val clave: String) {
     class Raiz(val p: Pestana) : Pantalla("raiz-${p.name}")
     class Ficha(val t: Titulo) : Pantalla("ficha-${t.clave}")
     /** Rejilla de títulos: un género, un estado de ánimo, una plataforma… */
-    class Categoria(val titulo: String, val tipos: List<String>, val cargar: suspend (tipo: String, pagina: Int) -> List<Titulo>) : Pantalla("cat-$titulo")
+    class Categoria(val titulo: String, val tipos: List<String>, val cargar: suspend (tipo: String, pagina: Int) -> List<Titulo>) : Pantalla("cat-$titulo-${tipos.joinToString("")}")
     class Descargas : Pantalla("descargas")
 }
 
@@ -53,6 +53,14 @@ object App {
     var versionLista by mutableStateOf(0)
     var ultimaBusqueda = ""
     var cacheLista: List<es.cinemood.tv.datos.EnLista>? = null
+
+    /** Al cerrar sesión o caducar: nada de la cuenta anterior se queda en memoria */
+    fun limpiarCuenta() {
+        cacheLista = null; ultimaBusqueda = ""; menu = null; fuentes = null
+        focoGuardado.clear()
+        es.cinemood.tv.datos.Fuentes.olvidar()
+        irA(Pestana.INICIO)
+    }
 
     fun irA(p: Pestana) {
         pestana = p

@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity() {
         Coil.setImageLoader(
             ImageLoader.Builder(applicationContext)
                 .okHttpClient(Red.cliente)
-                .memoryCache { MemoryCache.Builder(applicationContext).maxSizePercent(0.25).build() }
+                .memoryCache { MemoryCache.Builder(applicationContext).maxSizePercent(0.15).build() }
                 .diskCache { DiskCache.Builder().directory(cacheDir.resolve("imagenes")).maxSizeBytes(250L * 1024 * 1024).build() }
                 .respectCacheHeaders(false)
                 .allowRgb565(true)       // la mitad de memoria por imagen: va mejor en teles con poca RAM
@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity() {
         val tipo = partes.getOrNull(0)?.takeIf { it == "tv" || it == "movie" } ?: return
         val id = partes.getOrNull(1)?.toIntOrNull() ?: return
         if (!Sesion.iniciada) return
+        App.menu = null; App.fuentes = null
         App.irA(Pestana.INICIO)
         App.ficha(es.cinemood.tv.datos.Titulo(id, tipo, "", null, null, "", 0.0, ""))
     }
@@ -95,7 +96,7 @@ private fun Raiz() {
     var conSesion by remember { mutableStateOf(Sesion.iniciada) }
     val ctx = LocalContext.current
     var ultimoAtras by remember { mutableStateOf(0L) }
-    remember { Sesion.alCaducar = { App.ambito.launch { conSesion = false; App.fuentes = null; App.menu = null } }; 0 }
+    remember { Sesion.alCaducar = { App.ambito.launch { App.limpiarCuenta(); conSesion = false } }; 0 }
     fun atras() {
         if (App.atras()) return
         val ahora = System.currentTimeMillis()
@@ -122,7 +123,7 @@ private fun Raiz() {
                         is Pantalla.Raiz -> when (actual.p) {
                             Pestana.BUSCAR -> PantallaBuscar()
                             Pestana.MI_LISTA -> PantallaMiLista()
-                            Pestana.TU -> PantallaTu { Sesion.salir(); CacheDisco.borrarTodo(); App.focoGuardado.clear(); conSesion = false }
+                            Pestana.TU -> PantallaTu { Sesion.salir(); CacheDisco.borrarTodo(); App.limpiarCuenta(); conSesion = false }
                             else -> PantallaPestana(actual.p)
                         }
                         is Pantalla.Ficha -> PantallaFicha(actual.t)

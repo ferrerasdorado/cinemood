@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Cache
 import okhttp3.ConnectionPool
 import okhttp3.MediaType.Companion.toMediaType
@@ -56,27 +57,39 @@ object Red {
 
     fun cod(s: String): String = URLEncoder.encode(s, "UTF-8")
 
-    suspend fun get(url: String, cabeceras: Map<String, String> = emptyMap(), c: OkHttpClient = cliente): String =
-        withContext(Dispatchers.IO) {
-            val rb = Request.Builder().url(url)
-            cabeceras.forEach { (k, v) -> rb.header(k, v) }
-            c.newCall(rb.build()).execute().use { r ->
-                val cuerpo = r.body?.string().orEmpty()
-                if (!r.isSuccessful) throw ErrorHttp(r.code, cuerpo)
-                cuerpo
-            }
-        }
+    /** Cliente sin caché para el vídeo: si no, OkHttp iría copiando la película entera en el disco de la tele */
+    val clienteVideo: OkHttpClient by lazy { cliente.newBuilder().cache(null).build() }
 
-    suspend fun enviar(metodo: String, url: String, cuerpo: String?, cabeceras: Map<String, String>): String =
-        withContext(Dispatchers.IO) {
-            val rb = Request.Builder().url(url).method(metodo, cuerpo?.toRequestBody(JSON))
-            cabeceras.forEach { (k, v) -> rb.header(k, v) }
-            cliente.newCall(rb.build()).execute().use { r ->
-                val texto = r.body?.string().orEmpty()
-                if (!r.isSuccessful) throw ErrorHttp(r.code, texto)
-                texto
+    /**
+     * Petición cancelable: si quien la pidió deja de esperar (p. ej. un addon que no responde y se pasa a otra cosa),
+     * la conexión se corta de verdad en vez de seguir bloqueada hasta el tiempo máximo.
+     */
+    private suspend fun ejecutar(c: OkHttpClient, req: Request): String = suspendCancellableCoroutine { cont ->
+        val call = c.newCall(req)
+        cont.invokeOnCancellation { call.cancel() }
+        call.enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: IOException) { if (cont.isActive) cont.resumeWith(Result.failure(e)) }
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                response.use { r ->
+                    val cuerpo = try { r.body?.string().orEmpty() } catch (e: IOException) { if (cont.isActive) cont.resumeWith(Result.failure(e)); return }
+                    if (!cont.isActive) return
+                    if (!r.isSuccessful) cont.resumeWith(Result.failure(ErrorHttp(r.code, cuerpo))) else cont.resumeWith(Result.success(cuerpo))
+                }
             }
-        }
+        })
+    }
+
+    suspend fun get(url: String, cabeceras: Map<String, String> = emptyMap(), c: OkHttpClient = cliente): String {
+        val rb = Request.Builder().url(url)
+        cabeceras.forEach { (k, v) -> rb.header(k, v) }
+        return ejecutar(c, rb.build())
+    }
+
+    suspend fun enviar(metodo: String, url: String, cuerpo: String?, cabeceras: Map<String, String>): String {
+        val rb = Request.Builder().url(url).method(metodo, cuerpo?.toRequestBody(JSON))
+        cabeceras.forEach { (k, v) -> rb.header(k, v) }
+        return ejecutar(cliente, rb.build())
+    }
 }
 
 class ErrorHttp(val codigo: Int, val cuerpo: String) : IOException("HTTP $codigo") {
@@ -118,7 +131,7 @@ object Sesion {
         caduca = System.currentTimeMillis() + o.optLong("expires_in", 3600) * 1000L
         o.optJSONObject("user")?.let { u -> uid = u.optString("id", uid); email = u.optString("email", email) }
         prefs.edit().putString("uid", uid).putString("email", email).putString("acceso", acceso)
-            .putString("renovar", renovar).putLong("caduca", caduca).apply()
+            .putString("renovar", renovar).putLong("caduca", caduca).commit()   // commit: el token renovado no se puede perder
     }
 
     suspend fun entrar(correo: String, clave: String) {
@@ -193,17 +206,20 @@ object Tmdb {
     suspend fun json(ruta: String, params: String = ""): JSONObject {
         val p = if (Regex("(^|&)language=").containsMatchIn(params) || ruta.contains("/images")) params else (if (params.isEmpty()) "" else "$params&") + "language=es-ES"
         val url = "$TMDB_PROXY?path=${Red.cod(ruta)}" + (if (p.isEmpty()) "" else "&$p")
-        cache.get(url)?.let { (t, txt) -> if (System.currentTimeMillis() - t < VIGENCIA) return JSONObject(txt) }
+        cache.get(url)?.let { (t, txt) -> if (System.currentTimeMillis() - t < VIGENCIA) return withContext(Dispatchers.Default) { JSONObject(txt) } }
         var intento = 0
         while (true) {
             try {
                 val t0 = System.currentTimeMillis()
-                val txt = Red.get(url, Sesion.cabeceras()).replace(RE_GENEROS) { m ->
-                    val id = m.groupValues[1].toInt(); "\"id\":$id,\"name\":\"${GENEROS_ES[id]}\""
+                val bruto = Red.get(url, Sesion.cabeceras())
+                // Traducir géneros y leer el JSON fuera del hilo de la pantalla (las fichas pesan 100-200 KB)
+                val (txt, json) = withContext(Dispatchers.Default) {
+                    val t = bruto.replace(RE_GENEROS) { m -> val id = m.groupValues[1].toInt(); "\"id\":$id,\"name\":\"${GENEROS_ES[id]}\"" }
+                    t to JSONObject(t)
                 }
                 android.util.Log.i("CineMoodRed", "TMDB ${System.currentTimeMillis() - t0} ms $ruta")
                 cache.put(url, System.currentTimeMillis() to txt)
-                return JSONObject(txt)
+                return json
             } catch (e: ErrorHttp) {
                 android.util.Log.w("CineMoodRed", "TMDB error ${e.codigo} $ruta ?$p → ${e.cuerpo.take(300)}")
                 if (e.codigo == 403) throw ErrorCineMood("Esta cuenta no tiene acceso a CineMood.")

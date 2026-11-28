@@ -110,10 +110,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import java.nio.charset.Charset
 
 // CineMood TV · Reproductor (Media3 / ExoPlayer) con controles propios.
@@ -129,7 +128,12 @@ object Reproduccion {
     var elegida: Fuente? = null
     var alternativas: List<Fuente> = emptyList()
 
+    private var ultimaApertura = 0L
     fun abrir(c: android.content.Context, ctx: Contexto, elegida: Fuente? = null, alternativas: List<Fuente> = emptyList()) {
+        // Un doble OK (o la repetición de tecla del mando) no abre dos reproductores
+        val ahora = System.currentTimeMillis()
+        if (ahora - ultimaApertura < 1500) return
+        ultimaApertura = ahora
         this.ctx = ctx; this.elegida = elegida; this.alternativas = alternativas
         c.startActivity(android.content.Intent(c, PlayerActivity::class.java))
     }
@@ -149,6 +153,7 @@ class PlayerActivity : ComponentActivity() {
     private val actual get() = candidatos.getOrNull(indice)
     private var arrancada = false          // esta fuente ya ha llegado a reproducirse
     private var reintentada = false        // ya se reintentó en el mismo punto
+    private var listoDesde = 0L            // tras 60 s reproduciendo bien, un nuevo corte vuelve a reintentarse
     private var vigilante: Job? = null
 
     // Controles
@@ -182,9 +187,10 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onCreate(estado: Bundle?) {
         super.onCreate(estado)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         val c = Reproduccion.ctx ?: run { finish(); return }
         crearReproductor()
+        // Por si en algún momento nada tiene el foco: el Atrás del sistema hace lo mismo que el de la pantalla
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) { override fun handleOnBackPressed() = atras() })
         setContent { TemaCineMood { Pantalla() } }
         empezar(c, Reproduccion.elegida, Reproduccion.alternativas)
         // Posición, duración y créditos: se mira dos veces por segundo
@@ -207,7 +213,7 @@ class PlayerActivity : ComponentActivity() {
 
     private fun crearReproductor() {
         // Misma conexión (OkHttp) que el resto de la app: reutiliza conexiones y aguanta mejor las redes flojas
-        val http = OkHttpDataSource.Factory(Red.cliente).setUserAgent("CineMoodTV/3.0 (AndroidTV; Media3)")
+        val http = OkHttpDataSource.Factory(Red.clienteVideo).setUserAgent("CineMoodTV/3.0 (AndroidTV; Media3)")
         // Dolby Vision: primero el decodificador DV de la tele, si lo tiene
         val selector = MediaCodecSelector { mime, seguro, tunel ->
             val l = MediaCodecSelector.DEFAULT.getDecoderInfos(mime, seguro, tunel)
@@ -228,7 +234,7 @@ class PlayerActivity : ComponentActivity() {
             .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http), extractores))
             .setTrackSelector(pistas)
             // Búfer más amplio (30 a 120 s) para que una red floja no corte; 30 s hacia atrás para retroceder sin recargar
-            .setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(30_000, 120_000, 2_500, 5_000).setBackBuffer(30_000, false).build())
+            .setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(30_000, 120_000, 2_500, 5_000).setBackBuffer(10_000, true).build())
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
             .setHandleAudioBecomingNoisy(true)
             .build()
@@ -249,11 +255,16 @@ class PlayerActivity : ComponentActivity() {
         }
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(s: Int) {
-                if (s == Player.STATE_READY && fase == Fase.CARGANDO) { fase = Fase.VIENDO; vigilante?.cancel() }
+                if (s == Player.STATE_READY && fase == Fase.CARGANDO) { fase = Fase.VIENDO; vigilante?.cancel(); quizasSubtituloAutomatico() }
+                if (s == Player.STATE_READY) listoDesde = System.currentTimeMillis()
                 if (s == Player.STATE_READY) arrancada = true
                 if (s == Player.STATE_ENDED) alTerminar()
             }
-            override fun onIsPlayingChanged(p: Boolean) { reproduciendo = p }
+            override fun onIsPlayingChanged(p: Boolean) {
+                reproduciendo = p
+                // La pantalla puede apagarse sola en pausa o en un error; reproduciendo, nunca
+                if (p) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
             override fun onTracksChanged(t: Tracks) {
                 versionPistas++; quizasSubtituloAutomatico()
                 t.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }?.let { g ->
@@ -299,7 +310,7 @@ class PlayerActivity : ComponentActivity() {
             }.filter { it.second < 0.02f }.minWithOrNull(compareBy({ it.second > 0.005f }, { it.first.refreshRate }))?.first ?: return
             if (mejor.modeId != actual.modeId) {
                 window.attributes = window.attributes.also { it.preferredDisplayModeId = mejor.modeId }
-                aviso = "Tele a ${String.format("%.3f", mejor.refreshRate).trimEnd('0').trimEnd('.').replace('.', ',')} Hz para este vídeo"
+                aviso = "Tele a ${String.format(java.util.Locale.US, "%.3f", mejor.refreshRate).trimEnd('0').trimEnd('.').replace('.', ',')} Hz para este vídeo"
                 lifecycleScope.launch { delay(3000); aviso = "" }
             }
         } catch (e: Exception) { }
@@ -309,6 +320,7 @@ class PlayerActivity : ComponentActivity() {
     private fun empezar(c: Contexto, elegida: Fuente?, alternativas: List<Fuente>) {
         if (ffmpegPrimero) { ffmpegPrimero = false; player.release(); crearReproductor() }   // cada título empieza con los de la tele
         frecuenciaHecha = 0f
+        candidatos = mutableListOf(); indice = 0
         ctx = c; siguiente = null; cuentaAtras = null; siguienteDescartado = false; vistoMarcado = false
         subsAddons = emptyList(); subActivo = null; subArchivo = null; subsAutoHecho = false
         controles = false; objetivo = null
@@ -357,8 +369,9 @@ class PlayerActivity : ComponentActivity() {
         mensaje = if (indice == 0) "Cargando…" else "Probando otra fuente (${indice + 1} de ${candidatos.size})…"
         arrancada = false; reintentada = false
         synchronized(tiempos) { tiempos.clear() }
+        frecuenciaHecha = 0f
         player.setMediaItem(mediaItem(f), posMs.coerceAtLeast(0))
-        player.prepare(); player.playWhenReady = true
+        player.prepare(); player.playWhenReady = visible()
         // Si en 30 s no ha empezado, se da por mala
         vigilante?.cancel()
         vigilante = lifecycleScope.launch { delay(30_000); if (fase == Fase.CARGANDO) siguienteFuente(posMs, "tarda demasiado") }
@@ -376,16 +389,20 @@ class PlayerActivity : ComponentActivity() {
         return b.build()
     }
 
+    /** Solo se reproduce si la app está a la vista (no con la tele en otra app tras pulsar Inicio) */
+    private fun visible() = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
+
     private fun alFallar(e: PlaybackException) {
         val pos = player.currentPosition.coerceAtLeast(0)
         // Falla el descodificador de audio de la tele (p. ej. algunos MP3): misma fuente, con FFmpeg
         val ex = e as? androidx.media3.exoplayer.ExoPlaybackException
         if (!ffmpegPrimero && ex != null && ex.type == androidx.media3.exoplayer.ExoPlaybackException.TYPE_RENDERER &&
             ex.rendererFormat?.sampleMimeType?.startsWith("audio/") == true) { reintentarConFfmpeg(pos); return }
+        if (reintentada && listoDesde > 0 && System.currentTimeMillis() - listoDesde > 60_000) reintentada = false
         if (arrancada && !reintentada) {
             // Se ha cortado a mitad: se reintenta en el mismo punto
             reintentada = true; aviso = "Se ha cortado. Reintentando…"
-            lifecycleScope.launch { delay(800); player.setMediaItem(mediaItem(actual!!), pos); player.prepare(); player.playWhenReady = true; delay(2500); aviso = "" }
+            lifecycleScope.launch { delay(800); player.setMediaItem(mediaItem(actual!!), pos); player.prepare(); player.playWhenReady = visible(); delay(2500); aviso = "" }
             return
         }
         siguienteFuente(pos, e.errorCodeName)
@@ -398,6 +415,7 @@ class PlayerActivity : ComponentActivity() {
             lifecycleScope.launch { delay(3500); aviso = "" }
             abrirActual(pos)
         } else {
+            player.stop()
             fase = Fase.ERROR
             mensaje = "Ninguna fuente ha funcionado en el reproductor de la tele (último error: $motivo). Puedes abrir la última en VLC o elegir otra en «Fuentes»."
         }
@@ -426,7 +444,11 @@ class PlayerActivity : ComponentActivity() {
         if (queda in 1..45_000 && duracion > 10 * 60_000) {
             cuentaAtras = 15
             lifecycleScope.launch {
-                while ((cuentaAtras ?: 0) > 0) { delay(1000); if (cuentaAtras == null) return@launch; cuentaAtras = cuentaAtras!! - 1 }
+                while ((cuentaAtras ?: 0) > 0) {
+                    delay(1000)
+                    val n = cuentaAtras ?: return@launch
+                    if (player.isPlaying) cuentaAtras = n - 1   // en pausa (o fuera de la app) no cuenta
+                }
                 if (cuentaAtras == 0) irASiguiente(sig)
             }
         }
@@ -485,9 +507,12 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch {
             val archivo = withContext(Dispatchers.IO) {
                 try {
-                    val con = (URL(s.url).openConnection() as HttpURLConnection).apply { connectTimeout = 15000; readTimeout = 15000; setRequestProperty("User-Agent", "CineMoodTV/3.0") }
-                    val bytes = con.inputStream.use { it.readBytes() }.also { con.disconnect() }
-                    if (bytes.size > 5_000_000) throw Exception("demasiado grande")
+                    val bytes = Red.clienteVideo.newCall(okhttp3.Request.Builder().url(s.url).header("User-Agent", "CineMoodTV/3.0").build()).execute().use { r ->
+                        if (!r.isSuccessful) throw Exception("HTTP ${r.code}")
+                        val cuerpo = r.body ?: throw Exception("vacío")
+                        if (cuerpo.contentLength() > 5_000_000) throw Exception("demasiado grande")
+                        cuerpo.bytes().also { if (it.size > 5_000_000) throw Exception("demasiado grande") }
+                    }
                     var txt = String(bytes, Charsets.UTF_8)
                     if ('�' in txt) txt = String(bytes, Charset.forName("windows-1252"))
                     txt = txt.replace("﻿", "").replace("\r\n", "\n").replace("\r", "\n").trim()
@@ -498,7 +523,7 @@ class PlayerActivity : ComponentActivity() {
             if (archivo == null) { aviso = "No se ha podido cargar ese subtítulo. Prueba otro."; delay(3000); aviso = ""; return@launch }
             subActivo = s; subArchivo = Uri.fromFile(archivo)
             val pos = player.currentPosition; val jugando = player.playWhenReady
-            player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false).setPreferredTextLanguage(s.idioma).build()
+            player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_TEXT).setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false).setPreferredTextLanguage(s.idioma).build()
             player.setMediaItem(mediaItem(actual!!), pos); player.prepare(); player.playWhenReady = jugando
             aviso = avisoOk; delay(2500); aviso = ""
         }
@@ -540,16 +565,19 @@ class PlayerActivity : ComponentActivity() {
         objetivo = null; miniatura = null; player.play()
     }
 
+    private val candadoMiniaturas = kotlinx.coroutines.sync.Mutex()
     private suspend fun cargarMiniatura(ms: Long) {
-        val url = actual?.url ?: return
-        val bmp = withContext(Dispatchers.IO) {
+        val f = actual ?: return
+        val url = f.url ?: return
+        if (f.meta.calidad >= 2160) return   // en 4K, sacar fotogramas competiría con el propio vídeo por el descodificador
+        val bmp = candadoMiniaturas.withLock { withContext(Dispatchers.IO) {
             try {
                 if (extractorUrl != url) { extractor?.release(); extractor = MediaMetadataRetriever().apply { setDataSource(url, HashMap()) }; extractorUrl = url }
                 val r = extractor!!
                 if (Build.VERSION.SDK_INT >= 27) r.getScaledFrameAtTime(ms * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 384, 216)
                 else r.getFrameAtTime(ms * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
             } catch (e: Exception) { null }
-        }
+        } }
         if (objetivo == ms) miniatura = bmp
     }
 
@@ -559,12 +587,12 @@ class PlayerActivity : ComponentActivity() {
         if (!abajo) return k == Key.Back
         if (k == Key.Back) return false   // se gestiona al soltar
         if (fase != Fase.VIENDO || panelPistas) return false
-        if (cuentaAtras != null) return false
         when (code) {
             android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> { if (player.isPlaying) player.pause() else player.play(); controles = true; return true }
             android.view.KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { saltar(true); return true }
             android.view.KeyEvent.KEYCODE_MEDIA_REWIND -> { saltar(false); return true }
         }
+        if (cuentaAtras != null) return false
         if (objetivo != null) {
             when (k) {
                 Key.DirectionRight -> { saltar(true); return true }
@@ -710,7 +738,7 @@ class PlayerActivity : ComponentActivity() {
                 Row(Modifier.focusGroup(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Boton(if (reproduciendo) "Pausa" else "Seguir", { if (player.isPlaying) player.pause() else player.play() }, Modifier.focusRequester(frPrimero), icono = if (reproduciendo) "❚❚" else "▶", pequeno = true)
                     Boton("Audio y subtítulos", { panelPistas = true }, icono = "💬", pequeno = true)
-                    if (candidatos.size > 1) Boton("Otra fuente", { siguienteFuente(player.currentPosition, "cambio a mano") }, icono = "⇄", pequeno = true)
+                    if (indice + 1 < candidatos.size) Boton("Otra fuente", { siguienteFuente(player.currentPosition, "cambio a mano") }, icono = "⇄", pequeno = true)
                     siguiente?.let { s -> Boton("Siguiente capítulo", { irASiguiente(s) }, icono = "⏭", pequeno = true) }
                     f?.url?.let { u -> Boton("VLC", { guardarProgreso(); player.pause(); Externo.abrirEnVLC(this@PlayerActivity, u, c.t.nombre) }, icono = "🟠", pequeno = true) }
                 }
@@ -718,7 +746,7 @@ class PlayerActivity : ComponentActivity() {
                 Texto("◀ ▶ avanzar o retroceder viendo la imagen · OK pausa", tam = 13, color = Col.tenue)
             }
         }
-        LaunchedEffect(Unit) { delay(60); runCatching { frPrimero.requestFocus() } }
+        LaunchedEffect(panelPistas, cuentaAtras) { if (!panelPistas && cuentaAtras == null) { delay(60); runCatching { frPrimero.requestFocus() } } }
     }
 
     @Composable
@@ -823,6 +851,8 @@ class PlayerActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        vigilante?.cancel()
+        if (cuentaAtras != null) { cuentaAtras = null; siguienteDescartado = true }
         guardarProgreso()
         if (::player.isInitialized) player.pause()
         super.onStop()
@@ -830,7 +860,8 @@ class PlayerActivity : ComponentActivity() {
 
     override fun onDestroy() {
         vigilante?.cancel()
-        try { extractor?.release() } catch (e: Exception) { }
+        val r = extractor; extractor = null
+        if (r != null) Thread { try { r.release() } catch (e: Exception) { } }.start()   // liberar puede tardar: fuera del hilo principal
         if (::player.isInitialized) player.release()
         cacheDir.listFiles { f -> f.name.startsWith("cm_sub_") }?.forEach { it.delete() }
         super.onDestroy()

@@ -45,6 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -102,6 +108,9 @@ fun PanelFuentesUI(pf: PanelFuentes) {
     val frPrimero = remember { FocusRequester() }
     val frFiltros = remember { FocusRequester() }   // el filtro elegido
     val frNas = remember { FocusRequester() }
+    val estadoChips = androidx.compose.foundation.lazy.rememberLazyListState()
+    val estadoLista = androidx.compose.foundation.lazy.rememberLazyListState()
+    val ambitoPanel = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(pf) {
         try {
@@ -120,7 +129,7 @@ fun PanelFuentesUI(pf: PanelFuentes) {
                         try {
                             val l = Fuentes.deAddon(a, pf.ctx.t.tipo, id)
                             val vistos = resultados.map { it.clave }.toHashSet()
-                            resultados.addAll(l.filter { it.clave !in vistos })
+                            resultados.addAll(l.distinctBy { it.clave }.filter { it.clave !in vistos })   // sin repetidos (ni entre addons ni dentro de uno)
                             estados[a.url] = EstadoAddon(a.nombre, "${l.size}")
                         } catch (e: Exception) {
                             estados[a.url] = EstadoAddon(a.nombre, if (e is java.net.SocketTimeoutException) "no responde" else "error")
@@ -132,6 +141,10 @@ fun PanelFuentesUI(pf: PanelFuentes) {
         terminado = true
     }
 
+    val nombresFiltro = mapOf("todas" to "Todas", "instante" to "⚡ Al instante", "4k" to "4K", "1080" to "1080p", "720" to "720p",
+        "es" to "En español", "cast" to "Castellano", "lat" to "Latino", "ingles" to "Inglés + subtítulos ES", "packs" to "Packs")
+    val opcionesActuales = listOfNotNull("todas", if (pf.nas) null else "instante", "4k", "1080", "720", "es", "cast", "lat",
+        if (pf.nas) null else "ingles", if (pf.ctx.t.esSerie && pf.vistaNas.isEmpty()) "packs" else null)
     val n = resultados.size
     val base = remember(n, pf) { if (pf.nas) resultados.filter { entraEnNas(it, pf) } else resultados.toList() }
     val filtradas = remember(base, filtro, subsEsAddons) { Fuentes.ordenar(base.filter { f ->
@@ -169,14 +182,17 @@ fun PanelFuentesUI(pf: PanelFuentes) {
                     (if (!terminado) " · buscando…" else "") + "   (" + est.joinToString(" · ") { "${it.nombre}: ${it.estado}" } + ")"
             }, tam = 13, color = if (error != null) C.acentoTexto else C.tenue, lineas = 2)
             Spacer(Modifier.height(10.dp))
-            LazyRow(Modifier.offset(x = (-8).dp), horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
-                val opciones = listOfNotNull("todas" to "Todas", if (pf.nas) null else "instante" to "⚡ Al instante",
-                    "4k" to "4K", "1080" to "1080p", "720" to "720p", "es" to "En español", "cast" to "Castellano", "lat" to "Latino", if (pf.nas) null else "ingles" to "Inglés + subtítulos ES",
-                    if (pf.ctx.t.esSerie && pf.vistaNas.isEmpty()) "packs" to "Packs" else null)
+            LazyRow(Modifier.offset(x = (-8).dp), state = estadoChips, horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
+                val opciones = opcionesActuales.map { k -> k to nombresFiltro.getValue(k) }
                 items(opciones, key = { it.first }) { (k, n) ->
-                    // ↓ baja a las fuentes; ↑ no sale del panel
+                    // ↓ baja a la primera fuente (llevándola a la vista si hace falta); ↑ y ← (en el primero) no salen del panel
                     Chip(n, filtro == k, { filtro = k; cuantas = 40 }, Modifier.let { if (filtro == k) it.focusRequester(frFiltros) else it }
-                        .focusProperties { up = FocusRequester.Cancel; down = if (filtradas.isNotEmpty()) frPrimero else FocusRequester.Default })
+                        .focusProperties { up = FocusRequester.Cancel; if (k == opciones.first().first) left = FocusRequester.Cancel }
+                        .onPreviewKeyEvent { e ->
+                            if (e.key != Key.DirectionDown || filtradas.isEmpty()) return@onPreviewKeyEvent false
+                            if (e.type == KeyEventType.KeyDown) ambitoPanel.launch { estadoLista.scrollToItem(0); delay(30); runCatching { frPrimero.requestFocus() } }
+                            true
+                        })
                 }
             }
             Spacer(Modifier.height(10.dp))
@@ -189,13 +205,24 @@ fun PanelFuentesUI(pf: PanelFuentes) {
                 else if (base.isEmpty()) "Ninguno de tus addons tiene fuentes para esto. Prueba otro capítulo o «Que elija el NAS»."
                 else "No hay resultados con este filtro.", tam = 15, color = C.suave)
             }
-            LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 30.dp, top = 4.dp)) {
+            LazyColumn(Modifier.fillMaxSize(), state = estadoLista, verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 30.dp, top = 4.dp)) {
                 items(filtradas.take(cuantas), key = { it.clave }) { f ->
                     // Las fuentes no dejan salir el foco por los lados; desde la primera, ↑ sube a los filtros
                     val primera = f == filtradas.first()
-                    val subir = if (pf.nas && pf.vistaNas.isEmpty() && !pf.ctx.t.esSerie) frNas else frFiltros
+                    val conNas = pf.nas && pf.vistaNas.isEmpty() && !pf.ctx.t.esSerie
                     TarjetaFuente(f, pf, Modifier.let { if (primera) it.focusRequester(frPrimero) else it }
-                        .focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel; if (primera) up = subir }, c, filtradas)
+                        .focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel }
+                        .onPreviewKeyEvent { e ->
+                            // Desde la primera fuente, ↑ sube al filtro elegido (o al botón del NAS)
+                            if (!primera || e.key != Key.DirectionUp) return@onPreviewKeyEvent false
+                            if (e.type == KeyEventType.KeyDown) ambitoPanel.launch {
+                                if (!conNas) { estadoChips.scrollToItem(opcionesActuales.indexOf(filtro).coerceAtLeast(0)); delay(30) }
+                                try { (if (conNas) frNas else frFiltros).requestFocus() }
+                                catch (x: Exception) { android.util.Log.w("CineMoodFoco", "subir: $x") }
+                            }
+                            true
+                        }
+                        , c, filtradas)
                 }
                 if (filtradas.size > cuantas) item(key = "mas") {
                     Boton("Ver ${minOf(40, filtradas.size - cuantas)} más (quedan ${filtradas.size - cuantas})", { cuantas += 40 }, Modifier.focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel }, pequeno = true)
@@ -203,10 +230,12 @@ fun PanelFuentesUI(pf: PanelFuentes) {
             }
         }
     }
-    // El foco va a la primera fuente en cuanto llega (y si no hay, al primer filtro)
+    // El foco va a la primera fuente en cuanto llega; si al terminar no hay ninguna, al filtro elegido
     var enfocado by remember(pf) { mutableStateOf(false) }
-    LaunchedEffect(filtradas.isNotEmpty()) {
-        if (filtradas.isNotEmpty() && !enfocado) { delay(60); runCatching { frPrimero.requestFocus(); enfocado = true } }
+    LaunchedEffect(filtradas.isNotEmpty(), terminado) {
+        if (enfocado) return@LaunchedEffect
+        if (filtradas.isNotEmpty()) { estadoLista.scrollToItem(0); delay(60); runCatching { frPrimero.requestFocus(); enfocado = true } }
+        else if (terminado) { delay(60); runCatching { frFiltros.requestFocus(); enfocado = true } }
     }
 }
 

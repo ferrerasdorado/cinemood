@@ -54,6 +54,8 @@ import es.cinemood.tv.datos.ParteNas
 import es.cinemood.tv.datos.Progreso
 import es.cinemood.tv.datos.Tmdb
 import es.cinemood.tv.datos.Titulo
+import androidx.compose.ui.focus.onFocusChanged
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // CineMood TV · Ficha a pantalla completa: imagen de fondo, logo, datos, botones (Ver, Mi lista, Vista, NAS, Tráiler),
@@ -73,13 +75,14 @@ fun PantallaFicha(t0: Titulo) {
         if (d == null) try { d = Catalogo.detalle(t0.tipo, t0.id) } catch (e: Exception) { error = e.message }
     }
     LaunchedEffect(t0.clave, App.versionLista) { enLista = try { MiLista.estado(t0) } catch (e: Exception) { null } }
+    val t = d?.t ?: t0
+    // Por dónde vas: en series, el último capítulo que viste en esta tele
     // Capítulos vistos (los mismos que en la web)
     var vistos by remember { mutableStateOf<Map<Int, Set<Int>>>(emptyMap()) }
     LaunchedEffect(t0.clave, App.versionLista) { if (t0.esSerie) vistos = try { MiLista.episodiosVistos(t0) } catch (e: Exception) { emptyMap() } }
-    val t = d?.t ?: t0
-    // Por dónde vas: en series, el último capítulo que viste en esta tele
     val progresos = remember(App.versionLista, App.pila.size) { Progreso.deTitulo(ctx, t0) }
-    val seguir = remember(progresos) { progresos.values.maxByOrNull { it.cuando } }
+    // «Por dónde vas»: el capítulo a medias más reciente que no esté ya visto
+    val seguir = remember(progresos, vistos) { progresos.values.filter { p -> p.temporada == null || p.episodio !in (vistos[p.temporada] ?: emptySet()) }.maxByOrNull { it.cuando } }
     LaunchedEffect(d) {
         val dd = d ?: return@LaunchedEffect
         if (dd.t.esSerie && temporada == null) temporada = seguir?.temporada ?: dd.temporadas.firstOrNull()?.numero
@@ -94,9 +97,12 @@ fun PantallaFicha(t0: Titulo) {
         !t.esSerie -> Contexto(t)
         seguir?.temporada != null -> Contexto(t, seguir.temporada, seguir.episodio)
         else -> {
-            // El primer capítulo que aún no has visto
+            // El siguiente al último capítulo visto (y si no, el primero sin ver)
             val temps = d?.temporadas ?: emptyList()
-            val sig = temps.asSequence().flatMap { s -> (1..s.episodios).asSequence().map { s.numero to it } }.firstOrNull { (s, e) -> e !in (vistos[s] ?: emptySet()) }
+            val todos = temps.flatMap { s -> (1..s.episodios).map { s.numero to it } }
+            val ultimo = todos.indexOfLast { (s, e) -> e in (vistos[s] ?: emptySet()) }
+            val sig = todos.drop(ultimo + 1).firstOrNull { (s, e) -> e !in (vistos[s] ?: emptySet()) }
+                ?: todos.firstOrNull { (s, e) -> e !in (vistos[s] ?: emptySet()) }
             val (n, e) = sig ?: ((temps.firstOrNull()?.numero ?: 1) to 1)
             Contexto(t, n, e, episodios?.firstOrNull { temporada == n && it.numero == e }?.nombre ?: "")
         }
@@ -129,6 +135,7 @@ fun PantallaFicha(t0: Titulo) {
             Box(Modifier.fillMaxSize().veloAbajo())
         }
         val estado = rememberLazyListState()
+        val ambitoFicha = rememberCoroutineScope()
         LazyColumn(Modifier.fillMaxSize(), state = estado, contentPadding = PaddingValues(bottom = 60.dp)) {
             item(key = "cabecera") { Column {
                 Column(Modifier.padding(start = MARGEN.dp, top = 44.dp, end = MARGEN.dp).fillMaxWidth(0.6f)) {
@@ -155,7 +162,9 @@ fun PantallaFicha(t0: Titulo) {
                 }
                 Column(Modifier.padding(start = MARGEN.dp, end = MARGEN.dp)) {
                     // Botones (a todo lo ancho, para que quepan todos)
-                    Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Con el foco en estos botones, la ficha se queda arriba del todo (logo y título siempre a la vista)
+                    Row(Modifier.padding(vertical = 8.dp).onFocusChanged { if (it.hasFocus) ambitoFicha.launch { delay(30); estado.scrollToItem(0) } },
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         run {
                             val c = contextoVer()
                             val texto = when {
@@ -164,9 +173,9 @@ fun PantallaFicha(t0: Titulo) {
                                 seguir != null -> "Reanudar"
                                 else -> "Reproducir"
                             }
-                            Boton(texto, { App.reproducirAuto(ctx, c) }, Modifier.focoRecordado("ver", pedirSiNada = true), icono = "▶", principal = true)
+                            Boton(if (d == null) "Cargando…" else texto, { if (d != null) App.reproducirAuto(ctx, c) }, Modifier.focoRecordado("ver", pedirSiNada = true), icono = "▶", principal = true)
                         }
-                        run { Boton("Fuentes", { App.fuentes = PanelFuentes(contextoVer(), nas = false) }, Modifier.focoRecordado("fuentes"), icono = "☰") }
+                        run { Boton("Fuentes", { if (d != null) App.fuentes = PanelFuentes(contextoVer(), nas = false) }, Modifier.focoRecordado("fuentes"), icono = "☰") }
                         run {
                             val si = enLista?.pendiente == true
                             Boton(if (si) "En Mi lista" else "Mi lista", { cambiarLista("pendiente") }, Modifier.focoRecordado("lista"), icono = if (si) "✓" else "＋", activo = si)
@@ -227,7 +236,7 @@ fun PantallaFicha(t0: Titulo) {
                 }
             }
             if (dd != null) {
-                fila("reparto", "Reparto", dd.reparto, { it.id }) { p ->
+                fila("reparto", "Reparto", dd.reparto.distinctBy { it.id }, { it.id }) { p ->
                     Surface(
                         onClick = { App.abrir(Pantalla.Categoria("Con ${p.nombre}", listOf("movie", "tv")) { tp, pag -> Catalogo.dePersona(p.id, tp, pag) }) },
                         modifier = Modifier.width(120.dp).focoRecordado("persona-${p.id}"),

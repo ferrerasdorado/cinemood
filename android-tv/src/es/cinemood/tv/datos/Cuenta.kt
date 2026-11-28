@@ -24,8 +24,12 @@ object MiLista {
         return EnLista(t, o.optBoolean("visto"), o.optBoolean("pendiente"), if (o.isNull("puntuacion")) null else o.optInt("puntuacion"))
     }
 
-    private fun base(t: Titulo) = JSONObject().put("user_id", Sesion.uid).put("tmdb_id", t.id).put("tipo", t.tipo)
-        .put("titulo", t.nombre).put("poster_path", t.poster ?: JSONObject.NULL).put("anio", t.anio)
+    // Si la ficha aún no ha cargado (nombre vacío), no se pisan el título ni el cartel que ya tenga en la web
+    private fun base(t: Titulo) = JSONObject().put("user_id", Sesion.uid).put("tmdb_id", t.id).put("tipo", t.tipo).also { o ->
+        if (t.nombre.isNotBlank()) o.put("titulo", t.nombre)
+        if (t.poster != null) o.put("poster_path", t.poster)
+        if (t.anio.isNotBlank()) o.put("anio", t.anio)
+    }
 
     /** Capítulos vistos de una serie, por temporada (el mismo formato que la web: {"1":[1,2,3]}) */
     suspend fun episodiosVistos(t: Titulo): Map<Int, Set<Int>> {
@@ -91,7 +95,13 @@ object Nas {
             (0 until a.length()).map { a.getJSONObject(it) }.map { clave(tipo, t.id, if (it.isNull("temporada")) null else it.optInt("temporada"), if (it.isNull("episodio")) null else it.optInt("episodio")) }.toSet()
         } catch (e: Exception) { emptySet() }
         val vistas = HashSet<String>()
-        val nuevas = partes.filter { p -> val k = clave(tipo, t.id, p.temporada, p.episodio); k !in activas && vistas.add(k) }
+        // También cuenta lo que ya cubre algo más grande en cola: la serie entera cubre todo, una temporada sus capítulos
+        val serieEnCola = clave(tipo, t.id, null, null) in activas
+        val nuevas = partes.filter { p ->
+            val k = clave(tipo, t.id, p.temporada, p.episodio)
+            val cubierta = serieEnCola || (p.episodio != null && clave(tipo, t.id, p.temporada, null) in activas)
+            k !in activas && !cubierta && vistas.add(k)
+        }
         val repetidas = partes.size - nuevas.size
         if (nuevas.isEmpty()) return if (partes.size > 1) "Eso ya está en la cola del NAS." else "Ya está en la cola del NAS. Puedes seguirlo en «Mis descargas»."
         val filas = JSONArray()
@@ -149,6 +159,7 @@ object Progreso {
         val o = p.getString(clave, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return
         if (durSeg > 30 && posSeg >= durSeg * 0.92) {
             p.edit().remove(clave).apply()
+            olvidarAnteriores(ctx, o)
             if (o.optString("tipo") == "movie") CanalTv.quitar(ctx, "movie", o.optInt("id"))   // en series sigue el siguiente capítulo
             return
         }
@@ -156,6 +167,19 @@ object Progreso {
         o.put("pos", posSeg).put("dur", durSeg).put("cuando", System.currentTimeMillis())
         p.edit().putString(clave, o.toString()).apply()
         CanalTv.publicar(ctx, o, posSeg, durSeg)
+    }
+
+    /** Visto un capítulo, los que se dejaron a medias antes ya no son «por dónde vas» */
+    private fun olvidarAnteriores(ctx: Context, o: JSONObject) {
+        if (o.optString("tipo") != "tv") return
+        val id = o.optInt("id"); val t = o.optInt("temporada"); val e = o.optInt("episodio")
+        val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val borrar = p.all.keys.filter { k ->
+            val partes = k.split('-')
+            partes.size == 4 && partes[0] == "tv" && partes[1] == id.toString() &&
+                (partes[2].toIntOrNull() ?: 0).let { s -> s < t || (s == t && (partes[3].toIntOrNull() ?: 0) < e) }
+        }
+        if (borrar.isNotEmpty()) p.edit().apply { borrar.forEach { remove(it) } }.apply()
     }
 
     /** Antes de abrir el reproductor se apunta qué se va a ver, para poder listarlo en «Seguir viendo» */
