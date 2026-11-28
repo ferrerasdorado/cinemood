@@ -332,7 +332,7 @@ class PlayerActivity : ComponentActivity() {
         lifecycleScope.launch { cargarSubtitulos(c) }
         if (elegida != null) {
             candidatos = (listOf(elegida) + alternativas.filter { it.sePuedeVer && it.clave != elegida.clave }).toMutableList()
-            indice = 0; abrirActual(Progreso.preparar(this, c.t, c.temporada, c.episodio) * 1000)
+            indice = 0; abrirActual((Progreso.preparar(this, c.t, c.temporada, c.episodio) * 1000).let { if (c.desdeCero) 0L else it })
             return
         }
         fase = Fase.BUSCANDO; mensaje = "Buscando la mejor fuente en tus addons…"
@@ -340,7 +340,7 @@ class PlayerActivity : ComponentActivity() {
             val lista = try { buscar(c) } catch (e: Exception) { mensaje = e.message ?: "No se pudo buscar."; fase = Fase.ERROR; return@launch }
             if (lista.isEmpty()) { mensaje = "Ninguno de tus addons tiene ahora una fuente que se pueda ver aquí. Prueba con «Fuentes» o envíalo al NAS."; fase = Fase.ERROR; return@launch }
             candidatos = lista.toMutableList(); indice = 0
-            abrirActual(Progreso.preparar(this@PlayerActivity, c.t, c.temporada, c.episodio) * 1000)
+            abrirActual((Progreso.preparar(this@PlayerActivity, c.t, c.temporada, c.episodio) * 1000).let { if (c.desdeCero) 0L else it })
         }
     }
 
@@ -387,7 +387,8 @@ class PlayerActivity : ComponentActivity() {
         val l = url.lowercase()
         if (".m3u8" in l || "format=hls" in l) b.setMimeType(MimeTypes.APPLICATION_M3U8) else if (".mpd" in l) b.setMimeType(MimeTypes.APPLICATION_MPD)
         subArchivo?.let { u ->
-            b.setSubtitleConfigurations(listOf(MediaItem.SubtitleConfiguration.Builder(u).setMimeType(MimeTypes.TEXT_VTT)
+            val mime = when (u.path?.substringAfterLast('.')) { "srt" -> MimeTypes.APPLICATION_SUBRIP; "ass" -> MimeTypes.TEXT_SSA; else -> MimeTypes.TEXT_VTT }
+            b.setSubtitleConfigurations(listOf(MediaItem.SubtitleConfiguration.Builder(u).setMimeType(mime)
                 .setLanguage(subActivo?.idioma ?: "es").setLabel(subActivo?.etiqueta ?: "Subtítulo").setSelectionFlags(C.SELECTION_FLAG_DEFAULT).build()))
         }
         return b.build()
@@ -400,6 +401,16 @@ class PlayerActivity : ComponentActivity() {
         val pos = player.currentPosition.coerceAtLeast(0)
         // Falla el descodificador de audio de la tele (p. ej. algunos MP3): misma fuente, con FFmpeg
         val ex = e as? androidx.media3.exoplayer.ExoPlaybackException
+        // Falla un subtítulo: se quita solo el subtítulo, la película sigue
+        val mimeFallo = ex?.rendererFormat?.sampleMimeType.orEmpty()
+        if (ex != null && ex.type == androidx.media3.exoplayer.ExoPlaybackException.TYPE_RENDERER && (mimeFallo.startsWith("text/") || mimeFallo.startsWith("application/x-subrip") || mimeFallo.contains("ttml") || mimeFallo.contains("pgs") || mimeFallo.contains("dvbsubs"))) {
+            android.util.Log.w("CineMoodSubs", "Subtítulo no válido ($mimeFallo): se desactiva", e)
+            subActivo = null; subArchivo = null
+            player.trackSelectionParameters = player.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_TEXT).setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true).build()
+            player.setMediaItem(mediaItem(actual!!), pos); player.prepare(); player.playWhenReady = visible()
+            aviso = "Ese subtítulo no se puede mostrar. Prueba otro."; lifecycleScope.launch { delay(3500); aviso = "" }
+            return
+        }
         if (!ffmpegPrimero && ex != null && ex.type == androidx.media3.exoplayer.ExoPlaybackException.TYPE_RENDERER &&
             ex.rendererFormat?.sampleMimeType?.startsWith("audio/") == true) { reintentarConFfmpeg(pos); return }
         if (reintentada && listoDesde > 0 && System.currentTimeMillis() - listoDesde > 60_000) reintentada = false
@@ -520,9 +531,15 @@ class PlayerActivity : ComponentActivity() {
                     var txt = String(bytes, Charsets.UTF_8)
                     if ('�' in txt) txt = String(bytes, Charset.forName("windows-1252"))
                     txt = txt.replace("﻿", "").replace("\r\n", "\n").replace("\r", "\n").trim()
-                    if (!txt.startsWith("WEBVTT")) txt = "WEBVTT\n\n" + txt.replace(Regex("(?m)^\\d+\\s*\\n(?=\\d{1,2}:)"), "").replace(Regex("(\\d{1,2}:\\d{2}:\\d{2}),(\\d{3})"), "$1.$2")
-                    File(cacheDir, "cm_sub_${System.currentTimeMillis()}.vtt").apply { writeText(txt) }
-                } catch (e: Exception) { null }
+                    // SRT y WebVTT los lee el propio reproductor; ASS/SSA también. Se guarda con su extensión real.
+                    val ext = when {
+                        txt.startsWith("WEBVTT") -> "vtt"
+                        txt.contains("[Script Info]") -> "ass"
+                        Regex("\\d{1,2}:\\d{2}:\\d{2}[,.]\\d{1,3}\\s*-->").containsMatchIn(txt) -> "srt"
+                        else -> throw Exception("formato no reconocido")
+                    }
+                    File(cacheDir, "cm_sub_${System.currentTimeMillis()}.$ext").apply { writeText(txt) }
+                } catch (e: Exception) { android.util.Log.w("CineMoodSubs", "No se pudo cargar ${s.url}: $e"); null }
             }
             if (archivo == null) { aviso = "No se ha podido cargar ese subtítulo. Prueba otro."; delay(3000); aviso = ""; return@launch }
             subActivo = s; subArchivo = Uri.fromFile(archivo)

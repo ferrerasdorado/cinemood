@@ -361,34 +361,75 @@ fun PantallaCategoria(c: Pantalla.Categoria) {
     }
 }
 
+/** Buscar: teclado propio a la izquierda (pensado para el mando) y resultados a la derecha, al momento */
 @Composable
 fun PantallaBuscar() {
     var texto by remember { mutableStateOf(App.ultimaBusqueda) }
     var resultados by remember { mutableStateOf<List<Titulo>>(emptyList()) }
-    var sugerencias by remember { mutableStateOf<List<Titulo>>(emptyList()) }
+    var hoy by remember { mutableStateOf<List<Titulo>>(emptyList()) }
     var buscando by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { sugerencias = try { Catalogo.tendencias("all") } catch (e: Exception) { emptyList() } }
+    LaunchedEffect(Unit) { hoy = try { Catalogo.masVistoHoy() } catch (e: Exception) { emptyList() } }
     LaunchedEffect(texto) {
         App.ultimaBusqueda = texto
         if (texto.isBlank()) { resultados = emptyList(); return@LaunchedEffect }
-        delay(450)
+        delay(350)
         buscando = true
         resultados = try { Catalogo.buscar(texto) } catch (e: Exception) { App.error(e); emptyList() }
         buscando = false
     }
-    val lista = if (texto.isBlank()) sugerencias else resultados
-    Rejilla(lista, "buscar", pedirPrimero = false, cabecera = {
-        Column {
-            BarraSuperior(Pestana.BUSCAR, conMargen = false)
-            CampoTexto(texto, { texto = it }, "Busca una película, una serie…", Modifier.fillMaxWidth().padding(top = 14.dp).focoRecordado("campo", pedirSiNada = true), buscar = true)
-            Texto(when {
-                texto.isBlank() -> "Tendencias de la semana"
-                buscando -> "Buscando…"
-                resultados.isEmpty() -> "Sin resultados para «$texto»."
-                else -> "${resultados.size} resultados"
-            }, Modifier.padding(top = 18.dp, bottom = 4.dp), tam = 18, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta)
+    val lista = if (texto.isBlank()) hoy else resultados
+    Column(Modifier.fillMaxSize()) {
+        BarraSuperior(Pestana.BUSCAR)
+        Row(Modifier.fillMaxSize()) {
+            Teclado(texto, { texto = it }, Modifier.padding(start = MARGEN.dp, top = 8.dp).width(342.dp))
+            Rejilla(lista, "buscar", Modifier.weight(1f), pedirPrimero = false, cabecera = {
+                Texto(when {
+                    texto.isBlank() -> "Lo más visto hoy"
+                    buscando && resultados.isEmpty() -> "Buscando «$texto»…"
+                    resultados.isEmpty() -> "Sin resultados para «$texto»"
+                    else -> "Resultados para «$texto»"
+                }, Modifier.padding(top = 14.dp, bottom = 4.dp), tam = 20, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta)
+            })
         }
-    })
+    }
+}
+
+private val TECLAS = (('A'..'N') + 'Ñ' + ('O'..'Z') + ('1'..'9') + '0').map { it.toString() }
+
+@Composable
+private fun Teclado(texto: String, onCambio: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        // Lo escrito
+        Row(Modifier.fillMaxWidth().background(C.superficie2, RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Texto("🔍", tam = 18); Spacer(Modifier.width(12.dp))
+            Texto(texto.ifEmpty { "Escribe con las letras…" }, tam = 17, peso = FontWeight.Medium, color = if (texto.isEmpty()) C.tenue else C.tinta, lineas = 1)
+            if (texto.isNotEmpty()) Texto("▏", tam = 20, color = C.acentoTexto)
+        }
+        Spacer(Modifier.height(10.dp))
+        TECLAS.chunked(7).forEachIndexed { f, fila ->
+            Row(Modifier.padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                fila.forEach { t -> Tecla(t, Modifier.width(43.dp).focoRecordado("tecla-$t", pedirSiNada = t == "A")) { onCambio(texto + t.lowercase()) } }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Tecla("Espacio", Modifier.width(150.dp).focoRecordado("tecla-esp")) { if (texto.isNotEmpty() && !texto.endsWith(" ")) onCambio("$texto ") }
+            Tecla("⌫", Modifier.width(60.dp).focoRecordado("tecla-del")) { onCambio(texto.dropLast(1)) }
+            Tecla("Borrar", Modifier.width(120.dp).focoRecordado("tecla-borrar")) { onCambio("") }
+        }
+    }
+}
+
+@Composable
+private fun Tecla(t: String, modifier: Modifier, alPulsar: () -> Unit) {
+    val forma = RoundedCornerShape(6.dp)
+    Surface(
+        onClick = alPulsar, modifier = modifier.height(40.dp),
+        shape = ClickableSurfaceDefaults.shape(forma),
+        colors = ClickableSurfaceDefaults.colors(containerColor = C.superficie2, contentColor = C.tinta, focusedContainerColor = C.tinta, focusedContentColor = C.fondo),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.08f),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Texto(t, tam = 16, peso = FontWeight.Bold) }
+    }
 }
 
 @Composable

@@ -29,7 +29,7 @@ sealed class Pantalla(val clave: String) {
 }
 
 /** Contexto de lo que se quiere ver o descargar (película, o capítulo de una serie) */
-data class Contexto(val t: Titulo, val temporada: Int? = null, val episodio: Int? = null, val nombreEpisodio: String = "") {
+data class Contexto(val t: Titulo, val temporada: Int? = null, val episodio: Int? = null, val nombreEpisodio: String = "", val desdeCero: Boolean = false) {
     val etiqueta get() = if (temporada != null && episodio != null) "T$temporada · E$episodio" else ""
 }
 

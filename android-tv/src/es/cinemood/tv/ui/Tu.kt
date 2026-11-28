@@ -56,7 +56,6 @@ fun PantallaTu(alSalir: () -> Unit) {
     var descargas by remember { mutableStateOf<List<Descarga>?>(null) }
     LaunchedEffect(Unit) {
         addons = try { Fuentes.addons(forzar = true) } catch (e: Exception) { emptyList() }
-        descargas = try { Nas.misDescargas() } catch (e: Exception) { emptyList() }
     }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 60.dp)) {
         item { BarraSuperior(Pestana.TU) }
@@ -66,11 +65,9 @@ fun PantallaTu(alSalir: () -> Unit) {
                 Texto("Sesión iniciada como ${Sesion.email}", tam = 15, color = C.suave)
                 Spacer(Modifier.height(18.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    val enCurso = descargas?.count { it.enMarcha } ?: 0
-                    Boton("Mis descargas" + if (enCurso > 0) " ($enCurso en curso)" else "", { App.abrir(Pantalla.Descargas()) }, Modifier.focoRecordado("descargas", pedirSiNada = true), icono = "⬇", principal = true)
                     Boton("Cerrar sesión", {
                         App.menu = Menu("¿Cerrar sesión?", "Tendrás que volver a escribir tu email y contraseña en la tele.", listOf(OpcionMenu("Cerrar sesión", "↩", peligro = true) { alSalir() }))
-                    }, Modifier.focoRecordado("salir"), icono = "↩")
+                    }, Modifier.focoRecordado("salir", pedirSiNada = true), icono = "↩")
                 }
             }
         }

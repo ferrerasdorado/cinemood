@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class)
+@file:OptIn(ExperimentalTvMaterial3Api::class, ExperimentalComposeUiApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 
 package es.cinemood.tv.ui
 
@@ -135,7 +135,9 @@ fun PantallaFicha(t0: Titulo) {
             Box(Modifier.fillMaxSize().veloAbajo())
         }
         val estado = rememberLazyListState()
-        val ambitoFicha = rememberCoroutineScope()
+        // En la tele, Compose desplaza la lista para dejar el elemento enfocado a un tercio de la pantalla:
+        // en la ficha eso hacía bajar la cabecera y «temblar» al moverse entre botones. Aquí solo se mueve lo justo.
+        androidx.compose.runtime.CompositionLocalProvider(androidx.compose.foundation.gestures.LocalBringIntoViewSpec provides SoloLoJusto) {
         LazyColumn(Modifier.fillMaxSize(), state = estado, contentPadding = PaddingValues(bottom = 60.dp)) {
             item(key = "cabecera") { Column {
                 Column(Modifier.padding(start = MARGEN.dp, top = 44.dp, end = MARGEN.dp).fillMaxWidth(0.6f)) {
@@ -163,7 +165,7 @@ fun PantallaFicha(t0: Titulo) {
                 Column(Modifier.padding(start = MARGEN.dp, end = MARGEN.dp)) {
                     // Botones (a todo lo ancho, para que quepan todos)
                     // Con el foco en estos botones, la ficha se queda arriba del todo (logo y título siempre a la vista)
-                    Row(Modifier.padding(vertical = 8.dp).onFocusChanged { if (it.hasFocus) ambitoFicha.launch { delay(30); estado.scrollToItem(0) } },
+                    Row(Modifier.padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         run {
                             val c = contextoVer()
@@ -184,7 +186,10 @@ fun PantallaFicha(t0: Titulo) {
                             val si = enLista?.visto == true
                             Boton(if (si) "Vista" else "Marcar vista", { cambiarLista("visto") }, Modifier.focoRecordado("visto"), icono = if (si) "✓" else "👁", activo = si)
                         }
-                        run { Boton("NAS", { menuNas(t, d, temporada) }, Modifier.focoRecordado("nas"), icono = "⬇") }
+                        if (seguir != null && d != null) run {
+                            val c = contextoVer().copy(desdeCero = true)
+                            Boton("Desde el principio", { App.reproducirAuto(ctx, c) }, Modifier.focoRecordado("inicio"), icono = "⟲")
+                        }
                         d?.trailer?.let { k -> run { Boton("Tráiler", { Externo.abrirTrailer(ctx, k) }, Modifier.focoRecordado("trailer"), icono = "🎬") } }
                     }
                     if (seguir != null && seguir.fraccion > 0) {
@@ -229,8 +234,6 @@ fun PantallaFicha(t0: Titulo) {
                                 if (visto) OpcionMenu("Marcar como no visto", "↺") { marcarCapitulos(n, listOf(e.numero), false) }
                                 else OpcionMenu("Marcar como visto", "✓") { marcarCapitulos(n, listOf(e.numero), true) },
                                 OpcionMenu("Marcar la temporada $n entera como vista", "✓✓") { marcarCapitulos(n, (1..(dd.temporadas.firstOrNull { it.numero == n }?.episodios ?: eps.size)).toList(), true) },
-                                OpcionMenu("Enviar este capítulo al NAS", "⬇") { enviarNas(t, listOf(ParteNas(n, e.numero))) },
-                                OpcionMenu("Elegir el torrent para el NAS…", "☰") { App.fuentes = PanelFuentes(c, nas = true) },
                             ))
                         })
                 }
@@ -265,6 +268,7 @@ fun PantallaFicha(t0: Titulo) {
                 }
             }
         }
+        }
     }
 }
 
@@ -298,4 +302,19 @@ fun menuNas(t: Titulo, d: Detalle?, temporada: Int?) {
         if (total > 1) OpcionMenu("Todas las temporadas ($total) · que elija el NAS", "📦") { enviarNas(t, d!!.temporadas.map { ParteNas(it.numero) }) } else null,
         OpcionMenu("Serie completa · elegir un pack…", "☰") { App.fuentes = PanelFuentes(Contexto(t, n, 1), nas = true, vistaNas = "serie") },
     ))
+}
+
+
+/** Desplazamiento mínimo: solo lo necesario para que el elemento enfocado se vea entero */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+private object SoloLoJusto : androidx.compose.foundation.gestures.BringIntoViewSpec {
+    override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
+        val margen = 40f
+        val fin = offset + size
+        return when {
+            offset >= margen && fin <= containerSize - margen -> 0f
+            offset < margen -> offset - margen
+            else -> minOf(fin - (containerSize - margen), offset - margen)
+        }
+    }
 }

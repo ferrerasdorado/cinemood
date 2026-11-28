@@ -78,6 +78,7 @@ object Catalogo {
             .distinctBy { it.clave }
     }
 
+    suspend fun masVistoHoy() = lista(Tmdb.json("/trending/all/day"))
     suspend fun topHoy() = lista(Tmdb.json("/trending/all/day")).take(10)
     suspend fun tendencias(tipo: String = "all", pagina: Int = 1) = lista(Tmdb.json("/trending/$tipo/week", "page=$pagina"), tipo.takeIf { it != "all" })
     suspend fun populares(tipo: String) = lista(Tmdb.json("/$tipo/popular", "region=ES"), tipo)
