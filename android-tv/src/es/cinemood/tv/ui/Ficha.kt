@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -72,6 +73,9 @@ fun PantallaFicha(t0: Titulo) {
         if (d == null) try { d = Catalogo.detalle(t0.tipo, t0.id) } catch (e: Exception) { error = e.message }
     }
     LaunchedEffect(t0.clave, App.versionLista) { enLista = try { MiLista.estado(t0) } catch (e: Exception) { null } }
+    // Capítulos vistos (los mismos que en la web)
+    var vistos by remember { mutableStateOf<Map<Int, Set<Int>>>(emptyMap()) }
+    LaunchedEffect(t0.clave, App.versionLista) { if (t0.esSerie) vistos = try { MiLista.episodiosVistos(t0) } catch (e: Exception) { emptyMap() } }
     val t = d?.t ?: t0
     // Por dónde vas: en series, el último capítulo que viste en esta tele
     val progresos = remember(App.versionLista, App.pila.size) { Progreso.deTitulo(ctx, t0) }
@@ -89,7 +93,22 @@ fun PantallaFicha(t0: Titulo) {
     fun contextoVer(): Contexto = when {
         !t.esSerie -> Contexto(t)
         seguir?.temporada != null -> Contexto(t, seguir.temporada, seguir.episodio)
-        else -> { val n = d?.temporadas?.firstOrNull()?.numero ?: 1; Contexto(t, n, 1, episodios?.firstOrNull()?.takeIf { temporada == n }?.nombre ?: "") }
+        else -> {
+            // El primer capítulo que aún no has visto
+            val temps = d?.temporadas ?: emptyList()
+            val sig = temps.asSequence().flatMap { s -> (1..s.episodios).asSequence().map { s.numero to it } }.firstOrNull { (s, e) -> e !in (vistos[s] ?: emptySet()) }
+            val (n, e) = sig ?: ((temps.firstOrNull()?.numero ?: 1) to 1)
+            Contexto(t, n, e, episodios?.firstOrNull { temporada == n && it.numero == e }?.nombre ?: "")
+        }
+    }
+    fun marcarCapitulos(n: Int, eps: List<Int>, visto: Boolean) {
+        ambito.launch {
+            try {
+                vistos = MiLista.marcarEpisodios(t, n, eps, visto, d?.temporadas?.associate { it.numero to it.episodios } ?: emptyMap())
+                App.avisar(if (visto) (if (eps.size > 1) "Temporada $n marcada como vista." else "Marcado como visto.") else "Ya no está marcado como visto.")
+                App.versionLista++
+            } catch (e: Exception) { App.error(e) }
+        }
     }
     fun cambiarLista(campo: String) {
         val actual = enLista
@@ -136,27 +155,28 @@ fun PantallaFicha(t0: Titulo) {
                 }
                 Column(Modifier.padding(start = MARGEN.dp, end = MARGEN.dp)) {
                     // Botones (a todo lo ancho, para que quepan todos)
-                    LazyRow(Modifier, horizontalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(vertical = 6.dp)) {
-                        item {
+                    Row(Modifier.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        run {
                             val c = contextoVer()
                             val texto = when {
                                 t.esSerie && seguir != null -> "Seguir ${c.etiqueta}"
                                 t.esSerie -> "Ver ${c.etiqueta}"
                                 seguir != null -> "Reanudar"
-                                else -> "Ver"
+                                else -> "Reproducir"
                             }
-                            Boton(texto, { App.fuentes = PanelFuentes(c, nas = false) }, Modifier.focoRecordado("ver", pedirSiNada = true), icono = "▶", principal = true)
+                            Boton(texto, { App.reproducirAuto(ctx, c) }, Modifier.focoRecordado("ver", pedirSiNada = true), icono = "▶", principal = true)
                         }
-                        item {
+                        run { Boton("Fuentes", { App.fuentes = PanelFuentes(contextoVer(), nas = false) }, Modifier.focoRecordado("fuentes"), icono = "☰") }
+                        run {
                             val si = enLista?.pendiente == true
                             Boton(if (si) "En Mi lista" else "Mi lista", { cambiarLista("pendiente") }, Modifier.focoRecordado("lista"), icono = if (si) "✓" else "＋", activo = si)
                         }
-                        item {
+                        run {
                             val si = enLista?.visto == true
                             Boton(if (si) "Vista" else "Marcar vista", { cambiarLista("visto") }, Modifier.focoRecordado("visto"), icono = if (si) "✓" else "👁", activo = si)
                         }
-                        item { Boton("NAS", { menuNas(t, d, temporada) }, Modifier.focoRecordado("nas"), icono = "⬇") }
-                        d?.trailer?.let { k -> item { Boton("Tráiler", { Externo.abrirTrailer(ctx, k) }, Modifier.focoRecordado("trailer"), icono = "🎬") } }
+                        run { Boton("NAS", { menuNas(t, d, temporada) }, Modifier.focoRecordado("nas"), icono = "⬇") }
+                        d?.trailer?.let { k -> run { Boton("Tráiler", { Externo.abrirTrailer(ctx, k) }, Modifier.focoRecordado("trailer"), icono = "🎬") } }
                     }
                     if (seguir != null && seguir.fraccion > 0) {
                         Spacer(Modifier.height(14.dp))
@@ -184,17 +204,22 @@ fun PantallaFicha(t0: Titulo) {
                 }
                 val eps = episodios
                 if (eps == null) item(key = "cargando-eps") { Cargando("Cargando capítulos…") }
-                else fila("eps-$temporada", "Capítulos de la temporada $temporada", eps, { it.numero }) { e ->
+                else fila("eps-$temporada", "Capítulos de la temporada $temporada" + ((vistos[temporada] ?: emptySet()).size.takeIf { it > 0 }?.let { "  ·  $it de ${eps.size} vistos" } ?: ""), eps, { it.numero }) { e ->
                     val n = temporada ?: 1
                     val pr = progresos[n to e.numero]
+                    val visto = e.numero in (vistos[n] ?: emptySet())
                     val c = Contexto(t, n, e.numero, e.nombre)
                     TarjetaApaisada(Tmdb.img(e.imagen, "w300") ?: Tmdb.img(t.fondo, "w300"), "${e.numero}. ${e.nombre}",
                         listOfNotNull(fecha(e.fecha), if (e.minutos > 0) "${e.minutos} min" else null).joinToString(" · ").ifEmpty { e.sinopsis },
-                        "ep-$n-${e.numero}", onClick = { App.fuentes = PanelFuentes(c, nas = false) }, ancho = 260.dp,
-                        progreso = pr?.fraccion?.takeIf { it > 0 },
+                        "ep-$n-${e.numero}", onClick = { App.reproducirAuto(ctx, c) }, ancho = 260.dp,
+                        progreso = pr?.fraccion?.takeIf { it > 0 }, etiqueta = if (visto) "✓ Visto" else "",
                         onLongClick = {
                             App.menu = Menu("T$n · E${e.numero} · ${e.nombre}", opciones = listOf(
-                                OpcionMenu("Ver este capítulo", "▶") { App.fuentes = PanelFuentes(c, nas = false) },
+                                OpcionMenu("Reproducir", "▶") { App.reproducirAuto(ctx, c) },
+                                OpcionMenu("Elegir la fuente…", "☰") { App.fuentes = PanelFuentes(c, nas = false) },
+                                if (visto) OpcionMenu("Marcar como no visto", "↺") { marcarCapitulos(n, listOf(e.numero), false) }
+                                else OpcionMenu("Marcar como visto", "✓") { marcarCapitulos(n, listOf(e.numero), true) },
+                                OpcionMenu("Marcar la temporada $n entera como vista", "✓✓") { marcarCapitulos(n, (1..(dd.temporadas.firstOrNull { it.numero == n }?.episodios ?: eps.size)).toList(), true) },
                                 OpcionMenu("Enviar este capítulo al NAS", "⬇") { enviarNas(t, listOf(ParteNas(n, e.numero))) },
                                 OpcionMenu("Elegir el torrent para el NAS…", "☰") { App.fuentes = PanelFuentes(c, nas = true) },
                             ))

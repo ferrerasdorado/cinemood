@@ -1,25 +1,18 @@
 package es.cinemood.tv.ui
 
 import android.content.Context
-import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import es.cinemood.tv.PlayerActivity
 import es.cinemood.tv.datos.Catalogo
 import es.cinemood.tv.datos.Fuente
-import es.cinemood.tv.datos.Fuentes
-import es.cinemood.tv.datos.Progreso
 import es.cinemood.tv.datos.Titulo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
-import org.json.JSONArray
-import org.json.JSONObject
 
 // CineMood TV · Navegación y estado común.
 // Las pestañas de arriba son pantallas raíz; la ficha, las categorías y el resto se apilan encima
@@ -97,30 +90,10 @@ object App {
 
     fun error(e: Throwable) = avisar(e.message ?: "Algo ha fallado.", true)
 
-    /** Abre el reproductor nativo (Media3) con la fuente elegida */
-    fun reproducir(c: Context, f: Fuente, ctx: Contexto) {
-        val url = f.url ?: return
-        val inicio = Progreso.preparar(c, ctx.t, ctx.temporada, ctx.episodio)
-        val subs = JSONArray()
-        f.subtitulos.take(30).forEach { subs.put(JSONObject().put("url", it.url).put("lang", it.idioma).put("label", it.etiqueta)) }
-        val datos = JSONObject()
-            .put("url", url)
-            .put("titulo", ctx.t.nombre + if (ctx.etiqueta.isNotEmpty()) " · ${ctx.etiqueta}" else "")
-            .put("subtitulo", listOf(ctx.nombreEpisodio, f.meta.idioma, if (f.meta.calidad >= 2160) "4K" else if (f.meta.calidad > 0) "${f.meta.calidad}p" else "").filter { it.isNotEmpty() }.joinToString(" · "))
-            .put("progKey", Progreso.clave(ctx.t, ctx.temporada, ctx.episodio))
-            .put("inicioSeg", inicio)
-            .put("subtitulos", subs)
-            .put("subsEsAuto", !f.meta.es && !f.meta.multi)
-        c.startActivity(Intent(c, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_PAYLOAD_JSON, datos.toString()))
-        // Subtítulos de tus addons de subtítulos (OpenSubtitles…): llegan al reproductor cuando estén
-        ambito.launch {
-            val lista = withTimeoutOrNull(15_000) {
-                try { Fuentes.subtitulos(ctx.t.tipo, Fuentes.idStremio(Catalogo.imdbDe(ctx.t.tipo, ctx.t.id), ctx.temporada, ctx.episodio)) } catch (e: Exception) { emptyList() }
-            } ?: emptyList()
-            if (lista.isNotEmpty()) {
-                val a = JSONArray(); lista.forEach { a.put(JSONObject().put("url", it.url).put("lang", it.idioma).put("label", it.etiqueta)) }
-                PlayerActivity.recibirSubtitulosExternos(a.toString())
-            }
-        }
-    }
+    /** Abre el reproductor con una fuente concreta; si falla, sigue con las demás de la lista */
+    fun reproducir(c: Context, f: Fuente, ctx: Contexto, alternativas: List<Fuente> = emptyList()) =
+        es.cinemood.tv.Reproduccion.abrir(c, ctx, f, alternativas)
+
+    /** «Reproducir»: el reproductor busca solo la mejor fuente en tus addons */
+    fun reproducirAuto(c: Context, ctx: Contexto) = es.cinemood.tv.Reproduccion.abrir(c, ctx)
 }

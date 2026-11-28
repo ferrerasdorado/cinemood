@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -168,7 +169,7 @@ fun PanelFuentesUI(pf: PanelFuentes) {
                     (if (!terminado) " · buscando…" else "") + "   (" + est.joinToString(" · ") { "${it.nombre}: ${it.estado}" } + ")"
             }, tam = 13, color = if (error != null) C.acentoTexto else C.tenue, lineas = 2)
             Spacer(Modifier.height(10.dp))
-            LazyRow(Modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
+            LazyRow(Modifier.offset(x = (-8).dp), horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) {
                 val opciones = listOfNotNull("todas" to "Todas", if (pf.nas) null else "instante" to "⚡ Al instante",
                     "4k" to "4K", "1080" to "1080p", "720" to "720p", "es" to "En español", "cast" to "Castellano", "lat" to "Latino", if (pf.nas) null else "ingles" to "Inglés + subtítulos ES",
                     if (pf.ctx.t.esSerie && pf.vistaNas.isEmpty()) "packs" to "Packs" else null)
@@ -185,6 +186,7 @@ fun PanelFuentesUI(pf: PanelFuentes) {
             if (terminado && filtradas.isEmpty() && error == null) {
                 Texto(if (pf.nas && pf.vistaNas == "temporada") "Ningún addon tiene un pack con la temporada ${pf.ctx.temporada} entera. Puedes pedirla igualmente con «Que elija el NAS», o enviar los capítulos sueltos."
                 else if (pf.nas && pf.vistaNas == "serie") "Ningún addon tiene un pack con la serie completa. Prueba por temporadas."
+                else if (base.isEmpty()) "Ninguno de tus addons tiene fuentes para esto. Prueba otro capítulo o «Que elija el NAS»."
                 else "No hay resultados con este filtro.", tam = 15, color = C.suave)
             }
             LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 30.dp, top = 4.dp)) {
@@ -193,7 +195,7 @@ fun PanelFuentesUI(pf: PanelFuentes) {
                     val primera = f == filtradas.first()
                     val subir = if (pf.nas && pf.vistaNas.isEmpty() && !pf.ctx.t.esSerie) frNas else frFiltros
                     TarjetaFuente(f, pf, Modifier.let { if (primera) it.focusRequester(frPrimero) else it }
-                        .focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel; if (primera) up = subir }, c)
+                        .focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel; if (primera) up = subir }, c, filtradas)
                 }
                 if (filtradas.size > cuantas) item(key = "mas") {
                     Boton("Ver ${minOf(40, filtradas.size - cuantas)} más (quedan ${filtradas.size - cuantas})", { cuantas += 40 }, Modifier.focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel }, pequeno = true)
@@ -210,12 +212,14 @@ fun PanelFuentesUI(pf: PanelFuentes) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TarjetaFuente(f: Fuente, pf: PanelFuentes, modifier: Modifier, c: android.content.Context) {
+private fun TarjetaFuente(f: Fuente, pf: PanelFuentes, modifier: Modifier, c: android.content.Context, lista: List<Fuente>) {
+    // Si la elegida falla, el reproductor sigue con las demás del panel (en el mismo orden)
+    val resto = lista.filter { it.sePuedeVer && it.clave != f.clave }
     val forma = RoundedCornerShape(8.dp)
     val (parte, textoNas) = parteDe(f, pf.ctx)
     fun accion() {
         if (pf.nas) { App.fuentes = null; enviarNas(pf.ctx.t, listOf(parte)); return }
-        if (f.sePuedeVer) App.reproducir(c, f, pf.ctx)
+        if (f.sePuedeVer) App.reproducir(c, f, pf.ctx, resto)
         else App.menu = Menu("Es un torrent", "No se puede ver aquí sin un servicio como AllDebrid configurado en el addon, pero sí puedes descargarlo en tu NAS.", listOfNotNull(
             if (f.hash != null) OpcionMenu(textoNas, "⬇") { App.fuentes = null; enviarNas(pf.ctx.t, listOf(parte)) } else null))
     }
@@ -223,7 +227,7 @@ private fun TarjetaFuente(f: Fuente, pf: PanelFuentes, modifier: Modifier, c: an
         onClick = { accion() },
         onLongClick = {
             App.menu = Menu(f.torrent, f.origen, listOfNotNull(
-                if (f.sePuedeVer && !pf.nas) OpcionMenu("Ver aquí", "▶") { App.reproducir(c, f, pf.ctx) } else null,
+                if (f.sePuedeVer && !pf.nas) OpcionMenu("Ver aquí", "▶") { App.reproducir(c, f, pf.ctx, resto) } else null,
                 if (f.sePuedeVer) OpcionMenu("Abrir en VLC", "🟠") { Externo.abrirEnVLC(c, f.url, pf.ctx.t.nombre) } else null,
                 if (f.hash != null) OpcionMenu(textoNas, "⬇") { App.fuentes = null; enviarNas(pf.ctx.t, listOf(parte)) } else null,
             ))

@@ -27,6 +27,34 @@ object MiLista {
     private fun base(t: Titulo) = JSONObject().put("user_id", Sesion.uid).put("tmdb_id", t.id).put("tipo", t.tipo)
         .put("titulo", t.nombre).put("poster_path", t.poster ?: JSONObject.NULL).put("anio", t.anio)
 
+    /** Capítulos vistos de una serie, por temporada (el mismo formato que la web: {"1":[1,2,3]}) */
+    suspend fun episodiosVistos(t: Titulo): Map<Int, Set<Int>> {
+        val a = Bd.select("mi_biblioteca", "select=episodios_vistos&user_id=eq.${Sesion.uid}&tmdb_id=eq.${t.id}&tipo=eq.tv")
+        val o = a.optJSONObject(0)?.optJSONObject("episodios_vistos") ?: return emptyMap()
+        val r = HashMap<Int, Set<Int>>()
+        for (k in o.keys()) {
+            val n = k.toIntOrNull() ?: continue
+            val e = o.optJSONArray(k) ?: continue
+            r[n] = (0 until e.length()).map { e.optInt(it) }.toSet()
+        }
+        return r
+    }
+
+    /** Marca (o desmarca) capítulos como vistos. Si con eso están todos, la serie queda como «Vista», como en la web */
+    suspend fun marcarEpisodios(t: Titulo, temporada: Int, eps: Collection<Int>, visto: Boolean, totalPorTemporada: Map<Int, Int> = emptyMap()): Map<Int, Set<Int>> {
+        val actual = episodiosVistos(t).toMutableMap()
+        val conj = (actual[temporada] ?: emptySet()).toMutableSet()
+        if (visto) conj.addAll(eps) else conj.removeAll(eps.toSet())
+        actual[temporada] = conj
+        val o = JSONObject()
+        actual.forEach { (k, v) -> if (v.isNotEmpty()) o.put(k.toString(), org.json.JSONArray(v.sorted())) }
+        val fila = base(t).put("episodios_vistos", o)
+        val total = totalPorTemporada.values.sum()
+        if (visto && total > 0 && actual.values.sumOf { it.size } >= total) fila.put("visto", true)
+        Bd.upsert("mi_biblioteca", fila, "user_id,tmdb_id,tipo")
+        return actual
+    }
+
     suspend fun ponerPendiente(t: Titulo, si: Boolean) = Bd.upsert("mi_biblioteca", base(t).put("pendiente", si), "user_id,tmdb_id,tipo")
     suspend fun ponerVisto(t: Titulo, si: Boolean) = Bd.upsert("mi_biblioteca", base(t).put("visto", si), "user_id,tmdb_id,tipo")
 }
