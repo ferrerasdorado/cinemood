@@ -47,6 +47,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -181,7 +184,7 @@ fun PantallaPestana(p: Pestana) {
                 return@forEach
             }
             fila(f.clave, f.titulo, f.items, { it.clave }) { t ->
-                TarjetaPoster(t, "${f.clave}-${t.clave}", { App.ficha(t) }, onLongClick = { menuTitulo(t) },
+                TarjetaPoster(t, "${f.clave}-${t.clave}", { App.ficha(t) }, onLongClick = { menuTitulo(t) }, cintaSerie = p != Pestana.SERIES,
                     pedirSiNada = d.portada.isEmpty() && p != Pestana.DESCUBRE && f == d.filas.first() && t == f.items.first())
             }
         }
@@ -349,7 +352,7 @@ fun Rejilla(
     ) {
         if (cabecera != null) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }, key = "cab") { cabecera() }
         itemsIndexed(items, key = { _, t -> t.clave }) { idx, t ->
-            TarjetaPoster(t, "$prefijo-${t.clave}", { App.ficha(t) }, ancho = 132.dp, onLongClick = { menuTitulo(t) }, etiqueta = etiqueta(t), pedirSiNada = pedirPrimero && idx == 0)
+            TarjetaPoster(t, "$prefijo-${t.clave}", { App.ficha(t) }, ancho = 132.dp, conTitulo = true, onLongClick = { menuTitulo(t) }, etiqueta = etiqueta(t), pedirSiNada = pedirPrimero && idx == 0)
         }
     }
 }
@@ -404,8 +407,9 @@ fun PantallaBuscar() {
     val lista = if (texto.isBlank()) hoy else resultados
     Column(Modifier.fillMaxSize()) {
         BarraSuperior(Pestana.BUSCAR)
-        Row(Modifier.fillMaxSize()) {
-            Teclado(texto, { texto = it }, Modifier.padding(start = MARGEN.dp, top = 8.dp).width(342.dp))
+        val frA = remember { androidx.compose.ui.focus.FocusRequester() }
+        Row(Modifier.fillMaxSize().focusProperties { enter = { frA } }.focusGroup()) {
+            Teclado(texto, { texto = it }, Modifier.padding(start = MARGEN.dp, top = 8.dp).width(342.dp), frA)
             Rejilla(lista, "buscar", Modifier.weight(1f), pedirPrimero = false, cabecera = {
                 Texto(when {
                     texto.isBlank() -> "Lo más visto hoy"
@@ -421,7 +425,7 @@ fun PantallaBuscar() {
 private val TECLAS = (('A'..'N') + 'Ñ' + ('O'..'Z') + ('1'..'9') + '0').map { it.toString() }
 
 @Composable
-private fun Teclado(texto: String, onCambio: (String) -> Unit, modifier: Modifier = Modifier) {
+private fun Teclado(texto: String, onCambio: (String) -> Unit, modifier: Modifier = Modifier, frA: androidx.compose.ui.focus.FocusRequester) {
     Column(modifier) {
         // Lo escrito
         Row(Modifier.fillMaxWidth().background(C.superficie2, RoundedCornerShape(8.dp)).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -432,7 +436,7 @@ private fun Teclado(texto: String, onCambio: (String) -> Unit, modifier: Modifie
         Spacer(Modifier.height(10.dp))
         TECLAS.chunked(7).forEachIndexed { f, fila ->
             Row(Modifier.padding(bottom = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                fila.forEach { t -> Tecla(t, Modifier.width(43.dp).focoRecordado("tecla-$t", pedirSiNada = t == "A")) { onCambio(texto + t.lowercase()) } }
+                fila.forEach { t -> Tecla(t, Modifier.width(43.dp).let { if (t == "A") it.focusRequester(frA) else it }.focoRecordado("tecla-$t", pedirSiNada = t == "A")) { onCambio(texto + t.lowercase()) } }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {

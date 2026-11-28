@@ -168,6 +168,8 @@ fun Imagen(url: String?, modifier: Modifier = Modifier, ajuste: ContentScale = C
 fun TarjetaPoster(
     t: Titulo, claveFoco: String, onClick: () -> Unit, modifier: Modifier = Modifier, ancho: Dp = 128.dp,
     progreso: Float? = null, etiqueta: String = "", onLongClick: (() -> Unit)? = null, pedirSiNada: Boolean = false,
+    conTitulo: Boolean = false,
+    cintaSerie: Boolean = true,   // en la pestaña Series sobra   // título y año debajo (buscador y rejillas, donde muchos carteles se parecen)
 ) {
     val forma = RoundedCornerShape(6.dp)
     Column(modifier.width(ancho)) {
@@ -182,9 +184,18 @@ fun TarjetaPoster(
             Box(Modifier.fillMaxSize()) {
                 if (t.poster == null) Texto(t.nombre, Modifier.align(Alignment.Center).padding(10.dp), tam = 14, peso = FontWeight.Bold, color = C.suave)
                 Imagen(Tmdb.img(t.poster, "w342"), Modifier.fillMaxSize(), descripcion = t.nombre)
+                // Las series llevan una cinta roja discreta en la esquina; las películas, nada
+                if (cintaSerie && t.esSerie && etiqueta.isEmpty()) androidx.tv.material3.Text("SERIE", Modifier.align(Alignment.TopStart).padding(6.dp)
+                    .background(C.acento, RoundedCornerShape(3.dp)).padding(horizontal = 5.dp, vertical = 1.dp),
+                    fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.5.sp, color = Color.White, fontFamily = Satoshi)
                 if (etiqueta.isNotEmpty()) Texto(etiqueta, Modifier.align(Alignment.TopStart).padding(6.dp).background(C.fondo.copy(alpha = 0.85f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp), tam = 11, peso = FontWeight.Bold, color = C.tinta)
                 if (progreso != null) BarraProgreso(progreso, Modifier.align(Alignment.BottomCenter).padding(8.dp))
             }
+        }
+        if (conTitulo) {
+            Spacer(Modifier.height(8.dp))
+            Texto(t.nombre, tam = 14, peso = FontWeight.Bold, lineas = 2, color = C.tinta, alto = 18)
+            if (t.anio.isNotEmpty()) Texto(t.anio, tam = 12, lineas = 1, color = C.suave)
         }
     }
 }
