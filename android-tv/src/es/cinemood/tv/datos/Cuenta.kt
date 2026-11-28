@@ -60,6 +60,10 @@ object MiLista {
     }
 
     suspend fun ponerPendiente(t: Titulo, si: Boolean) = Bd.upsert("mi_biblioteca", base(t).put("pendiente", si), "user_id,tmdb_id,tipo")
+    /** Tu nota del 1 al 10 (la misma que en la web). Puntuar la marca como vista */
+    suspend fun puntuar(t: Titulo, nota: Int?) = Bd.upsert("mi_biblioteca",
+        base(t).put("puntuacion", nota ?: JSONObject.NULL).also { if (nota != null) it.put("visto", true) }, "user_id,tmdb_id,tipo")
+
     suspend fun ponerVisto(t: Titulo, si: Boolean) = Bd.upsert("mi_biblioteca", base(t).put("visto", si), "user_id,tmdb_id,tipo")
 }
 

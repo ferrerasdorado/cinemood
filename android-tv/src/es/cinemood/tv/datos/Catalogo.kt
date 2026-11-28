@@ -42,6 +42,7 @@ data class Detalle(
     val similares: List<Titulo>,
     val estado: String,
     val saga: Pair<String, List<Titulo>>? = null,   // la colección a la que pertenece una película
+    val info: InfoNota? = null,                       // para tu nota prevista («Para ti»)
 )
 
 object Catalogo {
@@ -207,6 +208,7 @@ object Catalogo {
             trailer = trailer, reparto = reparto, direccion = direccion, temporadas = temporadas,
             similares = o.optJSONObject("recommendations")?.let { lista(it) }?.take(20) ?: emptyList(),
             estado = o.optString("status"),
+            info = InfoNota.deDetalle(tipo, o),
             saga = o.optJSONObject("belongs_to_collection")?.optInt("id")?.takeIf { it > 0 }?.let { idc ->
                 try {
                     val col = Tmdb.json("/collection/$idc")

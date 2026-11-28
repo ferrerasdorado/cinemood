@@ -4,6 +4,8 @@ package es.cinemood.tv.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -55,6 +57,7 @@ import es.cinemood.tv.datos.Progreso
 import es.cinemood.tv.datos.Tmdb
 import es.cinemood.tv.datos.Titulo
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.focusRequester
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -76,6 +79,9 @@ fun PantallaFicha(t0: Titulo) {
     }
     LaunchedEffect(t0.clave, App.versionLista) { enLista = try { MiLista.estado(t0) } catch (e: Exception) { null } }
     val t = d?.t ?: t0
+    var puntuando by remember { mutableStateOf(false) }
+    var gustoListo by remember { mutableStateOf(es.cinemood.tv.datos.Gusto.listo) }
+    LaunchedEffect(Unit) { if (!gustoListo) { try { es.cinemood.tv.datos.Gusto.preparar() } catch (e: Exception) { }; gustoListo = es.cinemood.tv.datos.Gusto.listo } }
     // Por dónde vas: en series, el último capítulo que viste en esta tele
     // Capítulos vistos (los mismos que en la web)
     var vistos by remember { mutableStateOf<Map<Int, Set<Int>>>(emptyMap()) }
@@ -113,6 +119,17 @@ fun PantallaFicha(t0: Titulo) {
                 vistos = MiLista.marcarEpisodios(t, n, eps, visto, d?.temporadas?.associate { it.numero to it.episodios } ?: emptyMap())
                 App.avisar(if (visto) (if (eps.size > 1) "Temporada $n marcada como vista." else "Marcado como visto.") else "Ya no está marcado como visto.")
                 App.versionLista++
+            } catch (e: Exception) { App.error(e) }
+        }
+    }
+    fun puntuar(n: Int?) {
+        puntuando = false
+        ambito.launch {
+            try {
+                MiLista.puntuar(t, n)
+                App.avisar(if (n != null) "Le has puesto un $n. Tus recomendaciones se actualizan." else "Nota quitada.")
+                App.versionLista++; App.cacheParaTi = emptyList()
+                es.cinemood.tv.datos.Gusto.preparar(forzar = true)
             } catch (e: Exception) { App.error(e) }
         }
     }
@@ -157,6 +174,19 @@ fun PantallaFicha(t0: Titulo) {
                         }
                     }
                     d?.generos?.takeIf { it.isNotEmpty() }?.let { Spacer(Modifier.height(8.dp)); Texto(it.joinToString("  ·  "), tam = 15, color = C.suave) }
+                    // «Para ti»: la nota que le pondrías (el mismo modelo que la web), con el porqué
+                    val prev = remember(d, gustoListo) { d?.info?.let { es.cinemood.tv.datos.Gusto.prever(t.tipo, it) } }
+                    if (enLista?.visto == true && enLista?.puntuacion != null) {
+                        Spacer(Modifier.height(12.dp))
+                        Texto("Tu nota  ${enLista!!.puntuacion}", Modifier.background(C.superficie3, RoundedCornerShape(6.dp)).border(1.dp, C.acentoTexto, RoundedCornerShape(6.dp)).padding(horizontal = 10.dp, vertical = 4.dp), tam = 16, peso = FontWeight.Black, color = C.acentoTexto)
+                    } else if (prev != null && enLista?.visto != true) {
+                        Spacer(Modifier.height(12.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val color = if (prev.nota >= 7.5) C.verde else if (prev.nota >= 6) C.ambar else C.acentoTexto
+                            Texto("Para ti  ${es.cinemood.tv.datos.Gusto.fmt(prev.nota)}", Modifier.background(C.superficie3, RoundedCornerShape(6.dp)).border(1.dp, color, RoundedCornerShape(6.dp)).padding(horizontal = 10.dp, vertical = 4.dp), tam = 16, peso = FontWeight.Black, color = color)
+                            if (prev.motivos.isNotEmpty()) { Spacer(Modifier.width(12.dp)); Texto("Porque " + prev.motivos.joinToString(" y "), tam = 14, color = C.suave, lineas = 1) }
+                        }
+                    }
                     d?.lema?.takeIf { it.isNotBlank() }?.let { Spacer(Modifier.height(10.dp)); Texto("«$it»", tam = 15, peso = FontWeight.Medium, color = C.acentoTexto, lineas = 1) }
                     if (t.sinopsis.isNotEmpty()) { Spacer(Modifier.height(10.dp)); Texto(t.sinopsis, tam = 16, color = C.tinta.copy(alpha = 0.92f), lineas = 4, alto = 24) }
                     if (error != null && d == null) { Spacer(Modifier.height(10.dp)); Texto(error!!, tam = 15, color = C.acentoTexto) }
@@ -184,13 +214,29 @@ fun PantallaFicha(t0: Titulo) {
                         }
                         run {
                             val si = enLista?.visto == true
-                            Boton(if (si) "Vista" else "Marcar vista", { cambiarLista("visto") }, Modifier.focoRecordado("visto"), icono = if (si) "✓" else "👁", activo = si)
+                            val nota = enLista?.puntuacion
+                            // Vista: el botón pasa a ser tu nota y abre la fila para puntuar del 1 al 10
+                            if (si) Boton(if (nota != null) "Tu nota $nota" else "Puntuar", { puntuando = !puntuando }, Modifier.focoRecordado("visto"), icono = "★", activo = true)
+                            else Boton("Marcar vista", { cambiarLista("visto") }, Modifier.focoRecordado("visto"), icono = "👁")
                         }
                         if (seguir != null && d != null) run {
                             val c = contextoVer().copy(desdeCero = true)
                             Boton("Desde el principio", { App.reproducirAuto(ctx, c) }, Modifier.focoRecordado("inicio"), icono = "⟲")
                         }
                         d?.trailer?.let { k -> run { Boton("Tráiler", { Externo.abrirTrailer(ctx, k) }, Modifier.focoRecordado("trailer"), icono = "🎬") } }
+                    }
+                    if (puntuando) {
+                        val fr = remember { androidx.compose.ui.focus.FocusRequester() }
+                        Texto("¿Qué nota le pones?", Modifier.padding(top = 10.dp, bottom = 6.dp), tam = 15, peso = FontWeight.Bold, color = C.tinta)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            (1..10).forEach { n ->
+                                Chip("$n", enLista?.puntuacion == n, { puntuar(n) }, Modifier.let { m -> if (n == (enLista?.puntuacion ?: 7)) m.focusRequester(fr) else m })
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            if (enLista?.puntuacion != null) Boton("Quitar nota", { puntuar(null) }, pequeno = true)
+                            Boton("No la he visto", { puntuando = false; cambiarLista("visto") }, pequeno = true)
+                        }
+                        LaunchedEffect(Unit) { kotlinx.coroutines.delay(60); runCatching { fr.requestFocus() } }
                     }
                     if (seguir != null && seguir.fraccion > 0) {
                         Spacer(Modifier.height(14.dp))

@@ -57,6 +57,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(estado)
         Red.iniciar(applicationContext)
         CacheDisco.iniciar(applicationContext)
+        es.cinemood.tv.datos.Gusto.iniciar(applicationContext)
         // Imágenes: caché en memoria y en disco, con la misma conexión que el resto de la app
         Coil.setImageLoader(
             ImageLoader.Builder(applicationContext)
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
     /** cinemood://ficha/tv/1234 (desde «Seguir viendo» de la pantalla de inicio de la tele) */
     private fun abrirEnlace(i: android.content.Intent?) {
         val u = i?.data ?: return
+        if (u.scheme == "cinemood" && u.host == "noche" && Sesion.iniciada) { App.menu = null; App.fuentes = null; App.irA(Pestana.INICIO); App.abrir(Pantalla.Noche()); return }
         if (u.scheme == "cinemood" && u.host == "buscar" && Sesion.iniciada) {   // cinemood://buscar/tom hanks
             App.menu = null; App.fuentes = null
             App.ultimaBusqueda = u.pathSegments.joinToString(" "); App.versionBusqueda++
@@ -121,6 +123,8 @@ private fun Raiz() {
             androidx.compose.runtime.LaunchedEffect(actual) { App.entradaPantalla = System.currentTimeMillis(); App.huboTecla = false }
             // Tus addons se piden al abrir la app: el panel «Ver» ya los tiene al pulsar
             androidx.compose.runtime.LaunchedEffect(Unit) { try { es.cinemood.tv.datos.Fuentes.addons() } catch (e: Exception) { } }
+            // Tu modelo de gustos se prepara por detrás (la primera vez pide las fichas de lo que has puntuado)
+            androidx.compose.runtime.LaunchedEffect(Unit) { try { es.cinemood.tv.datos.Gusto.preparar() } catch (e: Exception) { } }
             // Cada pantalla conserva su posición (scroll) aunque se salga y se vuelva a ella
             guardado.SaveableStateProvider(actual.clave) {
                 CompositionLocalProvider(LocalPantalla provides actual.clave) {
@@ -134,6 +138,7 @@ private fun Raiz() {
                         is Pantalla.Ficha -> PantallaFicha(actual.t)
                         is Pantalla.Categoria -> PantallaCategoria(actual)
                         is Pantalla.Descargas -> PantallaDescargas()
+                        is Pantalla.Noche -> es.cinemood.tv.ui.PantallaNoche()
                     }
                 }
             }

@@ -26,6 +26,7 @@ sealed class Pantalla(val clave: String) {
     /** Rejilla de títulos: un género, un estado de ánimo, una plataforma… */
     class Categoria(val titulo: String, val tipos: List<String>, val cargar: suspend (tipo: String, pagina: Int) -> List<Titulo>) : Pantalla("cat-$titulo-${tipos.joinToString("")}")
     class Descargas : Pantalla("descargas")
+    class Noche : Pantalla("noche")
 }
 
 /** Contexto de lo que se quiere ver o descargar (película, o capítulo de una serie) */
@@ -54,12 +55,14 @@ object App {
     var ultimaBusqueda = ""
     var versionBusqueda by mutableStateOf(0)   // sube cuando la búsqueda llega desde fuera (enlace)
     var cacheLista: List<es.cinemood.tv.datos.EnLista>? = null
+    var cacheParaTi: List<Pair<Titulo, Double>> = emptyList()
 
     /** Al cerrar sesión o caducar: nada de la cuenta anterior se queda en memoria */
     fun limpiarCuenta() {
-        cacheLista = null; ultimaBusqueda = ""; menu = null; fuentes = null
+        cacheLista = null; cacheParaTi = emptyList(); ultimaBusqueda = ""; menu = null; fuentes = null
         focoGuardado.clear()
         es.cinemood.tv.datos.Fuentes.olvidar()
+        es.cinemood.tv.datos.Gusto.olvidar()
         irA(Pestana.INICIO)
     }
 

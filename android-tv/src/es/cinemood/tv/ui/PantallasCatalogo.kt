@@ -154,6 +154,8 @@ fun PantallaPestana(p: Pestana) {
     // Lo personal no se guarda en disco: Seguir viendo (de esta tele) y Mi lista
     val seguir = remember(App.versionLista) { if (p == Pestana.INICIO) Progreso.lista(ctx) else emptyList() }
     var pendientes by remember { mutableStateOf<List<Titulo>>(emptyList()) }
+    var paraTi by remember { mutableStateOf(App.cacheParaTi) }
+    LaunchedEffect(p) { if (p == Pestana.INICIO && paraTi.isEmpty()) paraTi = try { es.cinemood.tv.datos.Gusto.teVaAEncantar().also { App.cacheParaTi = it } } catch (e: Exception) { emptyList() } }
     LaunchedEffect(p, App.versionLista) {
         if (p == Pestana.INICIO) pendientes = try { MiLista.cargar().filter { it.pendiente && !it.visto }.map { it.t }.take(30) } catch (e: Exception) { emptyList() }
     }
@@ -178,6 +180,9 @@ fun PantallaPestana(p: Pestana) {
                 TarjetaPoster(t, "milista-${t.clave}", { App.ficha(t) }, onLongClick = { menuTitulo(t) })
             }
             item(key = "animos") { FilaAnimos() }
+            fila("parati", "Te va a encantar", paraTi, { it.first.clave }) { (t, n) ->
+                TarjetaPoster(t, "parati-${t.clave}", { App.ficha(t) }, etiqueta = "Para ti ${es.cinemood.tv.datos.Gusto.fmt(n)}", onLongClick = { menuTitulo(t) })
+            }
         }
         d.filas.forEach { f ->
             if (f.clave == "top10") {
@@ -305,7 +310,8 @@ fun sorprendeme() {
 
 @Composable
 fun FilaAnimos() = FilaChips("¿Cómo te sientes hoy?") {
-    item(key = "sorpresa") { Boton("Sorpréndeme", { sorprendeme() }, Modifier.focoRecordado("sorpresa"), icono = "🎲", principal = true) }
+    item(key = "noche") { Boton("¿Qué vemos esta noche?", { App.abrir(Pantalla.Noche()) }, Modifier.focoRecordado("noche"), icono = "🌙", principal = true) }
+    item(key = "sorpresa") { Boton("Sorpréndeme", { sorprendeme() }, Modifier.focoRecordado("sorpresa"), icono = "🎲") }
     items(Catalogo.ANIMOS, key = { it.clave }) { a ->
         Boton("${a.nombre}", icono = a.emoji, modifier = Modifier.focoRecordado("animo-${a.clave}"), onClick = {
             App.abrir(Pantalla.Categoria("Para cuando estás ${a.nombre.lowercase()}", listOf("movie", "tv")) { tipo, pag -> Catalogo.animo(a, tipo, pag) })
