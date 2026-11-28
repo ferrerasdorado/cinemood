@@ -5,3 +5,5 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+# El reproductor carga el decodificador FFmpeg por su nombre (reflexión) y usa código nativo
+-keep class androidx.media3.decoder.ffmpeg.** { *; }

@@ -97,6 +97,9 @@ public class PlayerActivity extends AppCompatActivity {
     private Uri subtituloLocalActivo = null;
     private String idiomaSubLocalActivo = "es";
     private String etiquetaSubLocalActivo = "Subtítulo externo";
+    // Si el audio no está en español, se activa solo el primer subtítulo en español que llegue de los addons
+    private boolean subsEsAuto = false;
+    private boolean subsAutoHecho = false;
 
     @Override
     protected void onCreate(Bundle estado) {
@@ -146,6 +149,7 @@ public class PlayerActivity extends AppCompatActivity {
                 }
             }
 
+            subsEsAuto = obj.optBoolean("subsEsAuto", false);
             agregarListaSubtitulosJson(obj.optJSONArray("subtitulos"));
         } catch (Exception ignored) {
         }
@@ -181,7 +185,7 @@ public class PlayerActivity extends AppCompatActivity {
         try {
             JSONArray arr = new JSONArray(jsonArray);
             act.agregarListaSubtitulosJson(arr);
-            act.runOnUiThread(act::actualizarBotonSubtitulosExternos);
+            act.runOnUiThread(() -> { act.actualizarBotonSubtitulosExternos(); act.quizasSubtituloAutomatico(); });
         } catch (Exception ignored) {
         }
     }
@@ -305,6 +309,27 @@ public class PlayerActivity extends AppCompatActivity {
         setContentView(cont);
     }
 
+    private static boolean esEspanol(String lang) {
+        String l = lang == null ? "" : lang.toLowerCase();
+        return l.equals("es") || l.equals("spa") || l.equals("esp") || l.startsWith("es-") || l.contains("spanish") || l.contains("español") || l.contains("castellano");
+    }
+
+    /** Fuente en inglés: si el archivo no trae subtítulos en español, se pone el primero en español de los addons */
+    private void quizasSubtituloAutomatico() {
+        if (!subsEsAuto || subsAutoHecho || subtituloLocalActivo != null || player == null) return;
+        for (androidx.media3.common.Tracks.Group g : player.getCurrentTracks().getGroups()) {
+            if (g.getType() == C.TRACK_TYPE_TEXT && g.length > 0 && esEspanol(g.getTrackFormat(0).language)) { subsAutoHecho = true; return; }
+        }
+        SubExterno elegido = null;
+        synchronized (subtitulosExternos) {
+            for (SubExterno x : subtitulosExternos) { if (esEspanol(x.lang)) { elegido = x; break; } }
+        }
+        if (elegido == null) return;
+        subsAutoHecho = true;
+        descargarYAplicarSubtitulo(elegido);
+        Toast.makeText(this, "Subtítulos en español activados", Toast.LENGTH_SHORT).show();
+    }
+
     private void actualizarBotonSubtitulosExternos() {
         if (btnSubExternos == null) return;
         int n;
@@ -389,6 +414,11 @@ public class PlayerActivity extends AppCompatActivity {
         playerView.setPlayer(player);
 
         player.addListener(new Player.Listener() {
+            @Override
+            public void onTracksChanged(androidx.media3.common.Tracks tracks) {
+                quizasSubtituloAutomatico();   // ya se sabe si el archivo trae subtítulos propios
+            }
+
             @Override
             public void onPlaybackStateChanged(int playbackState) {
                 if (spinnerCarga != null) {

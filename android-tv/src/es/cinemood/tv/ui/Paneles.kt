@@ -97,7 +97,10 @@ fun PanelFuentesUI(pf: PanelFuentes) {
     var terminado by remember(pf) { mutableStateOf(false) }
     var filtro by remember(pf) { mutableStateOf("todas") }
     var cuantas by remember(pf) { mutableIntStateOf(40) }
+    var subsEsAddons by remember(pf) { mutableStateOf(false) }   // tus addons de subtítulos tienen alguno en español
     val frPrimero = remember { FocusRequester() }
+    val frFiltros = remember { FocusRequester() }   // el filtro elegido
+    val frNas = remember { FocusRequester() }
 
     LaunchedEffect(pf) {
         try {
@@ -107,6 +110,9 @@ fun PanelFuentesUI(pf: PanelFuentes) {
             val addons = Fuentes.addons().filter { it.maneja("stream", tipoS, id) }
             if (addons.isEmpty()) { error = "No tienes addons de fuentes en tu cuenta. Añádelos en la web (Tú → Mis addons) y aparecerán aquí."; terminado = true; return@LaunchedEffect }
             addons.forEach { estados[it.url] = EstadoAddon(it.nombre, "buscando…") }
+            if (!pf.nas) launch {
+                subsEsAddons = try { Fuentes.subtitulos(pf.ctx.t.tipo, id).any { Regex("^(spa|es|esp|es-es|es-419)$", RegexOption.IGNORE_CASE).matches(it.idioma) } } catch (e: Exception) { false }
+            }
             coroutineScope {
                 addons.map { a ->
                     async {
@@ -127,12 +133,17 @@ fun PanelFuentesUI(pf: PanelFuentes) {
 
     val n = resultados.size
     val base = remember(n, pf) { if (pf.nas) resultados.filter { entraEnNas(it, pf) } else resultados.toList() }
-    val filtradas = remember(base, filtro) { Fuentes.ordenar(base.filter { f ->
+    val filtradas = remember(base, filtro, subsEsAddons) { Fuentes.ordenar(base.filter { f ->
         when (filtro) {
             "instante" -> f.sePuedeVer && f.meta.alInstante
             "4k" -> f.meta.calidad >= 2160
             "1080" -> f.meta.calidad == 1080
             "es" -> f.meta.es
+            "ingles" -> f.meta.en && !f.meta.es && (f.meta.subEs || subsEsAddons)
+            "cast" -> f.meta.cast
+            "lat" -> f.meta.lat
+            "720" -> f.meta.calidad == 720
+            "packs" -> f.tipoT.clase == "temporada" || f.tipoT.clase == "serie"
             else -> true
         }
     }) }
@@ -142,7 +153,7 @@ fun PanelFuentesUI(pf: PanelFuentes) {
         Column(
             Modifier.align(Alignment.CenterEnd).fillMaxHeight().fillMaxWidth(0.6f).background(C.superficie)
                 .border(BorderStroke(1.dp, C.linea)).padding(top = 30.dp, start = 30.dp, end = 30.dp)
-                .focusGroup().focusProperties { exit = { FocusRequester.Cancel } },
+                .focusGroup(),
         ) {
             Texto(if (pf.nas) (if (pf.vistaNas == "serie") "Elegir pack de la serie" else if (pf.vistaNas == "temporada") "Elegir pack · Temporada ${pf.ctx.temporada}" else "Elegir torrent para el NAS") else "Elegir fuente",
                 tam = 26, peso = FontWeight.ExtraBold, titulo = true, color = C.tinta)
@@ -158,13 +169,18 @@ fun PanelFuentesUI(pf: PanelFuentes) {
             }, tam = 13, color = if (error != null) C.acentoTexto else C.tenue, lineas = 2)
             Spacer(Modifier.height(10.dp))
             LazyRow(Modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(vertical = 4.dp)) {
-                val opciones = if (pf.nas) listOf("todas" to "Todas", "4k" to "4K", "1080" to "1080p", "es" to "En español")
-                else listOf("todas" to "Todas", "instante" to "⚡ Al instante", "4k" to "4K", "1080" to "1080p", "es" to "En español")
-                items(opciones, key = { it.first }) { (k, n) -> Chip(n, filtro == k, { filtro = k; cuantas = 40 }) }
+                val opciones = listOfNotNull("todas" to "Todas", if (pf.nas) null else "instante" to "⚡ Al instante",
+                    "4k" to "4K", "1080" to "1080p", "720" to "720p", "es" to "En español", "cast" to "Castellano", "lat" to "Latino", if (pf.nas) null else "ingles" to "Inglés + subtítulos ES",
+                    if (pf.ctx.t.esSerie && pf.vistaNas.isEmpty()) "packs" to "Packs" else null)
+                items(opciones, key = { it.first }) { (k, n) ->
+                    // ↓ baja a las fuentes; ↑ no sale del panel
+                    Chip(n, filtro == k, { filtro = k; cuantas = 40 }, Modifier.let { if (filtro == k) it.focusRequester(frFiltros) else it }
+                        .focusProperties { up = FocusRequester.Cancel; down = if (filtradas.isNotEmpty()) frPrimero else FocusRequester.Default })
+                }
             }
             Spacer(Modifier.height(10.dp))
             if (pf.nas && pf.vistaNas.isEmpty() && !pf.ctx.t.esSerie) {
-                Boton("Que elija el NAS (mejor en español)", { App.fuentes = null; enviarNas(pf.ctx.t, listOf(ParteNas())) }, Modifier.padding(bottom = 10.dp), icono = "✨", pequeno = true)
+                Boton("Que elija el NAS (mejor en español)", { App.fuentes = null; enviarNas(pf.ctx.t, listOf(ParteNas())) }, Modifier.padding(bottom = 10.dp).focusRequester(frNas).focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel }, icono = "✨", pequeno = true)
             }
             if (terminado && filtradas.isEmpty() && error == null) {
                 Texto(if (pf.nas && pf.vistaNas == "temporada") "Ningún addon tiene un pack con la temporada ${pf.ctx.temporada} entera. Puedes pedirla igualmente con «Que elija el NAS», o enviar los capítulos sueltos."
@@ -173,10 +189,14 @@ fun PanelFuentesUI(pf: PanelFuentes) {
             }
             LazyColumn(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(10.dp), contentPadding = PaddingValues(bottom = 30.dp, top = 4.dp)) {
                 items(filtradas.take(cuantas), key = { it.clave }) { f ->
-                    TarjetaFuente(f, pf, if (f == filtradas.first()) Modifier.focusRequester(frPrimero) else Modifier, c)
+                    // Las fuentes no dejan salir el foco por los lados; desde la primera, ↑ sube a los filtros
+                    val primera = f == filtradas.first()
+                    val subir = if (pf.nas && pf.vistaNas.isEmpty() && !pf.ctx.t.esSerie) frNas else frFiltros
+                    TarjetaFuente(f, pf, Modifier.let { if (primera) it.focusRequester(frPrimero) else it }
+                        .focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel; if (primera) up = subir }, c)
                 }
                 if (filtradas.size > cuantas) item(key = "mas") {
-                    Boton("Ver ${minOf(40, filtradas.size - cuantas)} más (quedan ${filtradas.size - cuantas})", { cuantas += 40 }, pequeno = true)
+                    Boton("Ver ${minOf(40, filtradas.size - cuantas)} más (quedan ${filtradas.size - cuantas})", { cuantas += 40 }, Modifier.focusProperties { left = FocusRequester.Cancel; right = FocusRequester.Cancel }, pequeno = true)
                 }
             }
         }

@@ -110,6 +110,7 @@ object App {
             .put("progKey", Progreso.clave(ctx.t, ctx.temporada, ctx.episodio))
             .put("inicioSeg", inicio)
             .put("subtitulos", subs)
+            .put("subsEsAuto", !f.meta.es && !f.meta.multi)
         c.startActivity(Intent(c, PlayerActivity::class.java).putExtra(PlayerActivity.EXTRA_PAYLOAD_JSON, datos.toString()))
         // Subtítulos de tus addons de subtítulos (OpenSubtitles…): llegan al reproductor cuando estén
         ambito.launch {
