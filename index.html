@@ -22,9 +22,9 @@
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&f[]=cabinet-grotesk@700,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css?v=29762913">
   <link rel="stylesheet" href="css/editorial.css?v=fffa323c">
-  <link rel="stylesheet" href="css/fuentes-nas.css?v=9c9c7cda">
+  <link rel="stylesheet" href="css/fuentes-nas.css?v=80ab2ce6">
   <link rel="stylesheet" href="css/acceso.css?v=fd2e64dc">
-  <link rel="stylesheet" href="css/componentes.css?v=ed00e26a">
+  <link rel="stylesheet" href="css/componentes.css?v=9b780c5b">
 </head>
 <body class="sin-sesion">
 <div id="splash" aria-hidden="true">
@@ -104,6 +104,14 @@
       </div>
       <div id="inicio-noche"></div>
       <div id="avisos-series" style="display:none"></div>
+      <div id="seguir-viendo-wrap" style="display:none;margin-top:28px">
+        <div class="section-label cv-cab" style="font-size:11px;opacity:0.75">Seguir viendo <span class="sv-nota">en este y en tus otros aparatos</span></div>
+        <div class="scroll-wrap">
+          <div class="scroll-arrow left" aria-label="Desplazar hacia la izquierda" onclick="scrollCarrusel('seguir-viendo-scroll',-1)">‹</div>
+          <div class="similares-scroll sv-scroll" id="seguir-viendo-scroll"></div>
+          <div class="scroll-arrow right" aria-label="Desplazar hacia la derecha" onclick="scrollCarrusel('seguir-viendo-scroll',1)">›</div>
+        </div>
+      </div>
       <div id="continuar-viendo-wrap" style="display:none;margin-top:28px">
         <div class="section-label cv-cab" style="font-size:11px;opacity:0.75">Continuar viendo <button type="button" class="d-saga-link" onclick="abrirMisSeries()">Mis series ›</button></div>
         <div class="scroll-wrap">
@@ -1141,35 +1149,36 @@
   <!-- Versión fija: una actualización de la librería no puede cambiar la app sin que lo sepamos -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js"></script>
   <script src="js/nucleo.js?v=0183641f"></script>
-  <script src="js/dialogos.js?v=de5e07b9"></script>
-  <script src="js/accesibilidad.js?v=cdaf4fe3"></script>
-  <script src="js/navegacion.js?v=ceab7fc5"></script>
-  <script src="js/animo.js?v=4760fb6f"></script>
-  <script src="js/descubre.js?v=7eff533c"></script>
-  <script src="js/ficha.js?v=875da479"></script>
+  <script src="js/dialogos.js?v=7033055e"></script>
+  <script src="js/accesibilidad.js?v=e1e5ac07"></script>
+  <script src="js/navegacion.js?v=e5d35dd6"></script>
+  <script src="js/animo.js?v=1d3cc21a"></script>
+  <script src="js/descubre.js?v=ac1b4cc7"></script>
+  <script src="js/ficha.js?v=71524434"></script>
   <script src="js/similares.js?v=d43f55ea"></script>
-  <script src="js/especiales.js?v=4b07292f"></script>
+  <script src="js/especiales.js?v=d0ad9239"></script>
   <script src="js/colecciones.js?v=f61821eb"></script>
-  <script src="js/rutas.js?v=595bc8f2"></script>
+  <script src="js/rutas.js?v=3e068d44"></script>
   <script src="js/mi-actividad.js?v=a6d6134e"></script>
-  <script src="js/juegos.js?v=974e0aa7"></script>
+  <script src="js/juegos.js?v=d23fbb97"></script>
   <script src="js/estadisticas.js?v=d4b25b7b"></script>
   <script src="js/extras-ficha.js?v=1dd5303a"></script>
   <script src="js/herramientas.js?v=1cc41103"></script>
   <script src="js/cuenta.js?v=876d6242"></script>
   <script src="js/premios.js?v=2cc04885"></script>
   <script src="js/esta-noche.js?v=b879e5ab"></script>
-  <script src="js/prediccion.js?v=ebb759fa"></script>
+  <script src="js/prediccion.js?v=207e778c"></script>
   <script src="js/addons.js?v=cb813685"></script>
-  <script src="js/fuentes.js?v=87b70bbc"></script>
-  <script src="js/reproductor.js?v=f6233454"></script>
-  <script src="js/subtitulos.js?v=af5f443a"></script>
+  <script src="js/fuentes.js?v=544b7917"></script>
+  <script src="js/reproductor.js?v=b8b25d4b"></script>
+  <script src="js/progreso.js?v=20e1e13d"></script>
+  <script src="js/subtitulos.js?v=e0ab1815"></script>
   <script src="js/videos.js?v=2fe823c5"></script>
-  <script src="js/hosters.js?v=814f88b9"></script>
-  <script src="js/nas.js?v=5228b1b6"></script>
-  <script src="js/mi-lista.js?v=0a7cccdf"></script>
+  <script src="js/hosters.js?v=3743bfc6"></script>
+  <script src="js/nas.js?v=1dba534e"></script>
+  <script src="js/mi-lista.js?v=d80120a3"></script>
   <script src="js/app.js?v=dad4b376"></script>
-  <script src="js/mi-lista-arranque.js?v=f60f642c"></script>
+  <script src="js/mi-lista-arranque.js?v=375fe791"></script>
   <script src="js/modo-tv.js?v=dee43860"></script>
   <script src="js/service-worker.js?v=9c0366c7"></script>
 </body>

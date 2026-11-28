@@ -6,6 +6,7 @@
       let fila=null, card=null, x0=0, y0=0, dx=0, decidido=false;
       document.addEventListener('touchstart', e=>{
         const f = e.target.closest && e.target.closest('#biblioteca-lista .ml-swipe'); if(!f || e.touches.length!==1) return;
+        if(e.touches[0].clientX < 24) return;   // desde el borde es el gesto de «atrás», no el de la fila
         fila = f; card = f.querySelector('.ml-fila'); x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; decidido = false;
       }, {passive:true});
       document.addEventListener('touchmove', e=>{
@@ -23,8 +24,11 @@
         c.style.transition = 'transform 0.2s ease-out';
         if(Math.abs(dx) < umbral){ c.style.transform = ''; return; }
         c.style.transform = `translateX(${dx<0?'-':''}110%)`;
-        const id = Number(c.dataset.id);
-        setTimeout(()=>{ if(dx<0) _mlCambiarEstado(id,{visto:true,pendiente:false}); else _mlCambiarEstado(id,{pendiente:false}); }, 180);
+        const id = Number(c.dataset.id), d = dx;   // se fija ya: otro toque podría cambiar dx antes del temporizador
+        setTimeout(async ()=>{
+          try{ await (d<0 ? _mlCambiarEstado(id,{visto:true,pendiente:false}) : _mlCambiarEstado(id,{pendiente:false})); }
+          catch(e){ c.style.transform = ''; f.classList.remove('a-vista','a-quitar'); }
+        }, 180);
       };
       document.addEventListener('touchend', fin, {passive:true});
       document.addEventListener('touchcancel', fin, {passive:true});

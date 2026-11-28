@@ -359,6 +359,7 @@
     }
 
     async function cargarContinuarViendo(){
+      cargarSeguirViendo();
       const wrap = document.getElementById('continuar-viendo-wrap');
       if(!sesionActual){ wrap.style.display='none'; return; }
       const { data, error } = await sb.from('mi_biblioteca').select('*')

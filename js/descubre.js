@@ -409,7 +409,7 @@
     }
     function _descTarjeta(p, arr, i){
       return `<div class="desc-card" data-k="${p.id}-${p._tipo}" onclick="abrirDetalle(${arr}[${i}])" ${_lp({id:p.id,tipo:p._tipo,t:p.title,poster:p.poster_path,f:p.release_date})}>
-        <div class="desc-poster"><img loading="lazy" src="https://image.tmdb.org/t/p/w342${p.poster_path}" alt="">${_descBadgeFecha(p)}${_descMarca(p)}${_prevBadge(p)}</div>
+        <div class="desc-poster"><img loading="lazy" src="https://image.tmdb.org/t/p/w342${p.poster_path}" alt="">${_descBadgeFecha(p)}${_descMarca(p)}${_prevBadge(p)}${p._tipo==='tv' ? '<span class="cinta-serie">Serie</span>' : ''}</div>
         <div class="desc-t">${_escHtml(p.title)}</div>
         <div class="desc-m">${_descFecha(p)}${p._g!==undefined && p._tipo==='tv' ? ' · Serie' : ''}${p.vote_average ? ` · ★ ${p.vote_average.toFixed(1)}` : ''}</div></div>`;
     }

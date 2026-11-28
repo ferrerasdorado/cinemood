@@ -76,13 +76,16 @@
       document.getElementById('visor-titulo').textContent = ctx.titulo;
       document.getElementById('visor-sub').textContent = subTxt;
       _subtitulosPreparar(ctx);
+      await progresoTraerPos(ctx, key);   // si en otro aparato llegaste más lejos, se sigue desde ahí
+      if(miTurno !== window._visorTurno) return;
       let ultimo = Date.now(), retomoAplicado = false, fallbackHlsIntentado = false;
       const retomar = ()=>{
         if(retomoAplicado) return; retomoAplicado = true;
         const t = parseFloat(localStorage.getItem(key)||'0');
         if(t>5 && (!isFinite(v.duration) || t<v.duration*0.92)){ try{ v.currentTime = t; }catch(e){} }
       };
-      const guardar = ()=>{ if(v.currentTime>1 && (!isFinite(v.duration) || v.duration>10)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){} } };
+      const guardar = forzar=>{ if(v.currentTime>1 && (!isFinite(v.duration) || v.duration>10)) { try{ localStorage.setItem(key, String(v.currentTime)); }catch(e){}
+        if(isFinite(v.duration) && v.duration>30 && v.currentTime >= v.duration*0.92) progresoTerminado(ctx); else progresoSubir(ctx, v.currentTime, v.duration, forzar===true); } };
       const mostrarError = detalle=>{
         if(miTurno !== window._visorTurno) return;
         _visorProblema('No se puede reproducir aquí: '+detalle, s, ctx);
@@ -94,10 +97,14 @@
         if(miTurno === window._visorTurno && v.readyState < 1 && err.hidden)
           _visorProblema('Esta fuente no arranca: probablemente su formato no se puede ver en el navegador.', s, ctx, true);
       }, 12000);
+      let sonidoComprobado = false;
       v.onplaying = ()=>{
         if(miTurno !== window._visorTurno) return;
         err.hidden = true;
-        if(!('webkitAudioDecodedByteCount' in v)) return;
+        // el aviso de «sin sonido» se comprueba una sola vez por fuente, y no en vídeos que no tienen pista de audio
+        if(sonidoComprobado || !('webkitAudioDecodedByteCount' in v)) return;
+        sonidoComprobado = true;
+        if(v.audioTracks && v.audioTracks.length===0) return;
         setTimeout(()=>{
           if(miTurno === window._visorTurno && !v.paused && !v.muted && v.currentTime > 1.5 && v.webkitAudioDecodedByteCount === 0 && err.hidden)
             _visorProblema('Se ve pero sin sonido: el audio de esta fuente no se puede reproducir en el navegador.', s, ctx, true);
@@ -105,9 +112,9 @@
       };
       v.onloadedmetadata = ()=>{ clearTimeout(window._visorVigia); retomar(); };
       v.ontimeupdate = ()=>{ if(Date.now()-ultimo>10000){ ultimo = Date.now(); guardar(); } };
-      v.onpause = guardar;
-      v.onended = ()=>{ try{ localStorage.removeItem(key); }catch(e){} };
-      window._visorGuardar = guardar;
+      v.onpause = ()=>guardar(true);
+      v.onended = ()=>{ try{ localStorage.removeItem(key); }catch(e){} progresoTerminado(ctx); };
+      window._visorGuardar = ()=>guardar(true);
       ov.classList.add('activo');
       document.body.style.overflow = 'hidden';
 
@@ -126,7 +133,12 @@
             hls.on(window.Hls.Events.ERROR, (_, data)=>{
               if(!data || !data.fatal) return;
               if(data.type === window.Hls.ErrorTypes.NETWORK_ERROR) mostrarError('Error de red o bloqueo CORS al cargar la lista HLS.');
-              else if(data.type === window.Hls.ErrorTypes.MEDIA_ERROR){ try{ hls.recoverMediaError(); }catch(e){ mostrarError('No se pudo decodificar el flujo HLS.'); } }
+              else if(data.type === window.Hls.ErrorTypes.MEDIA_ERROR){
+                // se intenta recuperar como mucho dos veces (la segunda cambiando el códec de audio); después, error
+                hls._cmRecup = (hls._cmRecup||0) + 1;
+                try{ if(hls._cmRecup===1) hls.recoverMediaError(); else if(hls._cmRecup===2){ hls.swapAudioCodec(); hls.recoverMediaError(); } else mostrarError('No se pudo decodificar el flujo HLS.'); }
+                catch(e){ mostrarError('No se pudo decodificar el flujo HLS.'); }
+              }
               else mostrarError('No se pudo iniciar el flujo HLS.');
             });
             hls.loadSource(src);
@@ -179,6 +191,17 @@
       const lista = window._fteReproducibles || [];
       const i = lista.findIndex(x=>x.s.url===s.url);
       const otra = lista.slice(i+1).find(x=>x.s.url!==s.url) || (i<0 ? lista[0] : null);
+      // Como en la tele: si hay otra fuente que se ve aquí, se pasa sola a ella (hasta 3 veces por título)
+      const k = _progKey(ctx), auto = window._visorAuto && window._visorAuto.k===k ? window._visorAuto : (window._visorAuto = {k, n:0});
+      if(otra && auto.n < 3){
+        auto.n++;
+        const turno = window._visorTurno;
+        err.replaceChildren(_fEl('p',{text:texto}), _fEl('p',{class:'visor-auto',text:`Probando otra fuente que se ve aquí (${auto.n} de 3)…`}),
+          _fEl('div',{class:'visor-error-acc'}, _fEl('button',{type:'button',class:'visor-btn',onclick:()=>{ auto.n = 3; _visorProblema(texto, s, ctx, puedeEsperar); }},'No, déjame elegir')));
+        err.hidden = false;
+        setTimeout(()=>{ if(window._visorTurno===turno && auto.n<=3 && !err.hidden && err.querySelector('.visor-auto')) reproducirFuente(otra.s,{...ctx,fuente:otra.s.name||otra.a.nombre}); }, 1800);
+        return;
+      }
       err.replaceChildren(
         _fEl('p',{text:texto}),
         _fEl('div',{class:'visor-error-acc'},
@@ -193,6 +216,7 @@
       window._visorTurno = (window._visorTurno||0) + 1;
       window._visorSrcActual = '';
       if(window._visorGuardar) window._visorGuardar();
+      setTimeout(cargarSeguirViendo, 800);   // la fila de Inicio se pone al día
       v.onpause = v.ontimeupdate = v.onerror = v.onended = v.onloadedmetadata = v.onplaying = null;
       clearTimeout(window._visorVigia);
       _limpiarMotoresVisor();

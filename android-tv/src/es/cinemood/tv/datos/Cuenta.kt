@@ -1,6 +1,7 @@
 package es.cinemood.tv.datos
 
 import android.content.Context
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -151,6 +152,55 @@ data class Progresion(val t: Titulo, val temporada: Int?, val episodio: Int?, va
 
 object Progreso {
     private const val PREFS = "progreso"
+    // «Seguir viendo» compartido con el móvil y la web (tabla mi_progreso de supabase/progreso.sql).
+    // Si la tabla aún no existe, todo sigue funcionando solo en esta tele.
+    private val ambito = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+    @Volatile private var sinTabla = false
+
+    private fun subir(ctx: Context, clave: String, o: JSONObject) {
+        if (sinTabla || !Sesion.iniciada) return
+        val app = ctx.applicationContext
+        ambito.launch {
+            try {
+                val t = o.optInt("temporada", -1); val e = o.optInt("episodio", -1)
+                Bd.upsert("mi_progreso", JSONObject().put("user_id", Sesion.uid).put("clave", clave).put("tmdb_id", o.optInt("id")).put("tipo", o.optString("tipo"))
+                    .put("temporada", if (t >= 0) t else JSONObject.NULL).put("episodio", if (e >= 1) e else JSONObject.NULL)
+                    .put("titulo", o.optString("nombre").take(300)).put("poster", o.optString("poster").take(200)).put("fondo", o.optString("fondo").take(200))
+                    .put("pos_seg", o.optLong("pos")).put("dur_seg", o.optLong("dur")).put("actualizado", java.time.Instant.ofEpochMilli(o.optLong("cuando")).toString()), "user_id,clave")
+                val p = app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                p.getString(clave, null)?.let { runCatching { JSONObject(it) }.getOrNull() }?.let { p.edit().putString(clave, it.put("sinc", true).toString()).apply() }
+            } catch (x: ErrorHttp) { if (x.codigo == 404 || "mi_progreso" in x.cuerpo) sinTabla = true } catch (x: Exception) { }
+        }
+    }
+
+    private fun borrarRemoto(filtro: String) {
+        if (sinTabla || !Sesion.iniciada) return
+        ambito.launch { try { Bd.borrar("mi_progreso", "user_id=eq.${Sesion.uid}&$filtro") } catch (x: Exception) { } }
+    }
+
+    /** Trae lo que hayas visto en otros aparatos (lo más reciente gana) y quita lo que allí ya terminaste */
+    suspend fun sincronizar(ctx: Context) {
+        if (sinTabla || !Sesion.iniciada) return
+        val filas = try { Bd.select("mi_progreso", "select=*&user_id=eq.${Sesion.uid}&order=actualizado.desc&limit=60") }
+            catch (x: ErrorHttp) { if (x.codigo == 404 || "mi_progreso" in x.cuerpo) sinTabla = true; return } catch (x: Exception) { return }
+        val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val ed = p.edit()
+        val remotas = HashSet<String>()
+        for (i in 0 until filas.length()) {
+            val r = filas.getJSONObject(i); val k = r.optString("clave"); remotas += k
+            val cuando = runCatching { java.time.Instant.parse(r.optString("actualizado").replace(" ", "T").let { if (it.endsWith("Z") || it.contains('+')) it else it + "Z" }).toEpochMilli() }.getOrDefault(0L)
+            val local = p.getString(k, null)?.let { runCatching { JSONObject(it) }.getOrNull() }
+            if (local == null || local.optLong("cuando") < cuando) {
+                ed.putString(k, JSONObject().put("id", r.optInt("tmdb_id")).put("tipo", r.optString("tipo")).put("nombre", r.optString("titulo"))
+                    .put("poster", r.optString("poster")).put("fondo", r.optString("fondo")).put("anio", local?.optString("anio") ?: "")
+                    .put("temporada", if (r.isNull("temporada")) -1 else r.optInt("temporada")).put("episodio", if (r.isNull("episodio")) -1 else r.optInt("episodio"))
+                    .put("pos", r.optLong("pos_seg")).put("dur", r.optLong("dur_seg")).put("cuando", cuando).put("sinc", true).toString())
+            }
+        }
+        // Lo que ya estaba en tu cuenta y ha desaparecido de allí, lo terminaste en otro aparato
+        p.all.forEach { (k, v) -> if (k !in remotas && runCatching { JSONObject(v as String).optBoolean("sinc") }.getOrDefault(false)) ed.remove(k) }
+        ed.apply()
+    }
 
     fun clave(t: Titulo, temporada: Int?, episodio: Int?) =
         if (t.esSerie && temporada != null && episodio != null) "tv-${t.id}-$temporada-$episodio" else "${t.tipo}-${t.id}"
@@ -164,6 +214,9 @@ object Progreso {
         if (durSeg > 30 && posSeg >= durSeg * 0.92) {
             p.edit().remove(clave).apply()
             olvidarAnteriores(ctx, o)
+            if (o.optString("tipo") == "tv") { val t = o.optInt("temporada"); val e = o.optInt("episodio")
+                borrarRemoto("tmdb_id=eq.${o.optInt("id")}&tipo=eq.tv&or=(temporada.lt.$t,and(temporada.eq.$t,episodio.lte.$e))") }
+            else borrarRemoto("clave=eq.${Red.cod(clave)}")
             if (o.optString("tipo") == "movie") CanalTv.quitar(ctx, "movie", o.optInt("id"))   // en series sigue el siguiente capítulo
             return
         }
@@ -171,6 +224,7 @@ object Progreso {
         o.put("pos", posSeg).put("dur", durSeg).put("cuando", System.currentTimeMillis())
         p.edit().putString(clave, o.toString()).apply()
         CanalTv.publicar(ctx, o, posSeg, durSeg)
+        subir(ctx, clave, o)
     }
 
     /** Visto un capítulo, los que se dejaron a medias antes ya no son «por dónde vas» */
@@ -220,5 +274,6 @@ object Progreso {
     fun quitar(ctx: Context, pr: Progresion) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(clave(pr.t, pr.temporada, pr.episodio)).apply()
         CanalTv.quitar(ctx, pr.t.tipo, pr.t.id)
+        borrarRemoto("tmdb_id=eq.${pr.t.id}&tipo=eq.${pr.t.tipo}")
     }
 }

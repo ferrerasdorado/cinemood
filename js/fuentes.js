@@ -41,6 +41,7 @@
     function cerrarFuentes(){
       document.getElementById('fuentes-modal').classList.remove('activo');
       window._fte = null;
+      window._fteReproducibles = [];   // «Probar otra» no puede ofrecer fuentes de otro título
       window._fteTurno = (window._fteTurno||0) + 1;   // descarta lo que aún estuviera cargando
       if(!document.getElementById('visor').classList.contains('activo')) document.body.style.overflow = '';
     }
@@ -200,6 +201,11 @@
       const temp = ctx.serieNas && ctx.vista==='serie' ? ctx.temporadas[0].n : ctx.season;
       const vid = ctx.tipo==='tv' ? `${imdb}:${temp}:${ep}` : imdb;
       const cands = addons.filter(a=>_addonManeja(a,'stream',tipoA,vid));
+      // ¿Tus addons de subtítulos tienen alguno en español para esto? (para el filtro «Inglés + subtítulos ES»)
+      window._fteSubsEs = false;
+      if(!ctx.nas){ const subsA = addons.filter(a=>_addonManeja(a,'subtitles',tipoA,vid));
+        Promise.all(subsA.map(a=>_fetchAddon(_addonUrl(a,'subtitles',tipoA,vid)).then(d=>(d&&d.subtitles||[]).some(x=>/^(spa|es|esp|es-es|es-419)$/i.test(x.lang||''))).catch(()=>false)))
+          .then(r=>{ if(window._fte===ctx && r.some(Boolean)){ window._fteSubsEs = true; if(typeof window._ftePintar==='function') window._ftePintar(); } }); }
       if(!cands.length){ body.replaceChildren(...[intro].filter(Boolean), _fEl('p',{class:'fte-msg',text:'Ninguno de tus addons da fuentes de vídeo para '+(ctx.tipo==='tv'?'series':'películas')+'. Revisa «Mis addons».'})); return; }
 
       const resultados = [], estados = new Map(cands.map(a=>[a, {txt:'buscando…', ok:null}]));
@@ -224,7 +230,7 @@
           sel('subtitulos','Subtítulos',[['todos','Sin filtrar'],['es','En español'],['en','En inglés'],['indicados','Con alguno'],['desconocidos','Sin información']]),
           cands.length>1 ? sel('proveedor','Addon',[['todos','Todos'],...cands.map((a,i)=>[String(i),a.nombre])]) : null));
       const controles = _fEl('div',{class:'fte-controles'},
-        chips('idioma','Idioma',[['todos','Todos'],['es','Español'],['cast','Castellano'],['lat','Latino'],['en','Inglés']]),
+        chips('idioma','Idioma',[['todos','Todos'],['es','Español'],['cast','Castellano'],['lat','Latino'],['en','Inglés']].concat(ctx.nas ? [] : [['ensub','Inglés + subtítulos ES']])),
         chips('resolucion','Calidad',[['todas','Todas'],['2160','4K'],['1080','1080p'],['720','720p']]),
         ctx.nas ? null : chips('aqui','Ver',[['todo','Todo'],['aqui','▶ Se ve aquí']]),
         _fEl('div',{class:'fte-fila-orden'}, buscar, selOrden), mas);
@@ -245,6 +251,7 @@
         if(f.idioma==='cast'&&!m.cast)return false;
         if(f.idioma==='lat'&&!m.lat)return false;
         if(f.idioma==='en'&&!m.en)return false;
+        if(f.idioma==='ensub'&&!(m.en&&!m.es&&(m.subEs||window._fteSubsEs)))return false;   // en inglés, con subtítulos en español (del archivo o de tus addons)
         if(f.idioma==='multi'&&!m.multi)return false;
         if(f.idioma==='desconocido'&&m.idiomaConocido)return false;
         if(/^\d+$/.test(f.resolucion)&&m.calidad!==Number(f.resolucion))return false;
@@ -271,6 +278,7 @@
         });
         return lista;
       }
+      window._ftePintar = ()=>{ if(window._fte===ctx) pintar(); };
       function pintar(){
         if(!vivo()) return;
         const entran = resultados.filter(r=>_fteEntra(r, ctx));

@@ -162,6 +162,12 @@ que la web y el móvil (Supabase), así que lo que se hace en un sitio aparece e
 Código: `android-tv/src/es/cinemood/tv/` (`datos/` = Supabase, TMDB, addons, lista y NAS; `ui/` = pantallas).
 Compilar: `android-tv/compilar.sh` · instalar en la tele por ADB y precompilar: `android-tv/instalar.sh [IP:PUERTO]`.
 
+### «Seguir viendo» compartido entre aparatos
+
+Por dónde vas en cada película o capítulo se guarda en tu cuenta (tabla `mi_progreso`): empiezas en la tele y sigues en
+el móvil en el mismo minuto, y al revés. Hay que ejecutar una vez `supabase/progreso.sql` en Supabase → SQL Editor;
+mientras no exista la tabla, cada aparato recuerda solo lo suyo, como antes.
+
 ## Pruebas
 
 ```

@@ -1205,7 +1205,12 @@
     }
 
     // ── Listas que se generan con TMDB ──
-    async function _tmdbJson(ruta){ return (await fetch(`${TMDB_PROXY}?path=${ruta}`)).json(); }
+    // Un error del catálogo (401, 500…) no se devuelve como si fueran datos: así no se guarda en caché como «vacío»
+    async function _tmdbJson(ruta){
+      const r = await fetch(`${TMDB_PROXY}?path=${ruta}`); const d = await r.json();
+      if(!r.ok || (d && d.success===false)) throw new Error('El catálogo respondió '+r.status);
+      return d;
+    }
     function _itemDesdeTmdb(r, tipo, tag){
       const f = r.release_date || r.first_air_date || '';
       return {t:r.title||r.name||'', y:f?Number(f.slice(0,4)):'', f, tipo, tmdb_id:r.id, tag:tag||'', p:r.overview||'', poster:r.poster_path||'', voto:r.vote_average||0, g:r.genre_ids||[]};

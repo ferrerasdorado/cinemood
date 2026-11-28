@@ -86,7 +86,9 @@ fun PantallaFicha(t0: Titulo) {
     // Capítulos vistos (los mismos que en la web)
     var vistos by remember { mutableStateOf<Map<Int, Set<Int>>>(emptyMap()) }
     LaunchedEffect(t0.clave, App.versionLista) { if (t0.esSerie) vistos = try { MiLista.episodiosVistos(t0) } catch (e: Exception) { emptyMap() } }
-    val progresos = remember(App.versionLista, App.pila.size) { Progreso.deTitulo(ctx, t0) }
+    var versionProgreso by remember { mutableStateOf(0) }
+    LaunchedEffect(t0.clave) { Progreso.sincronizar(ctx); versionProgreso++ }
+    val progresos = remember(App.versionLista, App.pila.size, versionProgreso) { Progreso.deTitulo(ctx, t0) }
     // «Por dónde vas»: el capítulo a medias más reciente que no esté ya visto
     val seguir = remember(progresos, vistos) { progresos.values.filter { p -> p.temporada == null || p.episodio !in (vistos[p.temporada] ?: emptySet()) }.maxByOrNull { it.cuando } }
     LaunchedEffect(d) {

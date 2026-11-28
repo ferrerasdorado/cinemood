@@ -56,8 +56,11 @@
           .eq('tmdb_id', p.id).eq('tipo', tipo).in('estado', _NAS_ACTIVOS);
         if(!errLeer && Array.isArray(activas)){
           const enCola = new Set(activas.map(a=>_nasClave(tipo,p.id,a.temporada,a.episodio)));
+          const serieEnCola = activas.some(a=>a.temporada==null && a.episodio==null);
           const antes = filas.length;
-          filas = filas.filter(f=>!enCola.has(_nasClave(tipo,f.tmdb_id,f.temporada,f.episodio)));
+          // también cuenta lo que ya cubre algo más grande en cola: la serie entera cubre todo y una temporada, sus capítulos
+          filas = filas.filter(f=>!enCola.has(_nasClave(tipo,f.tmdb_id,f.temporada,f.episodio)) && !(tipo==='tv' && serieEnCola)
+            && !(f.episodio!=null && enCola.has(_nasClave(tipo,f.tmdb_id,f.temporada,null))));
           repetidas = antes - filas.length;
         }
         if(!filas.length){
@@ -243,8 +246,8 @@
       const enMarcha = _nasMis.filas.some(f=>_NAS_ACTIVOS.includes(f.estado));
       if(!enMarcha) return;
       _nasMis.timer = setTimeout(()=>{
-        if(!document.getElementById('p-nas').classList.contains('activa')) return;
-        if(document.hidden){ _nasProgramarRefresco(); return; }
+        // fuera de «Mis descargas» o con la app en segundo plano: se vuelve a intentar más tarde (al volver se pone al día)
+        if(!document.getElementById('p-nas').classList.contains('activa') || document.hidden){ _nasProgramarRefresco(); return; }
         cargarMisDescargas(true);
       }, 15000);
     }
@@ -412,10 +415,11 @@
       if(!_nasConfirmado(btn)) return;
       btn.disabled = true;
       try{
-        const {error:e1} = await sb.from('solicitudes_descarga').update({cancelar:true}).eq('id', f.id).eq('user_id', sesionActual.user.id);
-        if(e1) throw e1;
+        // primero la nueva petición y luego cancelar la atascada: si algo falla, no se queda sin ninguna
         const {error:e2} = await sb.from('solicitudes_descarga').insert({tmdb_id:f.tmdb_id, tipo:f.tipo, titulo:f.titulo, temporada:f.temporada, episodio:f.episodio});
         if(e2) throw e2;
+        const {error:e1} = await sb.from('solicitudes_descarga').update({cancelar:true}).eq('id', f.id).eq('user_id', sesionActual.user.id);
+        if(e1) throw e1;
         _nasAviso('Buscando otro torrent: el NAS quitará el atascado y probará con uno distinto.');
       }catch(e){ console.error(e); btn.disabled = false; _nasAviso(_nasTextoError(e, 'No se pudo cambiar de torrent.'), true); return; }
       cargarMisDescargas(true);
@@ -439,10 +443,11 @@
     async function _nasReintentar(filas, btn){
       if(btn) btn.disabled = true;
       try{
-        const nuevas = filas.map(f=>({tmdb_id:f.tmdb_id,tipo:f.tipo,titulo:f.titulo,temporada:f.temporada,episodio:f.episodio,
+        // lo que ya vuelve a estar en marcha (p. ej. tras «Probar con otro torrent») no se pide otra vez
+        const activas = new Set((_nasMis.filas||[]).filter(x=>_NAS_ACTIVOS.includes(x.estado)).map(x=>_nasClave(x.tipo,x.tmdb_id,x.temporada,x.episodio)));
+        const nuevas = filas.filter(f=>!activas.has(_nasClave(f.tipo,f.tmdb_id,f.temporada,f.episodio))).map(f=>({tmdb_id:f.tmdb_id,tipo:f.tipo,titulo:f.titulo,temporada:f.temporada,episodio:f.episodio,
           ...(f.info_hash?{info_hash:f.info_hash,fuente:f.fuente}:{})}));
-        const {error} = await sb.from('solicitudes_descarga').insert(nuevas);
-        if(error) throw error;
+        if(nuevas.length){ const {error} = await sb.from('solicitudes_descarga').insert(nuevas); if(error) throw error; }
         const {error:errB} = await sb.from('solicitudes_descarga').delete().in('id', filas.map(f=>f.id)).eq('user_id', sesionActual.user.id);
         if(errB) console.warn('No se pudo quitar la solicitud fallida:', errB);
         _nasAviso(filas.length===1 ? 'Vuelve a estar en la cola del NAS.' : filas.length+' solicitudes vuelven a estar en la cola del NAS.');

@@ -138,7 +138,7 @@ function instalarDbFalsa() {
   await page.evaluate(instalarDbFalsa);
   const a11y = await page.evaluate(() => ({
     zoom: !/user-scalable=no|maximum-scale/.test(document.querySelector('meta[name=viewport]').content),
-    sinRol: [...document.querySelectorAll('[onclick]')].filter(e => !e.matches('button, a[href], input, select, textarea, label, summary, video, audio') && e.getAttribute('role') !== 'button').length,
+    sinRol: [...document.querySelectorAll('[onclick]')].filter(e => !e.matches('button, a[href], input, select, textarea, label, summary, video, audio') && !e.matches('#fuentes-modal, [id$="-overlay"], [id$="-visor"], .modal-fondo, .cm-dlg-fondo') && e.getAttribute('role') !== 'button').length,
     camposSinEtiqueta: [...document.querySelectorAll('input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range])')].filter(i => !i.getAttribute('aria-label') && !(i.id && document.querySelector('label[for="' + i.id + '"]')) && !i.closest('label')).length,
   }));
   ok(a11y.zoom, 'Se puede hacer zoom (sin user-scalable=no)');
@@ -263,10 +263,10 @@ function instalarDbFalsa() {
     reproducirFuente(window._fteReproducibles[0].s, { ...window._fte, fuente: 'Mala' }); });
   await page.waitForSelector('#visor-error:not([hidden])', { timeout: 20000 }).catch(() => {});
   const aviso12 = await page.textContent('#visor-error');
-  ok(/no arranca/.test(aviso12) && await page.isVisible('#visor-error button:has-text("Probar otra que se ve aquí")'), 'Si una fuente no arranca, aviso con «Probar otra que se ve aquí»');
+  ok(/no arranca/.test(aviso12) && /Probando otra fuente/.test(aviso12), 'Si una fuente no arranca, avisa y pasa sola a otra que se ve aquí');
   await foto('3a-no-arranca');
-  await page.click('#visor-error button:has-text("Probar otra que se ve aquí")'); await esperar(3500);
-  ok(await page.evaluate(() => document.querySelector('#visor video').currentTime > 0.5 && document.getElementById('visor-error').hidden), '«Probar otra» reproduce la siguiente compatible');
+  await esperar(5500);
+  ok(await page.evaluate(() => document.querySelector('#visor video').currentTime > 0.5 && document.getElementById('visor-error').hidden), 'Pasa sola a la siguiente compatible y se reproduce');
   await page.click('.visor-cerrar');
 
   await page.evaluate(() => cerrarFuentes());
@@ -315,6 +315,13 @@ function instalarDbFalsa() {
   await page.click('#fte-body .nas-intro button:has-text("Que elija el NAS")'); await esperar(800);
   filas = (await db()).filter(f => f.tipo === 'tv');
   ok(filas.some(f => f.temporada === 2 && f.episodio === null && !f.info_hash), '«Que elija el NAS» → una petición de la temporada 2 (el NAS busca el pack)');
+  // Un capítulo de una temporada que ya está entera en cola no se vuelve a pedir (no se descarga dos veces)
+  const antesCubierto = (await db()).length;
+  await page.evaluate(() => _enviarSolicitudesNAS([{ temporada: 1, episodio: 5 }])); await esperar(500);
+  const despuesCubierto = (await db()).length, avisoCubierto = await aviso();
+  ok(despuesCubierto === antesCubierto && /ya está|ya están/i.test(avisoCubierto), `Un capítulo de una temporada ya en cola no se pide otra vez (${antesCubierto}→${despuesCubierto}: «${avisoCubierto.slice(0, 70)}»)`);
+  // Para probar los capítulos sueltos se apartan un momento los packs en cola (se devuelven después)
+  await page.evaluate(() => window.__db.solicitudes_descarga.forEach(f => { if (f.episodio == null && f.estado === 'pendiente') { f.estado = 'apartada'; } }));
   // Capítulos sueltos: marcar varios
   await page.click('#btn-descargar-nas'); await esperarLista();
   await page.click('#fte-sel .nas-seg-btn:has-text("Capítulos")');
@@ -344,6 +351,7 @@ function instalarDbFalsa() {
   await page.locator('#fte-body .fte-card .fte-btn-prim').first().click(); await esperar(800);
   filas = (await db()).filter(f => f.tipo === 'tv');
   ok(filas.some(f => f.temporada === 1 && f.episodio === 4 && /^[a-f0-9]{40}$/.test(f.info_hash)), 'Torrent elegido → T1E4 con su torrent');
+  await page.evaluate(() => window.__db.solicitudes_descarga.forEach(f => { if (f.estado === 'apartada') f.estado = 'pendiente'; }));
   // Toda la serie
   await page.click('#btn-descargar-nas'); await esperarLista();
   await page.click('#fte-sel .fte-chip:has-text("Toda la serie")'); await esperarLista();
@@ -356,6 +364,7 @@ function instalarDbFalsa() {
   ok([1, 2, 3, 4, 5].every(n => filas.some(f => f.temporada === n)) && /3 temporadas/.test(av) && /2 ya estaban/.test(av), `«Que elija el NAS» en toda la serie → una petición por temporada sin repetir: «${av.slice(0, 80)}»`);
 
   // 5) «Ver» de un capítulo: un pack se envía como temporada entera, avisándolo
+  await page.evaluate(() => window.__db.solicitudes_descarga.forEach(f => { if (f.temporada === 5 && f.episodio == null && f.estado === 'pendiente') f.estado = 'apartada'; }));
   await page.evaluate(() => abrirFuentesEpisodio(5, 2));
   await esperarLista();
   const verCap = await page.$$eval('#fte-body .fte-card', cs => cs.map(c => ({ tags: c.querySelector('.fte-tags').textContent, btn: (c.querySelector('.fte-btn-prim') || {}).textContent })));
@@ -364,6 +373,7 @@ function instalarDbFalsa() {
   const idxEp = verCap.findIndex(c => !/completa/.test(c.tags));
   await page.locator('#fte-body .fte-card').nth(idxEp).locator('.fte-btn-prim').click(); await esperar(800);
   ok((await db()).some(f => f.temporada === 5 && f.episodio === 2 && f.info_hash), '«Enviar al NAS» de un capítulo en «Ver» → T5E2');
+  await page.evaluate(() => window.__db.solicitudes_descarga.forEach(f => { if (f.estado === 'apartada') f.estado = 'pendiente'; }));
   ok(/En la cola del NAS \(T5 · E2\)/.test(await page.locator('#fte-body .fte-card').nth(idxEp).locator('.fte-estado').textContent()), 'La tarjeta confirma que está en la cola');
   await page.evaluate(() => cerrarFuentes());
 

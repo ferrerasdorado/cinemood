@@ -137,8 +137,8 @@
           // rejilla de pósters: en «Vistas» con tu nota encima
           cont.className='ml-rejilla';
           cont.innerHTML=visibles.map((it,i)=>`<div class="desc-card" onclick="abrirDetalleDesdeBiblioteca(${i})" ${_lp({id:it.tmdb_id,tipo:it.tipo,t:it.titulo,poster:it.poster_path,f:it.anio?it.anio+'-01-01':''})}>
-            <div class="desc-poster">${it.poster_path?`<img loading="lazy" src="https://image.tmdb.org/t/p/w342${it.poster_path}" alt="">`:''}${!pendiente&&it.puntuacion!=null?`<span class="desc-marca nota">★ ${it.puntuacion}</span>`:''}${verPrev&&it.puntuacion==null&&_mlPrevista(it)!=null?`<span class="desc-marca prevista">🔮 ${_notaFmt(_mlPrevista(it))}</span>`:''}</div>
-            <div class="desc-t">${_escHtml(it.titulo||'Sin título')}</div><div class="desc-m">${it.anio||''}${it.tipo==='tv'?' · Serie':' · Película'}</div></div>`).join('');
+            <div class="desc-poster">${/^\/[\w.-]+$/.test(it.poster_path||'')?`<img loading="lazy" src="https://image.tmdb.org/t/p/w342${it.poster_path}" alt="">`:''}${!pendiente&&it.puntuacion!=null&&!isNaN(Number(it.puntuacion))?`<span class="desc-marca nota">★ ${Number(it.puntuacion)}</span>`:''}${verPrev&&it.puntuacion==null&&_mlPrevista(it)!=null?`<span class="desc-marca prevista">🔮 ${_notaFmt(_mlPrevista(it))}</span>`:''}</div>
+            <div class="desc-t">${_escHtml(it.titulo||'Sin título')}</div><div class="desc-m">${_escHtml(String(it.anio||''))}${it.tipo==='tv'?' · Serie':' · Película'}</div></div>`).join('');
           return;
         }
         cont.className='';
@@ -253,8 +253,7 @@
       const top=[...notas].sort((a,b)=>Number(b.puntuacion)-Number(a.puntuacion)).slice(0,5);
       if(!top.length)cont.append(_fEl('p',{class:'ml-ayuda',text:'Todavía no hay valoraciones en este periodo.'}));
       top.forEach(it=>cont.append(_fEl('button',{class:'ml-top',type:'button',onclick:async()=>{
-        const index=(window.bibliotecaActual=[it]).length-1;
-        await abrirDetalleDesdeBiblioteca(index);
+        await abrirDetalleDesdeBiblioteca(-1, it);   // sin tocar la lista que hay debajo
       }},_fEl('span',{text:String(it.titulo||'Sin título')}),_fEl('b',{text:it.puntuacion+'/10'}))));
       const sinFecha=_mlResumenFilas.filter(it=>!_mlAnoRegistro(it)).length;
       if(sinFecha)cont.append(_fEl('p',{class:'ml-ayuda',text:sinFecha+(sinFecha===1?' registro sin fecha de alta solo aparece':' registros sin fecha de alta solo aparecen')+' en «Todos los años». No se ha inventado una fecha.'}));

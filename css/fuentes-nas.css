@@ -57,7 +57,7 @@
 .addon-card .nas-info .nas-prog-txt{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
 
 /* ══════════ Hoja «Ver» / «NAS» ══════════ */
-.fte-sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;overflow:auto;overscroll-behavior:contain;border-radius:16px 16px 0 0;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.fte-sheet{background:var(--bg);width:100%;max-width:560px;max-height:88vh;max-height:88dvh;overflow:auto;overscroll-behavior:contain;border-radius:16px 16px 0 0;padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))}
 /* Cabecera fija al desplazarse: título y cerrar */
 .fte-cab{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -16px 4px;padding:14px 16px 10px;background:var(--bg);border-bottom:1px solid transparent}
 .fte-cab::before{content:"";position:absolute;top:6px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line)}
@@ -195,7 +195,7 @@
 .visor-barra{display:flex;justify-content:center;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));background:#101111}
 .visor-btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 16px;border:1px solid #3a3d3b;border-radius:10px;background:#1b1d1c;color:#fff;font-family:inherit;font-size:14px;font-weight:700;text-decoration:none;cursor:pointer}
 .visor-btn[aria-expanded="true"]{background:#fff;color:#111}
-.visor-subs{max-height:38vh;overflow:auto;background:#101111;color:#fff;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.visor-subs{max-height:38vh;max-height:38dvh;overflow:auto;background:#101111;color:#fff;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px))}
 .visor-subs[hidden]{display:none}
 .visor-subs-estado{font-size:13px;color:#c9ccc6;margin:4px 0 8px}
 .visor-subs .fte-cargando{color:#c9ccc6;justify-content:flex-start;padding:4px 0}
@@ -207,3 +207,6 @@
 .visor-error p{margin:0 0 12px;line-height:1.45}
 .visor-error-acc{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
 .visor-btn.prim{background:#fff;color:#111;border-color:#fff}
+
+/* iPhone: los campos de menos de 16px hacen que Safari amplíe la página al tocarlos */
+@media (max-width:767px){.fte-sel select,.fte-fila-orden input[type=search],.fte-fila-orden select,.fte-filtros select{font-size:16px}}

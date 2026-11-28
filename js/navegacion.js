@@ -82,6 +82,8 @@
       const vis = id => { const el = document.getElementById(id); return el && el.style.display && el.style.display!=='none' ? el : null; };
       if(document.getElementById('visor')?.classList.contains('activo')) return {el:document.getElementById('visor'), cerrar:cerrarVisor};
       if(document.getElementById('fuentes-modal')?.classList.contains('activo')) return {el:document.getElementById('fuentes-modal'), cerrar:cerrarFuentes};
+      const dlg = document.querySelector('.cm-dlg-fondo');   // ventana de confirmar o escribir: atrás la cancela
+      if(dlg && dlg._cerrar) return {el:dlg, cerrar:()=>dlg._cerrar()};
       if(document.getElementById('lp-menu')?.classList.contains('on')) return {el:document.getElementById('lp-menu'), cerrar:cerrarMenuLp};
       for(const [id,cerrar] of [['video-visor',()=>cerrarVideo()],['juntos-hoja',()=>cerrarJuntos()],['galeria-visor',()=>cerrarGaleria()],['feed-overlay',()=>cerrarFeedTrailers()],['col-overlay',()=>cerrarColOverlay()],['maraton-overlay',()=>cerrarMaraton()],['propina-overlay',()=>cerrarPropina()]]){
         const el = vis(id); if(el) return {el, cerrar};

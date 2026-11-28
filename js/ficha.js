@@ -511,7 +511,7 @@
       });
       _ficha.mo.observe(fila, {attributes:true, attributeFilter:['style','hidden'], subtree:true});
       const extra = document.getElementById('d-extra'); if(extra) _ficha.mo.observe(extra, {attributes:true, attributeFilter:['hidden']});
-      setTimeout(_fichaSoltar, 8000);   // pasado el rato de carga, ya no hace falta vigilar
+      clearTimeout(_ficha.soltar); _ficha.soltar = setTimeout(_fichaSoltar, 8000);   // pasado el rato de carga, ya no hace falta vigilar
     }
     function _fichaSoltar(){
       if(_ficha.ro){ _ficha.ro.disconnect(); _ficha.ro = null; }
@@ -520,7 +520,7 @@
       for(let el = fila && fila.nextElementSibling; el; el = el.nextElementSibling){ el.style.transition = ''; el.style.transform = ''; }
     }
     function _fichaAsentar(){
-      clearTimeout(_ficha.tope); clearTimeout(_ficha.calma);
+      clearTimeout(_ficha.tope); clearTimeout(_ficha.calma); clearTimeout(_ficha.soltar);
       _fichaSoltar();
       document.getElementById('p-detalle').classList.add('ficha-cargando');
       const notas = document.getElementById('d-notas-ext'), p = peliculaActual;
@@ -830,6 +830,7 @@
     }
     async function toggleTemporadaCompleta(seasonNumber, episodeCount){
       if(!sesionActual){ mostrarCuenta(); return; }
+      const fichaInicial = peliculaActual;   // si mientras preguntamos se abre otra serie, no se toca nada
       const guardado = { ...(window.episodiosVistosGuardado||{}) };
       const actuales = guardado[seasonNumber] || [];
       const completa = episodeCount>0 && actuales.length >= episodeCount;
@@ -859,13 +860,14 @@
       if(!window.episodiosCache) window.episodiosCache = {};
       if(!window.episodiosCache[seasonNumber]){
         cont.innerHTML = '<span style="color:var(--k-767973);font-size:12px">Cargando episodios...</span>';
+        const fichaInicial = peliculaActual, tvId = window.tvIdActual, cache = window.episodiosCache;
         try{
-          const d = await (await fetch(`${TMDB_PROXY}?path=/tv/${window.tvIdActual}/season/${seasonNumber}&language=es-ES`)).json();
+          const d = await (await fetch(`${TMDB_PROXY}?path=/tv/${tvId}/season/${seasonNumber}&language=es-ES`)).json();
           const eps = d.episodes||[];
           const generico = ep => !ep.name || /^Episodio \d+$/i.test(ep.name.trim());
           if(eps.some(ep=>!ep.overview || generico(ep))){
             try{
-              const en = await _tmdbJson(`/tv/${window.tvIdActual}/season/${seasonNumber}&language=en-US`);
+              const en = await _tmdbJson(`/tv/${tvId}/season/${seasonNumber}&language=en-US`);
               eps.forEach(ep=>{
                 const x = (en.episodes||[]).find(y=>y.episode_number===ep.episode_number); if(!x) return;
                 if(!ep.overview && x.overview){ ep.overview = x.overview; ep._sinopsisEn = true; }
@@ -873,6 +875,7 @@
               });
             }catch(e){}
           }
+          if(peliculaActual !== fichaInicial || window.episodiosCache !== cache) return;   // ya estás en otra serie
           window.episodiosCache[seasonNumber] = eps;
         }catch(e){
           cont.innerHTML = '<span style="color:#b3261e;font-size:12px">⚠️ No se pudieron cargar los episodios. Comprueba tu conexión.</span>';
@@ -1010,7 +1013,9 @@
           const partes = [];
           if(tempsAnteriores.length) partes.push(tempsAnteriores.length===1 ? `la temporada ${tempsAnteriores[0].season_number} entera` : `las temporadas ${tempsAnteriores.map(t=>t.season_number).join(', ').replace(/, (\d+)$/,' y $1')} enteras`);
           if(faltanAqui.length) partes.push(faltanAqui.length===1 ? `el episodio ${faltanAqui[0]} de esta temporada` : `los ${faltanAqui.length} episodios anteriores de esta temporada`);
-          if(await _confirmar(`¿Marco también como vistos ${partes.join(' y ')}?`, {aceptar:'Sí, marcarlos', cancelar:'Solo este'})){
+          const si = await _confirmar(`¿Marco también como vistos ${partes.join(' y ')}?`, {aceptar:'Sí, marcarlos', cancelar:'Solo este'});
+          if(peliculaActual !== fichaInicial) return;
+          if(si){
             faltanAqui.forEach(n=>actuales.push(n));
             tempsAnteriores.forEach(se=>{ guardado[se.season_number] = Array.from({length:se.episode_count},(_,i)=>i+1); });
           } else tempsAnteriores = [];

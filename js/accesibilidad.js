@@ -13,6 +13,8 @@
       const lista = raiz.matches && raiz.matches('[onclick]') ? [raiz, ...els] : els;
       for(const el of lista){
         if(el.matches(_A11Y_NATIVOS) || el.closest('[aria-hidden="true"]')) continue;
+        // el fondo oscuro de una ventana (tocar fuera para cerrar) no es un botón para el teclado ni el lector
+        if(el.matches('#fuentes-modal, [id$="-overlay"], [id$="-visor"], .modal-fondo, .cm-dlg-fondo')) continue;
         if(!el.hasAttribute('role')) el.setAttribute('role','button');
         if(!el.hasAttribute('tabindex')) el.tabIndex = 0;
       }

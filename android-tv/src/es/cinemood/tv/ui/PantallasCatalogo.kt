@@ -152,7 +152,10 @@ fun PantallaPestana(p: Pestana) {
         catch (e: Exception) { if (datos == null) error = e.message }
     }
     // Lo personal no se guarda en disco: Seguir viendo (de esta tele) y Mi lista
-    val seguir = remember(App.versionLista) { if (p == Pestana.INICIO) Progreso.lista(ctx) else emptyList() }
+    var versionProgreso by remember { mutableIntStateOf(0) }
+    // Lo visto en el móvil o en otra tele aparece aquí
+    LaunchedEffect(p) { if (p == Pestana.INICIO) { Progreso.sincronizar(ctx); versionProgreso++ } }
+    val seguir = remember(App.versionLista, versionProgreso) { if (p == Pestana.INICIO) Progreso.lista(ctx) else emptyList() }
     var pendientes by remember { mutableStateOf<List<Titulo>>(emptyList()) }
     var paraTi by remember { mutableStateOf(App.cacheParaTi) }
     LaunchedEffect(p) { if (p == Pestana.INICIO && paraTi.isEmpty()) paraTi = try { es.cinemood.tv.datos.Gusto.teVaAEncantar().also { App.cacheParaTi = it } } catch (e: Exception) { emptyList() } }

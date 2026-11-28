@@ -133,3 +133,18 @@
   .pc-nav{padding:10px 14px;gap:10px}
   .pc-nav-busqueda button{padding:10px 12px}
 }
+
+/* «Seguir viendo» compartido entre aparatos */
+.sv-nota{font-weight:500;text-transform:none;letter-spacing:0;opacity:.8;margin-left:6px}
+.sv-scroll .sv-card{flex:0 0 220px;cursor:pointer}
+.sv-img{position:relative;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.sv-img img{width:100%;height:100%;object-fit:cover;display:block}
+.sv-barra{position:absolute;left:8px;right:8px;bottom:8px;height:4px;border-radius:2px;background:rgba(255,255,255,.35)}
+.sv-barra i{display:block;height:100%;border-radius:2px;background:var(--acento)}
+.sv-quitar{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:13px;cursor:pointer;opacity:0;transition:opacity .15s}
+.sv-card:hover .sv-quitar,.sv-card:focus-within .sv-quitar{opacity:1}
+@media (hover:none){.sv-quitar{opacity:1}}
+
+/* Las series llevan una cinta roja discreta (como en la tele) */
+.desc-poster{position:relative}
+.cinta-serie{position:absolute;left:6px;bottom:6px;background:var(--acento);color:#fff;font-size:9px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;padding:2px 5px;border-radius:3px;pointer-events:none}

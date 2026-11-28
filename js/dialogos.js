@@ -43,6 +43,7 @@
             else if(!e.shiftKey && i===f.length-1){ e.preventDefault(); f[0].focus(); }
           }
         };
+        fondo._cerrar = ()=>cerrar(botones.find(b=>b.cancelar)?.valor ?? null);
         caja.append(
           titulo ? _fEl('h3',{id:'cm-dlg-tit',class:'cm-dlg-tit',text:titulo}) : null,
           texto ? _fEl('p',{id:titulo?null:'cm-dlg-tit',class:'cm-dlg-txt',text:texto}) : null,

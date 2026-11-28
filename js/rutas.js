@@ -407,6 +407,11 @@
           sesionActual = {...session, user: sesionActual.user};
           return;
         }
+        // Guardar notas, ranking o «La dejé» actualiza tus datos de usuario: no hace falta recargar toda la app
+        if(event === 'USER_UPDATED' && sesionActual && session?.user?.id === sesionActual.user?.id){
+          sesionActual = {...session};
+          return;
+        }
         // Fuera del callback de Auth para evitar esperas dentro de su bloqueo.
         setTimeout(async()=>{
           await _cmAplicarSesion(session);
@@ -532,7 +537,10 @@
       sesionActual = null;
       try{ _gateAplicar(); }catch(e){}
       try{ await Promise.race([sb.auth.signOut({scope:'local'}), new Promise(r=>setTimeout(r, 3000))]); }catch(e){}
-      try{ Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+      // Lo de esta cuenta guardado en el dispositivo (addons con claves de debrid, clave de AllDebrid, vídeos, notas…)
+      // no puede quedarse para la siguiente persona que entre: se borra todo lo de CineMood salvo preferencias del aparato
+      const deAparato = /^cm:(tema|tv|oled|acento|vista|busquedas|filtrosFte)/;
+      try{ Object.keys(localStorage).filter(k=>/^sb-.*-auth-token/.test(k) || (k.startsWith('cm:') && !deAparato.test(k)) || /^perfilGusto_|^cm-logro|^li:/.test(k)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
       location.replace(location.pathname);
     }
 
@@ -738,8 +746,8 @@
     async function cargarBiblioteca(){
       await _miListaCargar();
     }
-    async function abrirDetalleDesdeBiblioteca(i){
-      const it = window.bibliotecaActual[i];
+    async function abrirDetalleDesdeBiblioteca(i, item){
+      const it = item || window.bibliotecaActual[i]; if(!it) return;
       try{
         const d = await (await fetch(`${TMDB_PROXY}?path=/${it.tipo}/${it.tmdb_id}&language=es-ES`)).json();
         const obj = {...d, title: d.title||d.name, release_date: d.release_date||d.first_air_date, _tipo: it.tipo};

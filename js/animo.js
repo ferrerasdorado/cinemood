@@ -199,9 +199,26 @@
       const personasP=_buscarPersonas(_qTexto);
       const resultados=[];
       await Promise.all(['movie','tv'].map(async t=>{
-        try{const res=await fetch(`${TMDB_PROXY}?path=/search/${t}&language=es-ES&query=${encodeURIComponent(_qTexto)}${_qAnio?(t==='movie'?`&year=${_qAnio}`:`&first_air_date_year=${_qAnio}`):''}&page=1`);const data=await res.json();(data.results||[]).slice(0,5).forEach(item=>resultados.push({...item,_tipo:t,title:item.title||item.name,release_date:item.release_date||item.first_air_date}));}catch(e){}
+        try{const res=await fetch(`${TMDB_PROXY}?path=/search/${t}&language=es-ES&query=${encodeURIComponent(_qTexto)}${_qAnio?(t==='movie'?`&year=${_qAnio}`:`&first_air_date_year=${_qAnio}`):''}&page=1`);const data=await res.json();(data.results||[]).slice(0,12).forEach(item=>resultados.push({...item,_tipo:t,title:item.title||item.name,release_date:item.release_date||item.first_air_date}));}catch(e){}
       }));
-      const ordenados=resultados.sort((a,b)=>(b.popularity||0)-(a.popularity||0));
+      // Como las plataformas: primero lo que coincide con lo escrito (exacto → empieza por → palabra → contiene),
+      // dentro de cada nivel lo más popular y votado, y fuera lo que casi nadie ha visto
+      const qn=normalizarTitulo(_qTexto);
+      const nivel=x=>Math.min(...[x.title,x.name,x.original_title,x.original_name].filter(Boolean).map(t=>{const n=normalizarTitulo(t);return n===qn?0:n.startsWith(qn)?1:n.split(/\s+/).some(w=>w.startsWith(qn))?2:n.includes(qn)?3:4;}),4);
+      const peso=x=>Math.log((x.vote_count||0)+1)*2+Math.log((x.popularity||0)+1)*3;
+      const ordenados=resultados.filter(x=>x.poster_path && !((nivel(x)>=3 && (x.vote_count||0)<30 && (x.popularity||0)<4) || ((x.vote_count||0)<3 && (x.popularity||0)<1.5)))
+        .sort((a,b)=>nivel(a)-nivel(b) || peso(b)-peso(a));
+      // Si lo escrito es una persona conocida («tom hanks»), antes que nada sus títulos más famosos
+      const personas=await personasP, estrella=personas.find(x=>normalizarTitulo(x.name)===qn && (x.popularity||0)>=3);
+      if(estrella){
+        try{
+          const cc=await _tmdbJson(`/person/${estrella.id}/combined_credits&language=es-ES`), dir=estrella.known_for_department==='Directing';
+          const suyas=(dir?(cc.crew||[]).filter(c=>c.job==='Director'):(cc.cast||[])).filter(c=>c.poster_path && (c.vote_count||0)>=50 && !(c.media_type==='tv' && (c.episode_count||0)<3))
+            .sort((a,b)=>(b.vote_count||0)-(a.vote_count||0)).slice(0,15).map(c=>({...c,_tipo:c.media_type,title:c.title||c.name,release_date:c.release_date||c.first_air_date}));
+          const ya=new Set(suyas.map(c=>`${c._tipo}-${c.id}`));
+          ordenados.splice(0,0,...suyas.filter((c,i,a)=>a.findIndex(o=>o._tipo===c._tipo&&o.id===c.id)===i)); for(let i=ordenados.length-1;i>=suyas.length;i--) if(ya.has(`${ordenados[i]._tipo}-${ordenados[i].id}`)) ordenados.splice(i,1);
+        }catch(e){}
+      }
       const idsVistos=new Set(ordenados.map(r=>`${r._tipo}-${r.id}`));const original=ordenados[0];
       if(original){
         let det=original;
@@ -220,6 +237,6 @@
         }));
         respuestas.forEach((res,k)=>{const t=pedidas[k].t;res.filter(s=>s.poster_path&&!idsVistos.has(`${t}-${s.id}`)).forEach(item=>{idsVistos.add(`${t}-${item.id}`);ordenados.push({...item,_tipo:t,title:item.title||item.name,release_date:item.release_date||item.first_air_date});});});
       }
-      mostrarResultados(ordenados.slice(0,20),reset,`Resultados para «${titulo}» y parecidas`);
-      _pintarPersonasBuscadas(await personasP);
+      mostrarResultados(ordenados.slice(0,24),reset,`Resultados para «${titulo}» y parecidas`);
+      _pintarPersonasBuscadas(personas);
     }

@@ -15,7 +15,7 @@
       try{
         r = await fetch(SUPABASE_URL+'/functions/v1/cinemood-hosters', {method:'POST', credentials:'omit',
           headers:{Authorization:'Bearer '+data.session.access_token, apikey:SUPABASE_KEY, 'Content-Type':'application/json'},
-          body:JSON.stringify(cuerpo), signal:AbortSignal.timeout(40000)});
+          body:JSON.stringify(cuerpo), signal:(()=>{ const c = new AbortController(); setTimeout(()=>c.abort(), 40000); return c.signal; })()});   // iOS 15 no tiene AbortSignal.timeout
       }catch(e){
         throw new Error(e && e.name==='TimeoutError' ? 'Cinecalidad tarda demasiado en responder. Inténtalo más tarde.' : 'No se pudo conectar con el buscador de webs. Comprueba tu conexión.');
       }

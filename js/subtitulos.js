@@ -32,7 +32,7 @@
       const ctx = _subs.ctx; if(!ctx) return;
       const mio = ++_subs.turno, vigente = ()=>mio===_subs.turno && _subs.ctx===ctx;
       const estado = _fEl('p',{class:'visor-subs-estado',role:'status','aria-live':'polite'}), lista = _fEl('div',{class:'visor-subs-lista'});
-      const quitar = _fEl('button',{type:'button',class:'visor-sub',onclick:()=>{ _subtitulosLimpiar(); marcar(quitar); estado.textContent = 'Sin subtítulos.'; }},'Sin subtítulos');
+      const quitar = _fEl('button',{type:'button',class:'visor-sub',onclick:()=>{ _subs.turno++; _subtitulosLimpiar(); marcar(quitar); estado.textContent = 'Sin subtítulos.'; }},'Sin subtítulos');
       const marcar = b => lista.querySelectorAll('.visor-sub').forEach(x=>x.classList.toggle('on', x===b));
       panel.replaceChildren(estado, lista);
       estado.replaceChildren(_fteCargando('Buscando subtítulos en tus addons…'));
@@ -55,7 +55,7 @@
         todos.sort((p,q)=>peso(p.x)-peso(q.x));
         estado.textContent = todos.length ? `${todos.length} subtítulos. Toca uno para activarlo.` : 'Tus addons no tienen subtítulos para esto.';
         lista.replaceChildren(quitar, ...todos.slice(0,60).map(({x,a})=>{
-          const b = _fEl('button',{type:'button',class:'visor-sub',onclick:()=>{ marcar(b); _subtitulosCargar(x, estado, ctx, mio); }},
+          const b = _fEl('button',{type:'button',class:'visor-sub',onclick:()=>{ marcar(b); _subtitulosCargar(x, estado, ctx, ++_subs.turno); }},
             _subtitulosIdioma(x.lang)+(x.label && x.label!==x.lang ? ' · '+String(x.label).slice(0,60) : '')+' · '+a.nombre);
           return b;
         }));

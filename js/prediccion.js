@@ -841,7 +841,7 @@
       }
       const id = params.get('id');
       const tipo = params.get('tipo');
-      if(!id || (tipo!=='movie' && tipo!=='tv')) return;
+      if(!id || !/^\d{1,9}$/.test(id) || (tipo!=='movie' && tipo!=='tv')) return;
       history.replaceState(history.state, '', location.pathname); // limpiamos la URL para no reabrir esto si se recarga después
       try{
         const d = await fetch(`${TMDB_PROXY}?path=/${tipo}/${id}&language=es-ES`).then(r=>r.json());
