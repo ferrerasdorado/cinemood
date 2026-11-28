@@ -135,6 +135,26 @@ y en el móvil, en lugar de abrir su puerto en el router.
 2. En el NAS: `pip install -r nas/requirements.txt`, copia `nas/.env.example` como `.env`, rellénalo
    y arranca `python3 nas/cinemood_nas.py`.
 
+## App para Android TV (`android-tv/`)
+
+La versión de la tele es una **app nativa** (Kotlin + Jetpack Compose para TV + Media3), no la web metida en un navegador.
+La anterior cargaba la web entera (más de 1 MB de JavaScript) en un navegador interno e iba lenta en descodificadores modestos;
+ahora cada pantalla se dibuja de forma nativa y solo se descargan los datos. Usa **la misma cuenta, Mi lista, addons y NAS**
+que la web y el móvil (Supabase), así que lo que se hace en un sitio aparece en los demás.
+
+- **Pantallas:** Inicio (portada que cambia sola, «Seguir viendo», Mi lista, estados de ánimo, tendencias…), Descubre
+  (por plataforma, joyas poco vistas, clásicos…), Series, Películas, Buscar, Mi lista y Tú (addons y Mis descargas).
+- **Ficha** a pantalla completa con logo, datos, temporadas y capítulos, reparto y recomendaciones. Botones: Ver, Mi lista,
+  Marcar vista, NAS y Tráiler.
+- **Elegir fuente:** panel lateral con tus addons y las mismas etiquetas que la web (⚡ Al instante, 4K, HDR, Castellano,
+  packs…). Se reproduce en el reproductor nativo (Media3), con subtítulos de tus addons y VLC como alternativa.
+- **NAS:** película, temporada, todas las temporadas, un capítulo (manteniendo OK) o eligiendo el torrent.
+- **Rápida en teles modestas:** perfil de arranque (*baseline profile*) para que Android la precompile, R8, imágenes en
+  RGB565, copia en disco de Inicio para abrir al instante y precarga de la ficha al pasar el foco por un cartel.
+
+Código: `android-tv/src/es/cinemood/tv/` (`datos/` = Supabase, TMDB, addons, lista y NAS; `ui/` = pantallas).
+Compilar: `android-tv/compilar.sh` · instalar en la tele por ADB y precompilar: `android-tv/instalar.sh [IP:PUERTO]`.
+
 ## Pruebas
 
 ```

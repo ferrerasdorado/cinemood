@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Compila y firma CineMood-TV.apk con Media3 (ExoPlayer) reutilizando tu clave de firma actual.
+# Compila y firma CineMood-TV.apk (app nativa para Android TV) reutilizando tu clave de firma actual.
 set -e
 cd "$(dirname "$0")"
 
@@ -50,4 +50,4 @@ BT="$ANDROID_SDK_ROOT/build-tools/34.0.0"
 if [ -x "$BT/apksigner" ]; then
   "$BT/apksigner" verify CineMood-TV.apk
 fi
-echo "✓ CineMood-TV.apk lista con Media3 ExoPlayer ($(du -h CineMood-TV.apk | cut -f1))"
+echo "✓ CineMood-TV.apk lista (app nativa: Kotlin + Compose para TV + Media3). Para instalarla en la tele: ./instalar.sh. Tamaño: ($(du -h CineMood-TV.apk | cut -f1))"

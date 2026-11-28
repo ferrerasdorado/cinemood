@@ -280,7 +280,7 @@ public class PlayerActivity extends AppCompatActivity {
         btnAbrirVlc.setOnClickListener(v -> {
             guardarProgresoActual();
             if (player != null) player.pause();
-            MainActivity.abrirEnVLC(this, streamUrl, titulo);
+            Externo.abrirEnVLC(this, streamUrl, titulo);
         });
         LinearLayout.LayoutParams lpBtn2 = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -420,7 +420,7 @@ public class PlayerActivity extends AppCompatActivity {
                 .setTitle("No se pudo reproducir en el reproductor interno")
                 .setMessage("Detalle técnico: " + detalle + "\n\nPuedes abrir este enlace directamente en VLC sin salir de CineMood.")
                 .setPositiveButton("Abrir en VLC", (d, w) -> {
-                    MainActivity.abrirEnVLC(this, streamUrl, titulo);
+                    Externo.abrirEnVLC(this, streamUrl, titulo);
                     cerrarGuardandoProgreso();
                 })
                 .setNeutralButton("Reintentar", (d, w) -> {
@@ -584,7 +584,7 @@ public class PlayerActivity extends AppCompatActivity {
         long posSeg = Math.max(0L, player.getCurrentPosition() / 1000L);
         long durMs = player.getDuration();
         long durSeg = (durMs != C.TIME_UNSET && durMs > 0) ? (durMs / 1000L) : 0L;
-        MainActivity.guardarProgresoEnWeb(progKey, posSeg, durSeg);
+        es.cinemood.tv.datos.Progreso.guardar(this, progKey, posSeg, durSeg);
         Intent datos = new Intent();
         datos.putExtra("progKey", progKey);
         datos.putExtra("posSeg", posSeg);

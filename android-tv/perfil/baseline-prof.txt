@@ -1,0 +1,6 @@
+# CineMood TV · perfil de arranque (Baseline Profile)
+# Android precompila de antemano todo el código de la app que encaja con estas reglas, en lugar de
+# interpretarlo la primera vez que se usa. En teles modestas es la diferencia entre ir a tirones o ir fluida.
+# (Las bibliotecas de Compose, Coil y OkHttp traen sus propios perfiles, que se suman a este.)
+HSPLes/cinemood/tv/**->**(**)**
+Les/cinemood/tv/**;

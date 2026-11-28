@@ -3,7 +3,9 @@
     <style name="TemaCineMoodTV" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowBackground">@android:color/black</item>
-        <item name="android:colorBackground">@android:color/black</item>
+        <!-- El mismo fondo que el modo oscuro de la web: al abrir no hay destello blanco ni negro -->
+        <item name="android:windowBackground">@color/fondo</item>
+        <item name="android:colorBackground">@color/fondo</item>
     </style>
+    <color name="fondo">#121413</color>
 </resources>
