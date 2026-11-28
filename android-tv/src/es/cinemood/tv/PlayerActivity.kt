@@ -70,7 +70,12 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.Extractor
+import androidx.media3.extractor.ExtractorsFactory
+import es.cinemood.tv.datos.Red
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
@@ -196,22 +201,52 @@ class PlayerActivity : ComponentActivity() {
         }
     }
 
+    /** Si el decodificador de audio de la tele falla con un archivo, se pasa a FFmpeg (por software) para el resto */
+    private var ffmpegPrimero = false
+    private var vista: PlayerView? = null
+
     private fun crearReproductor() {
-        val http = DefaultHttpDataSource.Factory().setUserAgent("CineMoodTV/3.0 (AndroidTV; Media3)")
-            .setAllowCrossProtocolRedirects(true).setConnectTimeoutMs(20000).setReadTimeoutMs(25000)
+        // Misma conexión (OkHttp) que el resto de la app: reutiliza conexiones y aguanta mejor las redes flojas
+        val http = OkHttpDataSource.Factory(Red.cliente).setUserAgent("CineMoodTV/3.0 (AndroidTV; Media3)")
+        // Dolby Vision: primero el decodificador DV de la tele, si lo tiene
+        val selector = MediaCodecSelector { mime, seguro, tunel ->
+            val l = MediaCodecSelector.DEFAULT.getDecoderInfos(mime, seguro, tunel)
+            if (mime == MimeTypes.VIDEO_DOLBY_VISION) l.sortedByDescending { it.name.contains("dovi", true) || it.name.contains(".dv", true) || it.name.contains("dolby", true) } else l
+        }
         val renderers = DefaultRenderersFactory(this)
-            .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER)   // audio con FFmpeg
+            // Normal: decodificadores de la tele (Dolby/DTS salen tal cual a la barra o al receptor) y FFmpeg solo detrás.
+            // Si el audio ya falló con este archivo: FFmpeg delante.
+            .setExtensionRendererMode(if (ffmpegPrimero) DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER else DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
             .setEnableDecoderFallback(true)
-        val selector = DefaultTrackSelector(this).apply {
+            .setMediaCodecSelector(selector)
+        val pistas = DefaultTrackSelector(this).apply {
             setParameters(buildUponParameters().setPreferredAudioLanguage("es").setPreferredTextLanguage("es"))
         }
+        // MKV tolerante primero (si una pista está rota se descarta solo esa) y luego los formatos de siempre
+        val extractores = ExtractorsFactory { arrayOf<Extractor>(es.cinemood.tv.mkv.MatroskaExtractor()) + DefaultExtractorsFactory().createExtractors() }
         player = ExoPlayer.Builder(this, renderers)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http)))
-            .setTrackSelector(selector)
-            .setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(15000, 60000, 2000, 4500).build())
+            .setMediaSourceFactory(DefaultMediaSourceFactory(DefaultDataSource.Factory(this, http), extractores))
+            .setTrackSelector(pistas)
+            // Búfer más amplio (30 a 120 s) para que una red floja no corte; 30 s hacia atrás para retroceder sin recargar
+            .setLoadControl(DefaultLoadControl.Builder().setBufferDurationsMs(30_000, 120_000, 2_500, 5_000).setBackBuffer(30_000, false).build())
             .setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(), true)
             .setHandleAudioBecomingNoisy(true)
             .build()
+        player.videoChangeFrameRateStrategy = C.VIDEO_CHANGE_FRAME_RATE_STRATEGY_OFF   // la frecuencia la ajusta ajustarFrecuencia()
+        // Muchos MKV no dicen a cuántos fotogramas por segundo van: se calcula con los primeros 48 fotogramas
+        player.setVideoFrameMetadataListener { pts, _, _, _ ->
+            if (frecuenciaHecha > 0f) return@setVideoFrameMetadataListener
+            synchronized(tiempos) {
+                if (tiempos.size < 48) tiempos.add(pts)
+                if (tiempos.size == 48) {
+                    val difs = tiempos.sorted().zipWithNext { a, b -> b - a }.filter { it > 0 }.sorted()
+                    val med = difs.getOrNull(difs.size / 2) ?: return@synchronized
+                    tiempos.add(-1)   // ya calculado
+                    val fps = 1_000_000f / med
+                    runOnUiThread { ajustarFrecuencia(redondearFps(fps)) }
+                }
+            }
+        }
         player.addListener(object : Player.Listener {
             override fun onPlaybackStateChanged(s: Int) {
                 if (s == Player.STATE_READY && fase == Fase.CARGANDO) { fase = Fase.VIENDO; vigilante?.cancel() }
@@ -219,13 +254,61 @@ class PlayerActivity : ComponentActivity() {
                 if (s == Player.STATE_ENDED) alTerminar()
             }
             override fun onIsPlayingChanged(p: Boolean) { reproduciendo = p }
-            override fun onTracksChanged(t: Tracks) { versionPistas++; quizasSubtituloAutomatico() }
+            override fun onTracksChanged(t: Tracks) {
+                versionPistas++; quizasSubtituloAutomatico()
+                t.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }?.let { g ->
+                    (0 until g.length).firstOrNull { g.isTrackSelected(it) }?.let { ajustarFrecuencia(g.getTrackFormat(it).frameRate) }
+                }
+            }
             override fun onPlayerError(e: PlaybackException) { alFallar(e) }
         })
+        vista?.player = player
+    }
+
+    /** El audio falló en la tele: se rehace el reproductor con FFmpeg delante y se sigue en el mismo punto */
+    private fun reintentarConFfmpeg(pos: Long) {
+        ffmpegPrimero = true
+        aviso = "El sonido de este archivo no lo descodifica la tele. Pasando al descodificador de CineMood…"
+        player.release()
+        crearReproductor()
+        lifecycleScope.launch { delay(4000); aviso = "" }
+        abrirActual(pos)
+    }
+
+    /**
+     * La tele cambia a la frecuencia del vídeo (24 Hz para el cine, 25/50 para lo europeo…) si la admite:
+     * así los movimientos de cámara no van a saltitos. Se mantiene la misma resolución.
+     */
+    private var frecuenciaHecha = 0f
+    private val tiempos = ArrayList<Long>()
+    /** 23,98 / 24 / 25 / 29,97 / 30 / 50 / 59,94 / 60: el valor de cine o tele más cercano al medido */
+    private fun redondearFps(f: Float): Float = listOf(23.976f, 24f, 25f, 29.97f, 30f, 50f, 59.94f, 60f).minByOrNull { kotlin.math.abs(it - f) }
+        ?.takeIf { kotlin.math.abs(it - f) < 0.6f } ?: f
+    private fun ajustarFrecuencia(fps: Float) {
+        if (Build.VERSION.SDK_INT < 23 || fps <= 1f || kotlin.math.abs(fps - frecuenciaHecha) < 0.01f) return
+        frecuenciaHecha = fps
+        try {
+            @Suppress("DEPRECATION")
+            val d = (if (Build.VERSION.SDK_INT >= 30) display else windowManager.defaultDisplay) ?: return
+            val actual = d.mode
+            val mismos = d.supportedModes.filter { it.physicalWidth == actual.physicalWidth && it.physicalHeight == actual.physicalHeight }
+            // El modo cuya frecuencia es múltiplo exacto (o casi) de los fotogramas del vídeo; el más bajo posible
+            val mejor = mismos.mapNotNull { m ->
+                val k = kotlin.math.round(m.refreshRate / fps)
+                if (k < 1) null else m to kotlin.math.abs(m.refreshRate - fps * k) / k
+            }.filter { it.second < 0.02f }.minWithOrNull(compareBy({ it.second > 0.005f }, { it.first.refreshRate }))?.first ?: return
+            if (mejor.modeId != actual.modeId) {
+                window.attributes = window.attributes.also { it.preferredDisplayModeId = mejor.modeId }
+                aviso = "Tele a ${String.format("%.3f", mejor.refreshRate).trimEnd('0').trimEnd('.').replace('.', ',')} Hz para este vídeo"
+                lifecycleScope.launch { delay(3000); aviso = "" }
+            }
+        } catch (e: Exception) { }
     }
 
     // ── Elegir y abrir fuentes ──────────────────────────────────────────
     private fun empezar(c: Contexto, elegida: Fuente?, alternativas: List<Fuente>) {
+        if (ffmpegPrimero) { ffmpegPrimero = false; player.release(); crearReproductor() }   // cada título empieza con los de la tele
+        frecuenciaHecha = 0f
         ctx = c; siguiente = null; cuentaAtras = null; siguienteDescartado = false; vistoMarcado = false
         subsAddons = emptyList(); subActivo = null; subArchivo = null; subsAutoHecho = false
         controles = false; objetivo = null
@@ -273,6 +356,7 @@ class PlayerActivity : ComponentActivity() {
         fase = Fase.CARGANDO
         mensaje = if (indice == 0) "Cargando…" else "Probando otra fuente (${indice + 1} de ${candidatos.size})…"
         arrancada = false; reintentada = false
+        synchronized(tiempos) { tiempos.clear() }
         player.setMediaItem(mediaItem(f), posMs.coerceAtLeast(0))
         player.prepare(); player.playWhenReady = true
         // Si en 30 s no ha empezado, se da por mala
@@ -294,6 +378,10 @@ class PlayerActivity : ComponentActivity() {
 
     private fun alFallar(e: PlaybackException) {
         val pos = player.currentPosition.coerceAtLeast(0)
+        // Falla el descodificador de audio de la tele (p. ej. algunos MP3): misma fuente, con FFmpeg
+        val ex = e as? androidx.media3.exoplayer.ExoPlaybackException
+        if (!ffmpegPrimero && ex != null && ex.type == androidx.media3.exoplayer.ExoPlaybackException.TYPE_RENDERER &&
+            ex.rendererFormat?.sampleMimeType?.startsWith("audio/") == true) { reintentarConFfmpeg(pos); return }
         if (arrancada && !reintentada) {
             // Se ha cortado a mitad: se reintenta en el mismo punto
             reintentada = true; aviso = "Se ha cortado. Reintentando…"
@@ -525,6 +613,7 @@ class PlayerActivity : ComponentActivity() {
         ) {
             AndroidView(factory = { c ->
                 PlayerView(c).apply {
+                    vista = this
                     useController = false
                     resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
                     setShowBuffering(PlayerView.SHOW_BUFFERING_NEVER)
