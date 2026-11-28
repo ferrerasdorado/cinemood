@@ -246,6 +246,11 @@ fun PantallaFicha(t0: Titulo) {
                         }
                     }
                 }
+                dd.saga?.let { (nombre, partes) ->
+                    fila("saga", nombre, partes, { it.clave }) { s ->
+                        TarjetaPoster(s, "saga-${s.clave}", { if (s.clave != t.clave) App.ficha(s) }, etiqueta = if (s.clave == t.clave) "Esta" else s.anio, onLongClick = { menuTitulo(s) })
+                    }
+                }
                 fila("similares", "Si te gusta, te gustará", dd.similares, { it.clave }) { s ->
                     TarjetaPoster(s, "sim-${s.clave}", { App.ficha(s) }, onLongClick = { menuTitulo(s) })
                 }

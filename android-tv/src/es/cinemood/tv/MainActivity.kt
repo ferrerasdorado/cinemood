@@ -69,6 +69,24 @@ class MainActivity : ComponentActivity() {
                 .build()
         )
         setContent { TemaCineMood { Raiz() } }
+        abrirEnlace(intent)
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        abrirEnlace(intent)
+    }
+
+    /** cinemood://ficha/tv/1234 (desde «Seguir viendo» de la pantalla de inicio de la tele) */
+    private fun abrirEnlace(i: android.content.Intent?) {
+        val u = i?.data ?: return
+        if (u.scheme != "cinemood" || u.host != "ficha") return
+        val partes = u.pathSegments
+        val tipo = partes.getOrNull(0)?.takeIf { it == "tv" || it == "movie" } ?: return
+        val id = partes.getOrNull(1)?.toIntOrNull() ?: return
+        if (!Sesion.iniciada) return
+        App.irA(Pestana.INICIO)
+        App.ficha(es.cinemood.tv.datos.Titulo(id, tipo, "", null, null, "", 0.0, ""))
     }
 }
 

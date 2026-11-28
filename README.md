@@ -149,6 +149,13 @@ que la web y el móvil (Supabase), así que lo que se hace en un sitio aparece e
 - **Elegir fuente:** panel lateral con tus addons y las mismas etiquetas que la web (⚡ Al instante, 4K, HDR, Castellano,
   packs…). Se reproduce en el reproductor nativo (Media3), con subtítulos de tus addons y VLC como alternativa.
 - **NAS:** película, temporada, todas las temporadas, un capítulo (manteniendo OK) o eligiendo el torrent.
+- **Reproductor propio:** «Reproducir» busca en tus addons y elige la fuente (al instante, en español, 1080p o 4K ligero);
+  si una falla pasa sola a la siguiente y si se corta a mitad reintenta en el mismo punto. Audio con FFmpeg cuando la tele
+  no puede (MP3, AC-3, DTS, TrueHD), panel de audio y subtítulos (del archivo y de tus addons; con audio en inglés pone
+  solos los subtítulos en español), avanzar/retroceder con miniaturas y «Siguiente capítulo» en los créditos.
+- **Capítulos vistos** sincronizados con la web (ticks, marcar capítulo o temporada; se marcan solos al terminar).
+- **Inicio:** Top 10 de hoy, «Sorpréndeme», saga de cada película en su ficha y «Seguir viendo» en la pantalla de
+  inicio de Android TV (si el lanzador de la tele lo admite).
 - **Rápida en teles modestas:** perfil de arranque (*baseline profile*) para que Android la precompile, R8, imágenes en
   RGB565, copia en disco de Inicio para abrir al instante y precarga de la ficha al pasar el foco por un cartel.
 

@@ -35,11 +35,19 @@
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboard|keyboardHidden|navigation|uiMode|density|screenLayout"
             android:screenOrientation="landscape"
-            android:windowSoftInputMode="adjustNothing">
+            android:windowSoftInputMode="adjustNothing"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- «Seguir viendo» de la pantalla de inicio de Android TV abre la ficha -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="cinemood" android:host="ficha" />
             </intent-filter>
         </activity>
 

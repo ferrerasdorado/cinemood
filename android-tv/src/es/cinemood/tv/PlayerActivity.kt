@@ -265,7 +265,7 @@ class PlayerActivity : ComponentActivity() {
                 }
             }
         }
-        return Fuentes.ordenar(synchronized(todas) { todas.toList() }.filter { it.sePuedeVer }.distinctBy { it.url }).take(12)
+        return Fuentes.ordenarParaReproducir(synchronized(todas) { todas.toList() }.filter { it.sePuedeVer }.distinctBy { it.url }).take(12)
     }
 
     private fun abrirActual(posMs: Long) {
@@ -543,6 +543,21 @@ class PlayerActivity : ComponentActivity() {
                         if (c.etiqueta.isNotEmpty()) Texto(c.etiqueta + if (c.nombreEpisodio.isNotEmpty()) " · ${c.nombreEpisodio}" else "", tam = 20, color = Col.suave)
                         Spacer(Modifier.height(24.dp))
                         Texto(mensaje, tam = 18, color = if (fase == Fase.ERROR) Col.acentoTexto else Col.tinta, lineas = 4)
+                        // La fuente elegida, con sus etiquetas (como en el panel «Fuentes»)
+                        val f = actual
+                        if (f != null && fase == Fase.CARGANDO) {
+                            Spacer(Modifier.height(16.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                if (f.meta.alInstante) Etiqueta("⚡ Al instante", Col.verde, Col.verdeSuave)
+                                if (f.meta.calidad > 0) Etiqueta(if (f.meta.calidad >= 2160) "4K" else "${f.meta.calidad}p", Col.tinta, Col.superficie3)
+                                if (f.meta.dv) Etiqueta("Dolby Vision") else if (f.meta.hdr) Etiqueta("HDR")
+                                if (f.meta.idioma.isNotEmpty()) Etiqueta(f.meta.idioma, if (f.meta.es) Col.acentoTexto else Col.suave, if (f.meta.es) Col.acentoSuave else Col.superficie2)
+                                if (f.meta.tamano > 0) Etiqueta(Fuentes.bytes(f.meta.tamano))
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Texto(f.torrent, tam = 15, color = Col.suave, lineas = 1)
+                            Texto(f.origen + if (candidatos.size > 1) "  ·  ${candidatos.size - indice - 1} más de reserva por si falla" else "", tam = 13, color = Col.tenue, lineas = 1)
+                        }
                         if (fase == Fase.ERROR) {
                             Spacer(Modifier.height(22.dp))
                             val fr = remember { FocusRequester() }

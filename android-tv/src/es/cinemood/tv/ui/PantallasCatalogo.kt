@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -115,6 +116,7 @@ suspend fun cargarPestana(p: Pestana): DatosPestana = when (p) {
         Triple("es", "Cine español", { Catalogo.descubrir("movie", "with_origin_country=ES&vote_count.gte=100") }),
         Triple("anime", "Anime", { Catalogo.descubrir("tv", "with_genres=16&with_original_language=ja&vote_count.gte=200") })))
     else -> DatosPestana(Catalogo.portada(), filas(
+        Triple("top10", "Top 10 de hoy", { Catalogo.topHoy() }),
         Triple("tend", "Tendencias de la semana", { Catalogo.tendencias("all") }),
         Triple("cine", "En cines", { Catalogo.estrenos() }),
         Triple("pelis", "Películas populares", { Catalogo.populares("movie") }),
@@ -174,6 +176,10 @@ fun PantallaPestana(p: Pestana) {
             item(key = "animos") { FilaAnimos() }
         }
         d.filas.forEach { f ->
+            if (f.clave == "top10") {
+                fila(f.clave, f.titulo, f.items, { it.clave }) { t -> TarjetaTop(t, f.items.indexOf(t) + 1, "top-${t.clave}") }
+                return@forEach
+            }
             fila(f.clave, f.titulo, f.items, { it.clave }) { t ->
                 TarjetaPoster(t, "${f.clave}-${t.clave}", { App.ficha(t) }, onLongClick = { menuTitulo(t) },
                     pedirSiNada = d.portada.isEmpty() && p != Pestana.DESCUBRE && f == d.filas.first() && t == f.items.first())
@@ -242,8 +248,33 @@ private fun FilaChips(titulo: String, contenido: LazyListScope.() -> Unit) {
     }
 }
 
+/** Cartel del Top 10 con su número grande al lado */
+@Composable
+fun TarjetaTop(t: Titulo, n: Int, clave: String) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        androidx.tv.material3.Text(n.toString(), fontFamily = Cabinet, fontWeight = FontWeight.ExtraBold, fontSize = androidx.compose.ui.unit.TextUnit(if (n == 10) 92f else 120f, androidx.compose.ui.unit.TextUnitType.Sp),
+            color = C.superficie3, modifier = Modifier.padding(end = 2.dp).offset(y = 18.dp), style = androidx.compose.ui.text.TextStyle(
+                drawStyle = androidx.compose.ui.graphics.drawscope.Stroke(width = 5f), color = C.suave))
+        TarjetaPoster(t, clave, { App.ficha(t) }, ancho = 118.dp, onLongClick = { menuTitulo(t) })
+    }
+}
+
+/** «Sorpréndeme»: un estado de ánimo al azar y, de ahí, un título bien valorado al azar */
+fun sorprendeme() {
+    App.avisar("Buscando algo para ti…")
+    App.ambito.launch {
+        try {
+            val a = Catalogo.ANIMOS.random(); val tipo = listOf("movie", "tv").random()
+            val t = Catalogo.animo(a, tipo, (1..3).random()).filter { it.fondo != null }.randomOrNull() ?: Catalogo.tendencias("all").random()
+            App.aviso = null
+            App.ficha(t)
+        } catch (e: Exception) { App.error(e) }
+    }
+}
+
 @Composable
 fun FilaAnimos() = FilaChips("¿Cómo te sientes hoy?") {
+    item(key = "sorpresa") { Boton("Sorpréndeme", { sorprendeme() }, Modifier.focoRecordado("sorpresa"), icono = "🎲", principal = true) }
     items(Catalogo.ANIMOS, key = { it.clave }) { a ->
         Boton("${a.nombre}", icono = a.emoji, modifier = Modifier.focoRecordado("animo-${a.clave}"), onClick = {
             App.abrir(Pantalla.Categoria("Para cuando estás ${a.nombre.lowercase()}", listOf("movie", "tv")) { tipo, pag -> Catalogo.animo(a, tipo, pag) })

@@ -40,6 +40,7 @@ data class Detalle(
     val temporadas: List<Temporada>,
     val similares: List<Titulo>,
     val estado: String,
+    val saga: Pair<String, List<Titulo>>? = null,   // la colección a la que pertenece una película
 )
 
 object Catalogo {
@@ -77,6 +78,7 @@ object Catalogo {
             .distinctBy { it.clave }
     }
 
+    suspend fun topHoy() = lista(Tmdb.json("/trending/all/day")).take(10)
     suspend fun tendencias(tipo: String = "all", pagina: Int = 1) = lista(Tmdb.json("/trending/$tipo/week", "page=$pagina"), tipo.takeIf { it != "all" })
     suspend fun populares(tipo: String) = lista(Tmdb.json("/$tipo/popular", "region=ES"), tipo)
     suspend fun mejorValoradas(tipo: String) = lista(Tmdb.json("/$tipo/top_rated", "region=ES"), tipo)
@@ -154,6 +156,14 @@ object Catalogo {
             trailer = trailer, reparto = reparto, direccion = direccion, temporadas = temporadas,
             similares = o.optJSONObject("recommendations")?.let { lista(it) }?.take(20) ?: emptyList(),
             estado = o.optString("status"),
+            saga = o.optJSONObject("belongs_to_collection")?.optInt("id")?.takeIf { it > 0 }?.let { idc ->
+                try {
+                    val col = Tmdb.json("/collection/$idc")
+                    val partes = col.optJSONArray("parts")?.let { a -> (0 until a.length()).mapNotNull { titulo(a.getJSONObject(it), "movie") } }
+                        ?.filter { it.poster != null }?.sortedBy { it.anio.ifEmpty { "9999" } } ?: emptyList()
+                    if (partes.size > 1) col.optString("name") to partes else null
+                } catch (e: Exception) { null }
+            },
         )
     }
 

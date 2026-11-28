@@ -223,6 +223,32 @@ object Fuentes {
             .thenByDescending { it.meta.semillas }
     )
 
+    /**
+     * Orden para «Reproducir» (elige solo): al instante y en español primero, y luego lo que mejor va en una tele normal:
+     * 1080p, después 4K si el archivo es ligero, 720p, y al final los 4K enormes (remux de 50 GB, que piden 70 Mb/s).
+     */
+    fun ordenarParaReproducir(l: List<Fuente>): List<Fuente> {
+        val gb = 1L shl 30
+        fun calidad(f: Fuente): Int {
+            val m = f.meta
+            val remux = Regex("remux", RegexOption.IGNORE_CASE).containsMatchIn(f.torrent)
+            return when {
+                m.calidad == 1080 && m.tamano < 25 * gb -> 5
+                m.calidad >= 2160 && m.tamano in 1..20 * gb && !remux -> 4
+                m.calidad == 1080 -> 3
+                m.calidad == 720 -> 2
+                m.calidad >= 2160 -> 1
+                else -> 0
+            }
+        }
+        return l.sortedWith(
+            compareByDescending<Fuente> { it.meta.alInstante }
+                .thenByDescending { if (it.meta.cast) 3 else if (it.meta.es) 2 else if (it.meta.multi) 1 else 0 }
+                .thenByDescending { calidad(it) }
+                .thenByDescending { it.meta.semillas }
+        )
+    }
+
     fun bytes(n: Long): String = when {
         n >= 1L shl 40 -> String.format("%.1f TB", n / (1L shl 40).toDouble())
         n >= 1L shl 30 -> String.format("%.1f GB", n / (1L shl 30).toDouble())

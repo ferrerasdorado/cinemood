@@ -147,10 +147,15 @@ object Progreso {
         if (clave.isNullOrEmpty()) return
         val p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val o = p.getString(clave, null)?.let { runCatching { JSONObject(it) }.getOrNull() } ?: return
-        if (durSeg > 30 && posSeg >= durSeg * 0.92) { p.edit().remove(clave).apply(); return }
+        if (durSeg > 30 && posSeg >= durSeg * 0.92) {
+            p.edit().remove(clave).apply()
+            if (o.optString("tipo") == "movie") CanalTv.quitar(ctx, "movie", o.optInt("id"))   // en series sigue el siguiente capítulo
+            return
+        }
         if (posSeg < 5) return
         o.put("pos", posSeg).put("dur", durSeg).put("cuando", System.currentTimeMillis())
         p.edit().putString(clave, o.toString()).apply()
+        CanalTv.publicar(ctx, o, posSeg, durSeg)
     }
 
     /** Antes de abrir el reproductor se apunta qué se va a ver, para poder listarlo en «Seguir viendo» */
@@ -186,5 +191,6 @@ object Progreso {
 
     fun quitar(ctx: Context, pr: Progresion) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(clave(pr.t, pr.temporada, pr.episodio)).apply()
+        CanalTv.quitar(ctx, pr.t.tipo, pr.t.id)
     }
 }
