@@ -139,6 +139,9 @@ object Reproduccion {
     }
 }
 
+/** Cambio automático de la frecuencia de la tele (pendiente de afinar; ver ajustarFrecuencia) */
+private const val CAMBIAR_FRECUENCIA = false
+
 private enum class Fase { BUSCANDO, CARGANDO, VIENDO, ERROR }
 
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
@@ -296,6 +299,7 @@ class PlayerActivity : ComponentActivity() {
     private fun redondearFps(f: Float): Float = listOf(23.976f, 24f, 25f, 29.97f, 30f, 50f, 59.94f, 60f).minByOrNull { kotlin.math.abs(it - f) }
         ?.takeIf { kotlin.math.abs(it - f) < 0.6f } ?: f
     private fun ajustarFrecuencia(fps: Float) {
+        if (!CAMBIAR_FRECUENCIA) return   // desactivado: en el DIGI eligió 59,94 Hz y la imagen se corrompió al cambiar de modo
         if (Build.VERSION.SDK_INT < 23 || fps <= 1f || kotlin.math.abs(fps - frecuenciaHecha) < 0.01f) return
         frecuenciaHecha = fps
         try {
